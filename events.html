@@ -15,7 +15,7 @@
   }
   body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); min-height:100vh; }
 
-  .header { background:var(--primary); padding:14px 28px; display:flex; align-items:center; gap:12px; }
+  .header { background:var(--primary); padding:14px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .logo { font-size:22px; font-weight:800; color:white; letter-spacing:-0.3px; }
   .logo span { color:#fff; font-weight:400; }
   .tagline { font-size:11px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:.05em; }
@@ -37,7 +37,7 @@
   .field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
   .field { margin-bottom:18px; }
 
-  .page-body { max-width:980px; margin:0 auto; padding:28px 24px; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
   .page-title { font-size:28px; font-weight:800; }
   .page-sub { color:var(--muted); font-size:15px; margin-top:4px; }
@@ -57,7 +57,7 @@
   .form-cat-chip:hover { border-color:var(--primary); color:var(--primary); }
   .form-cat-chip.selected { background:#154F74; border-color:#154F74; color:white; }
 
-  .event-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+  .event-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
   .event-card { background:var(--white); border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,.05); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s,transform .15s; }
   .event-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.1); transform:translateY(-2px); }
 
@@ -84,7 +84,8 @@
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
   .room-preview { display:none; margin-bottom:18px; padding:14px 16px; background:var(--white); border-radius:8px; border:1.5px solid var(--border); }
-  .room-preview-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:10px; }
+  .loading-bar { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--primary), var(--green)); z-index:9999; animation: loadpulse 1s ease-in-out infinite; }
+  @keyframes loadpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .room-chip { background:var(--light); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--dark); transition:all .15s; white-space:nowrap; }
   .room-chip:hover { border-color:var(--primary); color:var(--primary); background:var(--white); }
   .room-chip.selected { background:#154F74; border-color:#154F74; color:white; }
@@ -108,11 +109,43 @@
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
 
-  @media(max-width:500px) { .two-col { grid-template-columns:1fr; } .modal { padding:24px; } }
+  /* ── Responsive ───────────────────────────── */
+  @media(max-width:768px) {
+    .header { padding:12px 16px; gap:8px; }
+    .header-right { display:flex; gap:8px; flex-wrap:wrap; }
+    .page-body { padding:16px 12px; }
+    .event-grid { grid-template-columns:1fr; gap:12px; }
+    .filter-row { flex-direction:column; gap:8px; }
+    .filter-search { width:100%; min-width:unset; box-sizing:border-box; }
+    .cat-pills { gap:6px; margin-bottom:16px; }
+    .modal { padding:20px 16px; margin:12px; border-radius:12px; }
+    .two-col { grid-template-columns:1fr; gap:0; }
+    .event-card-footer { flex-direction:column; align-items:flex-start; gap:8px; }
+    .room-schedule-modal { max-width:100%; }
+    .room-event-row { flex-direction:column; align-items:flex-start; gap:4px; }
+    .btn-sm { font-size:12px; padding:6px 10px; }
+    .modal-actions { flex-wrap:wrap; }
+  }
+  @media(max-width:420px) {
+    .event-title { font-size:15px; }
+    .modal { padding:16px 14px; }
+    .modal-title { font-size:18px; }
+    .btn { font-size:13px; padding:9px 14px; }
+    .event-grid { gap:10px; }
+    .format-chip { font-size:12px; padding:6px 12px; }
+  }
+  @media(min-width:1024px) {
+    .page-body { padding:32px 40px; }
+    .event-grid { grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+  }
+  @media(min-width:1400px) {
+    .event-grid { grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
+  }
 </style>
 </head>
 <body>
 
+<div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div>
     <div class="logo">Day<span>Balancer</span></div>
@@ -167,7 +200,7 @@
     </div>
 
     <div class="room-preview" id="room-preview">
-      <div class="room-preview-label">Which virtual room is best for this event?</div>
+      <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
       <div class="form-cat-chips" id="room-options"></div>
     </div>
 
@@ -288,24 +321,81 @@ let activeFilter = "all";
 let activeTab = "upcoming"; // "upcoming" | "past"
 let selectedCats = new Set(); // for the form
 
-// ── Storage ──────────────────────────────────
+// ── Google Sheets API ─────────────────────────
+const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
+
+function evToSheet(ev) {
+  return {
+    id:          ev.id,
+    title:       ev.title || "",
+    categories:  Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
+    date:        ev.date || "",
+    startTime:   ev.time || "",
+    endTime:     ev.endtime || "",
+    format:      ev.format || "",
+    location:    ev.location || "",
+    room:        ev.room || "",
+    description: ev.description || "",
+    host:        ev.host || "",
+    passcode:    ev.passcode || "",
+    going:       ev.going || 0,
+  };
+}
+
+function sheetToEv(row) {
+  return {
+    id:          String(row.id || ""),
+    title:       row.title || "",
+    categories:  row.categories ? String(row.categories).split(",").filter(Boolean) : [],
+    date:        row.date || "",
+    time:        row.startTime || "",
+    endtime:     row.endTime || "",
+    format:      row.format || "",
+    location:    row.location || "",
+    room:        row.room || "",
+    description: row.description || "",
+    host:        row.host || "",
+    passcode:    row.passcode || "",
+    going:       parseInt(row.going) || 0,
+  };
+}
+
 async function loadEvents() {
   try {
-    if (window.storage) {
-      const r = await window.storage.get("db-community-events", true);
-      if (r) events = JSON.parse(r.value);
-    } else {
-      const s = localStorage.getItem("db-community-events");
-      if (s) events = JSON.parse(s);
-    }
-  } catch(e) { events = []; }
+    showLoading(true);
+    const res = await fetch(GS_URL + "?t=" + Date.now());
+    const data = await res.json();
+    events = (data.events || []).filter(r => r.id).map(sheetToEv);
+  } catch(e) {
+    console.error("Failed to load events:", e);
+    events = [];
+  } finally {
+    showLoading(false);
+  }
 }
-async function saveEvents() {
+
+async function apiCall(params) {
   try {
-    const data = JSON.stringify(events);
-    if (window.storage) await window.storage.set("db-community-events", data, true);
-    else localStorage.setItem("db-community-events", data);
-  } catch(e) {}
+    const qs = Object.entries(params)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`)
+      .join("&");
+    const res = await fetch(GS_URL + "?" + qs);
+    return await res.json();
+  } catch(e) {
+    console.error("API error:", e);
+    return { status: "error" };
+  }
+}
+
+async function apiAdd(ev)          { return apiCall({ action: "add",    event: evToSheet(ev) }); }
+async function apiUpdate(ev)       { return apiCall({ action: "update", event: evToSheet(ev) }); }
+async function apiDelete(id)       { return apiCall({ action: "delete", id }); }
+async function apiGoing(id, delta) { return apiCall({ action: "going",  id, delta }); }
+
+function showLoading(on) {
+  let el = document.getElementById("loading-bar");
+  if (!el) return;
+  el.style.display = on ? "block" : "none";
 }
 
 // ── Build form category chips ─────────────────
@@ -351,8 +441,9 @@ function setFormat(fmt) {
 
 function updateRoomPreview() {
   const preview = document.getElementById("room-preview");
-  const label = document.querySelector(".room-preview-label");
+  const label = document.getElementById("room-preview-label");
   const roomOptions = document.getElementById("room-options");
+  if (!preview || !label || !roomOptions) return;
 
   const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
   if (!showRooms) { preview.style.display = "none"; selectedRoom = null; return; }
@@ -488,11 +579,12 @@ function renderEvents() {
   });
 }
 
-function markGoing(id) {
+async function markGoing(id) {
   const key = "db-going-" + id;
   const ev = events.find(e => e.id === id);
   if (!ev) return;
   const already = localStorage.getItem(key);
+  const delta = already ? -1 : 1;
   if (already) {
     ev.going = Math.max((ev.going || 1) - 1, 0);
     localStorage.removeItem(key);
@@ -500,7 +592,7 @@ function markGoing(id) {
     ev.going = (ev.going || 0) + 1;
     localStorage.setItem(key, "1");
   }
-  saveEvents();
+  await apiGoing(id, delta);
   const nowGone = !!localStorage.getItem(key);
   const countEl = document.getElementById("going-" + id);
   const btn = document.getElementById("goin-btn-" + id);
@@ -573,8 +665,6 @@ function verifyPasscode() {
   loadEditForm(idToEdit);
 }
 
-document.getElementById("p-code").addEventListener("keydown", e => { if (e.key === "Enter") verifyPasscode(); });
-document.getElementById("passcode-modal").addEventListener("click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
 
 function loadEditForm(id) {
   const ev = events.find(e => e.id === id);
@@ -609,10 +699,18 @@ function loadEditForm(id) {
   updateRoomPreview();
 }
 function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
-document.getElementById("post-modal").addEventListener("click", e => { if (e.target.id === "post-modal") closeModal(); });
-document.getElementById("f-date").addEventListener("change", checkAndWarnConflict);
-document.getElementById("f-time").addEventListener("change", checkAndWarnConflict);
-document.getElementById("f-endtime").addEventListener("change", checkAndWarnConflict);
+function safeOn(id, evt, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(evt, fn);
+}
+safeOn("post-modal", "click", e => { if (e.target.id === "post-modal") closeModal(); });
+safeOn("f-date", "change", checkAndWarnConflict);
+safeOn("f-time", "change", checkAndWarnConflict);
+safeOn("f-endtime", "change", checkAndWarnConflict);
+safeOn("p-code", "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
+safeOn("passcode-modal", "click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") closeSummaryModal(); });
+safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 // ── Summary modal ─────────────────────────────
 function showSummary(ev) {
@@ -651,7 +749,6 @@ function copySummary() {
   });
 }
 
-document.getElementById("summary-modal").addEventListener("click", e => { if (e.target.id === "summary-modal") closeSummaryModal(); });
 
 function fmt12(t) {
   if (!t) return "";
@@ -665,7 +762,7 @@ function fmtDateShort(date) {
   return new Date(date + "T12:00").toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
 }
 
-function submitEvent() {
+async function submitEvent() {
   const title    = document.getElementById("f-title").value.trim();
   const date     = document.getElementById("f-date").value;
   const time     = document.getElementById("f-time").value;
@@ -727,8 +824,10 @@ function submitEvent() {
 
   if (editingId) {
     const idx = events.findIndex(e => e.id === editingId);
-    if (idx > -1) events[idx] = { ...events[idx], ...eventData };
-    saveEvents();
+    if (idx > -1) {
+      events[idx] = { ...events[idx], ...eventData };
+      await apiUpdate(events[idx]);
+    }
     closeModal();
     ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
@@ -737,7 +836,7 @@ function submitEvent() {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
     const newEv = { id: newId, ...eventData, passcode, going: 0 };
     events.unshift(newEv);
-    saveEvents();
+    await apiAdd(newEv);
     closeModal();
     ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
@@ -765,13 +864,13 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-function deleteEvent() {
+async function deleteEvent() {
   if (!editingId) return;
   const ev = events.find(e => e.id === editingId);
   if (!ev) return;
   if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
   events = events.filter(e => e.id !== editingId);
-  saveEvents();
+  await apiDelete(editingId);
   closeModal();
   renderEvents();
   showToast("Event deleted.");
@@ -932,7 +1031,6 @@ function openRoomSchedule() {
 function closeRoomModal() {
   document.getElementById("room-modal").classList.remove("open");
 }
-document.getElementById("room-modal").addEventListener("click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 loadEvents().then(() => { renderPills(); renderEvents(); });
 </script>
