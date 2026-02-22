@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -183,6 +184,11 @@
       <input class="input" id="f-host" placeholder="Full name">
     </div>
 
+    <div class="field" id="passcode-field">
+      <label class="field-label">Edit passcode * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, save this to edit later</span></label>
+      <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;">
+    </div>
+
     <p class="error-msg" id="post-error"></p>
 
     <div class="modal-actions">
@@ -193,6 +199,22 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PASSCODE MODAL -->
+<div class="modal-overlay" id="passcode-modal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" style="font-size:18px;">Enter your edit passcode</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">This is the 4-digit code you set when you posted the event.</p>
+    <div class="field">
+      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;">
+    </div>
+    <p class="error-msg" id="passcode-error">Incorrect passcode. Please try again.</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="verifyPasscode()">Unlock</button>
+      <button class="btn btn-outline" onclick="closePasscodeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const CATEGORIES = [
@@ -438,11 +460,43 @@ function openModal() {
   document.getElementById("f-date").min = new Date().toISOString().split("T")[0];
   document.getElementById("modal-title").textContent = "Post an event";
   document.getElementById("submit-btn").textContent = "Post event";
-  ["f-title","f-date","f-time","f-location","f-desc","f-host"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("passcode-field").style.display = "block";
+  ["f-title","f-date","f-time","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   buildFormChips();
 }
 
+let pendingEditId = null;
 function openEdit(id) {
+  pendingEditId = id;
+  document.getElementById("p-code").value = "";
+  document.getElementById("passcode-error").style.display = "none";
+  document.getElementById("passcode-modal").classList.add("open");
+  setTimeout(() => document.getElementById("p-code").focus(), 100);
+}
+
+function closePasscodeModal() {
+  document.getElementById("passcode-modal").classList.remove("open");
+  pendingEditId = null;
+}
+
+function verifyPasscode() {
+  const ev = events.find(e => e.id === pendingEditId);
+  if (!ev) return;
+  const entered = document.getElementById("p-code").value.trim();
+  if (entered !== ev.passcode) {
+    document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("p-code").value = "";
+    document.getElementById("p-code").focus();
+    return;
+  }
+  closePasscodeModal();
+  loadEditForm(pendingEditId);
+}
+
+document.getElementById("p-code").addEventListener("keydown", e => { if (e.key === "Enter") verifyPasscode(); });
+document.getElementById("passcode-modal").addEventListener("click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+
+function loadEditForm(id) {
   const ev = events.find(e => e.id === id);
   if (!ev) return;
   editingId = id;
@@ -454,6 +508,7 @@ function openEdit(id) {
   document.getElementById("post-error").style.display = "none";
   document.getElementById("modal-title").textContent = "Edit event";
   document.getElementById("submit-btn").textContent = "Save changes";
+  document.getElementById("passcode-field").style.display = "none";
   document.getElementById("f-title").value = ev.title || "";
   document.getElementById("f-date").value = ev.date || "";
   document.getElementById("f-time").value = ev.time || "";
@@ -461,7 +516,6 @@ function openEdit(id) {
   document.getElementById("f-desc").value = ev.description || "";
   document.getElementById("f-host").value = ev.host || "";
 
-  // Restore format chips
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
   });
@@ -483,8 +537,15 @@ function submitEvent() {
   const host     = document.getElementById("f-host").value.trim();
   const errEl    = document.getElementById("post-error");
 
+  const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
+
   if (!title || selectedCats.size === 0 || !date || !host || !selectedFormat) {
     errEl.textContent = "Please fill in a title, at least one category, format, date, and host name.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (!editingId && (!/^\d{4}$/.test(passcode))) {
+    errEl.textContent = "Please set a 4-digit passcode so you can edit this event later.";
     errEl.style.display = "block";
     return;
   }
@@ -509,12 +570,12 @@ function submitEvent() {
     if (idx > -1) events[idx] = { ...events[idx], ...eventData };
     showToast("✓ Event updated!");
   } else {
-    events.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), ...eventData, going: 0 });
-    showToast("✓ Event posted!");
+    events.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), ...eventData, passcode, going: 0 });
+    showToast("✓ Event posted! Save your passcode: " + passcode);
   }
   saveEvents();
   closeModal();
-  ["f-title","f-date","f-time","f-location","f-desc","f-host"].forEach(id => document.getElementById(id).value = "");
+  ["f-title","f-date","f-time","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   renderEvents();
 }
 
