@@ -92,7 +92,15 @@
   .format-chip:hover { border-color:var(--primary); color:var(--primary); }
   .format-chip.selected { background:#154F74; border-color:#154F74; color:white; }
 
-  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); grid-column:1/-1; }
+  .room-schedule-modal { max-width:640px; }
+  .room-section { margin-bottom:24px; }
+  .room-section-title { font-size:14px; font-weight:800; color:var(--dark); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .room-event-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--light); gap:10px; flex-wrap:wrap; }
+  .room-event-row:last-child { border-bottom:none; }
+  .room-event-name { font-size:14px; font-weight:700; }
+  .room-event-time { font-size:12px; color:var(--muted); }
+  .room-empty { font-size:13px; color:var(--muted); font-style:italic; padding:6px 0; }
+  .conflict-warning { background:#FFF3E0; border:1.5px solid #E8732A; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#b85a00; font-weight:700; display:none; }
   .empty-icon { font-size:48px; margin-bottom:16px; }
   .empty-title { font-size:18px; font-weight:700; margin-bottom:8px; color:var(--dark); }
   .error-msg { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
@@ -110,7 +118,8 @@
     <div class="logo">Day<span>Balancer</span></div>
     <div class="tagline">Community events</div>
   </div>
-  <div class="header-right">
+  <div class="header-right" style="display:flex;gap:10px;">
+    <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
     <button class="btn btn-white btn-sm" onclick="openModal()">+ Post an event</button>
   </div>
 </div>
@@ -118,8 +127,12 @@
 <div class="page-body">
   <div class="page-title-row">
     <div>
-      <div class="page-title">What's happening</div>
+      <div class="page-title" id="page-title">What's happening</div>
       <div class="page-sub">Events posted by DayBalancer members</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="format-chip active" id="tab-upcoming" onclick="setTab('upcoming')">Upcoming</button>
+      <button class="format-chip" id="tab-past" onclick="setTab('past')">Past events</button>
     </div>
   </div>
   <div class="filter-row">
@@ -174,14 +187,33 @@
         <input class="input" id="f-date" type="date">
       </div>
       <div class="field">
-        <label class="field-label">Time</label>
+        <label class="field-label">Start time *</label>
         <input class="input" id="f-time" type="time">
       </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label">End time *</label>
+        <input class="input" id="f-endtime" type="time">
+      </div>
+      <div class="field"></div>
     </div>
 
     <div class="field">
       <label class="field-label">Who's hosting? *</label>
       <input class="input" id="f-host" placeholder="Full name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Your email <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <input class="input" id="f-email" type="email" placeholder="you@example.com">
+    </div>
+
+    <div id="email-copy-field" style="display:none;margin-bottom:18px;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--dark);">
+        <input type="checkbox" id="f-emailcopy" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
+        Send me a copy of this event info
+      </label>
     </div>
 
     <div class="field" id="passcode-field">
@@ -190,10 +222,25 @@
     </div>
 
     <p class="error-msg" id="post-error"></p>
+    <div class="conflict-warning" id="conflict-warning"></div>
 
     <div class="modal-actions">
       <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="cloneEvent()" title="Clone this event">⧉ Clone</button>
+      <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROOM SCHEDULE MODAL -->
+<div class="modal-overlay" id="room-modal">
+  <div class="modal room-schedule-modal">
+    <div class="modal-title">Room schedules</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">Upcoming events by virtual room. Check availability before posting.</p>
+    <div id="room-schedule-body"></div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-outline btn-full" onclick="closeRoomModal()">Close</button>
     </div>
   </div>
 </div>
@@ -233,6 +280,7 @@ const CATEGORIES = [
 
 let events = [];
 let activeFilter = "all";
+let activeTab = "upcoming"; // "upcoming" | "past"
 let selectedCats = new Set(); // for the form
 
 // ── Storage ──────────────────────────────────
@@ -298,6 +346,7 @@ function setFormat(fmt) {
 
 function updateRoomPreview() {
   const preview = document.getElementById("room-preview");
+  const label = document.querySelector(".room-preview-label");
   const roomOptions = document.getElementById("room-options");
 
   const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
@@ -314,18 +363,29 @@ function updateRoomPreview() {
   if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
   if (rooms.length === 1) selectedRoom = rooms[0];
 
+  // Update label based on choice count
+  label.textContent = rooms.length === 1 ? "Virtual room for this event:" : "Which virtual room is best for this event?";
+
   preview.style.display = "block";
   roomOptions.innerHTML = "";
   rooms.forEach(room => {
     const chip = document.createElement("button");
     chip.type = "button";
-    chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
-    chip.textContent = room; // no emoji
-    chip.onclick = () => {
-      selectedRoom = room;
-      roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected"));
-      chip.classList.add("selected");
-    };
+    // Single room: show as a plain badge, not clickable
+    if (rooms.length === 1) {
+      chip.className = "room-chip selected";
+      chip.style.cursor = "default";
+      chip.textContent = room;
+    } else {
+      chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
+      chip.textContent = room;
+      chip.onclick = () => {
+        selectedRoom = room;
+        roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+        checkAndWarnConflict();
+      };
+    }
     roomOptions.appendChild(chip);
   });
 }
@@ -354,6 +414,7 @@ function setFilter(id) { activeFilter = id; renderPills(); renderEvents(); }
 function renderEvents() {
   const grid = document.getElementById("event-grid");
   const q = document.getElementById("search-input").value.toLowerCase();
+  const now = Date.now();
 
   let list = events.filter(e => {
     const cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
@@ -363,22 +424,22 @@ function renderEvents() {
       (e.description||"").toLowerCase().includes(q) ||
       (e.location||"").toLowerCase().includes(q) ||
       (e.host||"").toLowerCase().includes(q);
-    return matchCat && matchQ;
+    const evMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
+    const isPast = evMs < now;
+    const matchTab = activeTab === "past" ? isPast : !isPast;
+    return matchCat && matchQ && matchTab;
   });
 
-  const now = Date.now();
   list.sort((a, b) => {
     const da = new Date(a.date + "T" + (a.time||"00:00")).getTime();
     const db = new Date(b.date + "T" + (b.time||"00:00")).getTime();
-    const aF = da >= now, bF = db >= now;
-    if (aF && !bF) return -1;
-    if (!aF && bF) return 1;
-    return aF ? da - db : db - da;
+    return activeTab === "past" ? db - da : da - db;
   });
 
   grid.innerHTML = "";
   if (list.length === 0) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No events yet</div><p>Be the first to post something for the community.</p></div>`;
+    const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p>${msg}</p></div>`;
     return;
   }
 
@@ -399,7 +460,7 @@ function renderEvents() {
       </div>
       <div class="event-card-body">
         <div class="event-meta">
-          <div class="event-meta-item"><span>📅</span>${esc(fmtDate(ev.date, ev.time))}</div>
+          <div class="event-meta-item"><span>📅</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
@@ -412,7 +473,7 @@ function renderEvents() {
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-sm ${gone?"btn-outline":""}" id="goin-btn-${ev.id}"
             onclick="markGoing('${ev.id}')">
-            ${gone ? "✓ You're in" : "🙋 I'm in"}
+            ${gone ? "✓ Interested" : "🙋 Interested?"}
           </button>
           ${roomBadge}
           <button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>
@@ -440,7 +501,7 @@ function markGoing(id) {
   const btn = document.getElementById("goin-btn-" + id);
   if (countEl) countEl.textContent = ev.going;
   if (btn) {
-    btn.textContent = nowGone ? "✓ You're in" : "🙋 I'm in";
+    btn.textContent = nowGone ? "✓ Interested" : "🙋 Interested?";
     btn.className = "btn btn-sm" + (nowGone ? " btn-outline" : "");
   }
   showToast(nowGone ? "Marked as interested!" : "Removed - no problem!");
@@ -457,11 +518,18 @@ function openModal() {
   document.getElementById("post-modal").classList.add("open");
   document.getElementById("post-error").style.display = "none";
   document.getElementById("room-preview").style.display = "none";
+  document.getElementById("conflict-warning").style.display = "none";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("submit-btn").style.opacity = "";
   document.getElementById("f-date").min = new Date().toISOString().split("T")[0];
   document.getElementById("modal-title").textContent = "Post an event";
   document.getElementById("submit-btn").textContent = "Post event";
   document.getElementById("passcode-field").style.display = "block";
-  ["f-title","f-date","f-time","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  document.getElementById("delete-btn").style.display = "none";
+  document.getElementById("clone-btn").style.display = "none";
+  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-email","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  document.getElementById("email-copy-field").style.display = "none";
+  const cb = document.getElementById("f-emailcopy"); if(cb) cb.checked = false;
   buildFormChips();
 }
 
@@ -479,10 +547,19 @@ function closePasscodeModal() {
   pendingEditId = null;
 }
 
+const MASTER_PASSCODE = "6090";
+
 function verifyPasscode() {
-  const ev = events.find(e => e.id === pendingEditId);
-  if (!ev) return;
   const entered = document.getElementById("p-code").value.trim();
+  const idToEdit = pendingEditId;
+  // Master passcode bypasses everything
+  if (entered === MASTER_PASSCODE) {
+    closePasscodeModal();
+    loadEditForm(idToEdit);
+    return;
+  }
+  const ev = events.find(e => e.id === idToEdit);
+  if (!ev) return;
   if (entered !== ev.passcode) {
     document.getElementById("passcode-error").style.display = "block";
     document.getElementById("p-code").value = "";
@@ -490,7 +567,7 @@ function verifyPasscode() {
     return;
   }
   closePasscodeModal();
-  loadEditForm(pendingEditId);
+  loadEditForm(idToEdit);
 }
 
 document.getElementById("p-code").addEventListener("keydown", e => { if (e.key === "Enter") verifyPasscode(); });
@@ -509,12 +586,17 @@ function loadEditForm(id) {
   document.getElementById("modal-title").textContent = "Edit event";
   document.getElementById("submit-btn").textContent = "Save changes";
   document.getElementById("passcode-field").style.display = "none";
+  document.getElementById("delete-btn").style.display = "block";
+  document.getElementById("clone-btn").style.display = "block";
   document.getElementById("f-title").value = ev.title || "";
   document.getElementById("f-date").value = ev.date || "";
   document.getElementById("f-time").value = ev.time || "";
+  document.getElementById("f-endtime").value = ev.endtime || "";
   document.getElementById("f-location").value = ev.location || "";
   document.getElementById("f-desc").value = ev.description || "";
   document.getElementById("f-host").value = ev.host || "";
+  document.getElementById("f-email").value = ev.email || "";
+  if (ev.email) document.getElementById("email-copy-field").style.display = "block";
 
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
@@ -527,41 +609,72 @@ function loadEditForm(id) {
 }
 function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
 document.getElementById("post-modal").addEventListener("click", e => { if (e.target.id === "post-modal") closeModal(); });
+document.getElementById("f-date").addEventListener("change", checkAndWarnConflict);
+document.getElementById("f-time").addEventListener("change", checkAndWarnConflict);
+document.getElementById("f-endtime").addEventListener("change", checkAndWarnConflict);
+document.getElementById("f-email").addEventListener("input", function() {
+  document.getElementById("email-copy-field").style.display = this.value.trim() ? "block" : "none";
+});
 
 function submitEvent() {
   const title    = document.getElementById("f-title").value.trim();
   const date     = document.getElementById("f-date").value;
   const time     = document.getElementById("f-time").value;
+  const endtime  = document.getElementById("f-endtime").value;
   const location = document.getElementById("f-location").value.trim();
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
+  const email    = document.getElementById("f-email").value.trim();
+  const wantsCopy = document.getElementById("f-emailcopy")?.checked && email;
+  const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
 
-  const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
+  const missing = [];
+  if (!title) missing.push("event title");
+  if (selectedCats.size === 0) missing.push("at least one category");
+  if (!selectedFormat) missing.push("virtual or in-person");
+  if (!date) missing.push("date");
+  if (!time) missing.push("start time");
+  if (!endtime) missing.push("end time");
+  if (!host) missing.push("host name");
+  if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit passcode");
 
-  if (!title || selectedCats.size === 0 || !date || !host || !selectedFormat) {
-    errEl.textContent = "Please fill in a title, at least one category, format, date, and host name.";
+  if (missing.length > 0) {
+    errEl.textContent = "Please add: " + missing.join(", ") + ".";
     errEl.style.display = "block";
     return;
   }
-  if (!editingId && (!/^\d{4}$/.test(passcode))) {
-    errEl.textContent = "Please set a 4-digit passcode so you can edit this event later.";
+  if (time && endtime && endtime <= time) {
+    errEl.textContent = "End time must be after start time.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (checkAllFields()) {
+    errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed.";
     errEl.style.display = "block";
     return;
   }
   if ((selectedFormat === "virtual" || selectedFormat === "both") && !selectedRoom) {
-    errEl.textContent = "Please select which room is best for this event.";
+    errEl.textContent = "Please select which virtual room is best for this event.";
     errEl.style.display = "block";
     return;
+  }
+  if (selectedRoom && date) {
+    const conflict = checkConflict(selectedRoom, date, time, editingId);
+    if (conflict) {
+      errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`;
+      errEl.style.display = "block";
+      return;
+    }
   }
   errEl.style.display = "none";
 
   const catIds = Array.from(selectedCats);
   const eventData = {
-    title, categories: catIds, date, time,
+    title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    description: desc, host,
+    description: desc, host, email,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
 
@@ -570,21 +683,51 @@ function submitEvent() {
     if (idx > -1) events[idx] = { ...events[idx], ...eventData };
     showToast("✓ Event updated!");
   } else {
-    events.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), ...eventData, passcode, going: 0 });
+    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    events.unshift({ id: newId, ...eventData, passcode, going: 0 });
     showToast("✓ Event posted! Save your passcode: " + passcode);
+    if (wantsCopy) {
+      const roomLine = selectedRoom ? `\nVirtual room: ${selectedRoom}\n${(ROOMS.find(r=>r.name===selectedRoom)||{}).url||""}` : "";
+      const locLine = eventData.location ? `\nLocation: ${eventData.location}` : "";
+      const timeLine = endtime ? `${time} - ${endtime}` : time;
+      const body = [
+        `Hi ${host},`,
+        ``,
+        `Here's a copy of your event on DayBalancer:`,
+        ``,
+        `Event: ${title}`,
+        `Date: ${date}`,
+        `Time: ${timeLine}`,
+        locLine,
+        roomLine,
+        desc ? `\nDescription: ${desc}` : "",
+        ``,
+        `Your edit passcode: ${passcode}`,
+        `To edit your event, visit the bulletin board and click the ✏️ icon on your event card.`,
+      ].filter(l => l !== undefined).join("\n");
+      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent("Your DayBalancer event: " + title)}&body=${encodeURIComponent(body)}`;
+      window.open(mailto, "_blank");
+    }
   }
   saveEvents();
   closeModal();
-  ["f-title","f-date","f-time","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-email","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  document.getElementById("email-copy-field").style.display = "none";
+  const cb2 = document.getElementById("f-emailcopy"); if(cb2) cb2.checked = false;
   renderEvents();
 }
 
 // ── Helpers ───────────────────────────────────
-function fmtDate(date, time) {
+function fmtDate(date, time, endtime) {
   if (!date) return "Date TBD";
   const d = new Date(date + "T" + (time||"00:00"));
   const ds = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
-  return time ? ds + " · " + d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" }) : ds;
+  if (!time) return ds;
+  const ts = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  if (!endtime) return ds + " · " + ts;
+  const de = new Date(date + "T" + endtime);
+  const te = de.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  return ds + " · " + ts + " - " + te;
 }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s, n) { return s.length > n ? s.slice(0,n) + "…" : s; }
@@ -593,6 +736,175 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2500);
 }
+
+function deleteEvent() {
+  if (!editingId) return;
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
+  events = events.filter(e => e.id !== editingId);
+  saveEvents();
+  closeModal();
+  renderEvents();
+  showToast("Event deleted.");
+}
+
+
+// ── Tab toggle ────────────────────────────────
+function setTab(tab) {
+  activeTab = tab;
+  document.getElementById("tab-upcoming").classList.toggle("active", tab === "upcoming");
+  document.getElementById("tab-past").classList.toggle("active", tab === "past");
+  document.getElementById("page-title").textContent = tab === "past" ? "Past events" : "What's happening";
+  renderEvents();
+}
+
+// ── Clone event ───────────────────────────────
+function cloneEvent() {
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  closeModal();
+  setTimeout(() => {
+    openModal();
+    document.getElementById("f-title").value = ev.title + " (copy)";
+    document.getElementById("f-location").value = ev.location || "";
+    document.getElementById("f-desc").value = ev.description || "";
+    document.getElementById("f-host").value = ev.host || "";
+    selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+    selectedRoom = ev.room || null;
+    selectedFormat = ev.format || null;
+    ["virtual","inperson","both"].forEach(f => {
+      document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
+    });
+    const showLoc = selectedFormat === "inperson" || selectedFormat === "both";
+    document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+    buildFormChips();
+    updateRoomPreview();
+    showToast("Event cloned - set a new date and passcode!");
+  }, 100);
+}
+
+// ── Bad words filter ──────────────────────────
+const BAD_WORDS = ["fuck","shit","bitch","asshole","cunt","dick","cock","pussy","bastard","ass","crap","piss","prick","slut","whore","nigger","faggot","retard"];
+
+function containsBadWords(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some(w => {
+    const re = new RegExp("\\b" + w + "\\b");
+    return re.test(lower);
+  });
+}
+
+function checkAllFields() {
+  return ["f-title","f-desc","f-host","f-location"].some(id => {
+    const el = document.getElementById(id);
+    return el && containsBadWords(el.value);
+  });
+}
+
+const ROOM_BUFFER_MINS = 90;
+
+function getEventMs(ev) {
+  if (!ev.date) return null;
+  return new Date(ev.date + "T" + (ev.time || "09:00")).getTime();
+}
+
+function checkConflict(room, date, time, excludeId) {
+  if (!room || !date) return null;
+  const newMs = new Date(date + "T" + (time || "09:00")).getTime();
+  const buffer = ROOM_BUFFER_MINS * 60 * 1000;
+  return events.find(ev => {
+    if (ev.id === excludeId) return false;
+    if (ev.room !== room) return false;
+    const evMs = getEventMs(ev);
+    if (!evMs) return false;
+    return Math.abs(newMs - evMs) < buffer;
+  }) || null;
+}
+
+// Watch for room/date/time changes to show live conflict warning
+function checkAndWarnConflict() {
+  const warningEl = document.getElementById("conflict-warning");
+  const submitBtn = document.getElementById("submit-btn");
+  if (!warningEl) return;
+  if (!selectedRoom || !document.getElementById("f-date").value) {
+    warningEl.style.display = "none";
+    submitBtn.disabled = false;
+    return;
+  }
+  const date = document.getElementById("f-date").value;
+  const time = document.getElementById("f-time").value;
+  const conflict = checkConflict(selectedRoom, date, time, editingId);
+  if (conflict) {
+    warningEl.textContent = `⚠️ "${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`;
+    warningEl.style.display = "block";
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = "0.5";
+  } else {
+    warningEl.style.display = "none";
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
+  }
+}
+
+// ── Room schedule modal ───────────────────────
+const ROOMS = [
+  { name:"Conference room",    url:"https://gather.daybalancer.com/events/335887/502618" },
+  { name:"Co-create room",     url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Wellness room",      url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"The Commons",        url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+];
+
+function openRoomSchedule() {
+  const body = document.getElementById("room-schedule-body");
+  const now = Date.now();
+  body.innerHTML = "";
+
+  ROOMS.forEach(({ name, url }) => {
+    const upcoming = events
+      .filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000)
+      .sort((a,b) => getEventMs(a) - getEventMs(b))
+      .slice(0, 5);
+
+    const section = document.createElement("div");
+    section.className = "room-section";
+
+    // Header with visit button
+    const header = document.createElement("div");
+    header.className = "room-section-title";
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
+    header.innerHTML = `
+      <span>🏠 ${name}</span>
+      <a href="${url}" target="_blank" rel="noopener"
+        style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:4px 10px;border-radius:6px;white-space:nowrap;">
+        Visit room →
+      </a>`;
+    section.appendChild(header);
+
+    if (upcoming.length === 0) {
+      section.innerHTML += `<div class="room-empty">Nothing scheduled yet - wide open!</div>`;
+    } else {
+      upcoming.forEach(ev => {
+        const row = document.createElement("div");
+        row.className = "room-event-row";
+        row.innerHTML = `
+          <div class="room-event-name">${esc(ev.title)}</div>
+          <div class="room-event-time">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>`;
+        section.appendChild(row);
+      });
+    }
+    body.appendChild(section);
+  });
+
+  document.getElementById("room-modal").classList.add("open");
+}
+
+function closeRoomModal() {
+  document.getElementById("room-modal").classList.remove("open");
+}
+document.getElementById("room-modal").addEventListener("click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 loadEvents().then(() => { renderPills(); renderEvents(); });
 </script>
