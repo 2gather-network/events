@@ -532,9 +532,7 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-email","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-  document.getElementById("email-copy-field").style.display = "none";
-  const cb = document.getElementById("f-emailcopy"); if(cb) cb.checked = false;
+  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   buildFormChips();
 }
 
@@ -600,8 +598,6 @@ function loadEditForm(id) {
   document.getElementById("f-location").value = ev.location || "";
   document.getElementById("f-desc").value = ev.description || "";
   document.getElementById("f-host").value = ev.host || "";
-  document.getElementById("f-email").value = ev.email || "";
-  if (ev.email) document.getElementById("email-copy-field").style.display = "block";
 
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
