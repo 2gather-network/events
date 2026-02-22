@@ -204,18 +204,6 @@
       <input class="input" id="f-host" placeholder="Full name">
     </div>
 
-    <div class="field">
-      <label class="field-label">Your email <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
-      <input class="input" id="f-email" type="email" placeholder="you@example.com">
-    </div>
-
-    <div id="email-copy-field" style="display:none;margin-bottom:18px;">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--dark);">
-        <input type="checkbox" id="f-emailcopy" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
-        Send me a copy of this event info
-      </label>
-    </div>
-
     <div class="field" id="passcode-field">
       <label class="field-label">Edit passcode * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, save this to edit later</span></label>
       <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;">
@@ -242,6 +230,23 @@
     <div style="margin-top:8px;">
       <button class="btn btn-outline btn-full" onclick="closeRoomModal()">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- EVENT SUMMARY MODAL -->
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal" style="max-width:480px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:8px;">✅</div>
+      <div class="modal-title" style="margin-bottom:4px;">Event posted!</div>
+      <p style="font-size:14px;color:var(--muted);">Save this info - you'll need the passcode to edit later.</p>
+    </div>
+    <div id="summary-body" style="background:var(--light);border-radius:10px;padding:18px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:inherit;color:var(--dark);"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-green" style="flex:1;" onclick="copySummary()">📋 Copy all</button>
+      <button class="btn btn-outline" onclick="closeSummaryModal()">Done</button>
+    </div>
+    <p id="copy-confirm" style="text-align:center;font-size:13px;color:var(--green);font-weight:700;margin-top:10px;display:none;">Copied to clipboard!</p>
   </div>
 </div>
 
@@ -364,7 +369,7 @@ function updateRoomPreview() {
   if (rooms.length === 1) selectedRoom = rooms[0];
 
   // Update label based on choice count
-  label.textContent = rooms.length === 1 ? "Virtual room for this event:" : "Which virtual room is best for this event?";
+  label.textContent = rooms.length === 1 ? "DayBalancer virtual room for this event:" : "Which DayBalancer virtual room is best for this event?";
 
   preview.style.display = "block";
   roomOptions.innerHTML = "";
@@ -612,9 +617,57 @@ document.getElementById("post-modal").addEventListener("click", e => { if (e.tar
 document.getElementById("f-date").addEventListener("change", checkAndWarnConflict);
 document.getElementById("f-time").addEventListener("change", checkAndWarnConflict);
 document.getElementById("f-endtime").addEventListener("change", checkAndWarnConflict);
-document.getElementById("f-email").addEventListener("input", function() {
-  document.getElementById("email-copy-field").style.display = this.value.trim() ? "block" : "none";
-});
+
+// ── Summary modal ─────────────────────────────
+function showSummary(ev) {
+  const roomObj = ROOMS.find(r => r.name === ev.room);
+  const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
+  const lines = [
+    `📅 ${ev.title}`,
+    ``,
+    `Date:       ${fmtDateShort(ev.date)}`,
+    `Time:       ${timeLine}`,
+    ev.format ? `Format:     ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
+    ev.location ? `Location:   ${ev.location}` : "",
+    ev.room ? `Room:       ${ev.room}` : "",
+    roomObj ? `Room link:  ${roomObj.url}` : "",
+    ev.description ? `\n${ev.description}` : "",
+    ``,
+    `─────────────────────────`,
+    `Edit passcode:  ${ev.passcode}`,
+    `To edit: open the bulletin board, click ✏️ on your event, and enter your passcode.`,
+  ].filter(l => l !== "").join("\n");
+
+  document.getElementById("summary-body").textContent = lines;
+  document.getElementById("copy-confirm").style.display = "none";
+  document.getElementById("summary-modal").classList.add("open");
+}
+
+function closeSummaryModal() {
+  document.getElementById("summary-modal").classList.remove("open");
+}
+
+function copySummary() {
+  const text = document.getElementById("summary-body").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById("copy-confirm").style.display = "block";
+    setTimeout(() => document.getElementById("copy-confirm").style.display = "none", 2500);
+  });
+}
+
+document.getElementById("summary-modal").addEventListener("click", e => { if (e.target.id === "summary-modal") closeSummaryModal(); });
+
+function fmt12(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
+}
+
+function fmtDateShort(date) {
+  if (!date) return "";
+  return new Date(date + "T12:00").toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+}
 
 function submitEvent() {
   const title    = document.getElementById("f-title").value.trim();
@@ -624,8 +677,6 @@ function submitEvent() {
   const location = document.getElementById("f-location").value.trim();
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
-  const email    = document.getElementById("f-email").value.trim();
-  const wantsCopy = document.getElementById("f-emailcopy")?.checked && email;
   const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
 
@@ -674,47 +725,28 @@ function submitEvent() {
     title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    description: desc, host, email,
+    description: desc, host,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
 
   if (editingId) {
     const idx = events.findIndex(e => e.id === editingId);
     if (idx > -1) events[idx] = { ...events[idx], ...eventData };
+    saveEvents();
+    closeModal();
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    renderEvents();
     showToast("✓ Event updated!");
   } else {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    events.unshift({ id: newId, ...eventData, passcode, going: 0 });
-    showToast("✓ Event posted! Save your passcode: " + passcode);
-    if (wantsCopy) {
-      const roomLine = selectedRoom ? `\nVirtual room: ${selectedRoom}\n${(ROOMS.find(r=>r.name===selectedRoom)||{}).url||""}` : "";
-      const locLine = eventData.location ? `\nLocation: ${eventData.location}` : "";
-      const timeLine = endtime ? `${time} - ${endtime}` : time;
-      const body = [
-        `Hi ${host},`,
-        ``,
-        `Here's a copy of your event on DayBalancer:`,
-        ``,
-        `Event: ${title}`,
-        `Date: ${date}`,
-        `Time: ${timeLine}`,
-        locLine,
-        roomLine,
-        desc ? `\nDescription: ${desc}` : "",
-        ``,
-        `Your edit passcode: ${passcode}`,
-        `To edit your event, visit the bulletin board and click the ✏️ icon on your event card.`,
-      ].filter(l => l !== undefined).join("\n");
-      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent("Your DayBalancer event: " + title)}&body=${encodeURIComponent(body)}`;
-      window.open(mailto, "_blank");
-    }
+    const newEv = { id: newId, ...eventData, passcode, going: 0 };
+    events.unshift(newEv);
+    saveEvents();
+    closeModal();
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    renderEvents();
+    showSummary(newEv);
   }
-  saveEvents();
-  closeModal();
-  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-email","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-  document.getElementById("email-copy-field").style.display = "none";
-  const cb2 = document.getElementById("f-emailcopy"); if(cb2) cb2.checked = false;
-  renderEvents();
 }
 
 // ── Helpers ───────────────────────────────────
