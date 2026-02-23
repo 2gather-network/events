@@ -306,7 +306,7 @@
 const CATEGORIES = [
   { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-create room" },
   { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room" },
-  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room" },
+  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room", extraRooms:["Ikigai room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:null },
   { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room" },
   { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-create room" },
@@ -345,14 +345,37 @@ function evToSheet(ev) {
   };
 }
 
+function parseSheetDate(val) {
+  if (!val) return "";
+  const s = String(val);
+  // Already plain date like 2026-02-24
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // ISO timestamp - extract date part
+  if (s.includes("T")) return s.split("T")[0];
+  return s;
+}
+
+function parseSheetTime(val) {
+  if (!val) return "";
+  const s = String(val);
+  // Already plain time like 12:00
+  if (/^\d{2}:\d{2}$/.test(s)) return s;
+  // ISO timestamp - extract HH:MM from time part
+  if (s.includes("T")) {
+    const t = s.split("T")[1];
+    return t.substring(0, 5);
+  }
+  return s;
+}
+
 function sheetToEv(row) {
   return {
     id:          String(row.id || ""),
     title:       row.title || "",
     categories:  row.categories ? String(row.categories).split(",").filter(Boolean) : [],
-    date:        row.date || "",
-    time:        row.startTime || "",
-    endtime:     row.endTime || "",
+    date:        parseSheetDate(row.date),
+    time:        parseSheetTime(row.startTime),
+    endtime:     parseSheetTime(row.endTime),
     format:      row.format || "",
     location:    row.location || "",
     room:        row.room || "",
@@ -471,8 +494,11 @@ function updateRoomPreview() {
 
   const rooms = [...new Set(
     Array.from(selectedCats)
-      .map(id => CATEGORIES.find(c => c.id === id)?.room)
-      .filter(Boolean)
+      .flatMap(id => {
+        const cat = CATEGORIES.find(c => c.id === id);
+        if (!cat) return [];
+        return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
+      })
   )];
 
   if (rooms.length === 0) { preview.style.display = "none"; selectedRoom = null; return; }
@@ -566,7 +592,12 @@ function renderEvents() {
     const gone = localStorage.getItem("db-going-" + ev.id);
 
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
-    const roomBadge = ev.room ? `<span class="room-badge">🏠 ${esc(ev.room)}</span>` : "";
+    const roomObj = ROOMS.find(r => r.name === ev.room);
+    const roomBadge = ev.room
+      ? roomObj
+        ? `<a href="${roomObj.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none;">🏠 ${esc(ev.room)}</a>`
+        : `<span class="room-badge">🏠 ${esc(ev.room)}</span>`
+      : "";
 
     const card = document.createElement("div");
     card.className = "event-card";
@@ -583,7 +614,7 @@ function renderEvents() {
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
           <div class="event-meta-item"><span>👤</span>Hosted by ${esc(ev.host)}</div>
         </div>
-        ${ev.description ? `<div class="event-desc">${esc(trunc(ev.description, 110))}</div>` : ""}
+        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div class="going-count"><span id="going-${ev.id}">${ev.going||0}</span> interested</div>
@@ -806,6 +837,22 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
     }, { passive: false });
   });
 })();
+
+function toggleDesc(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev || ev.description.length <= 200) return;
+  const el = document.getElementById("desc-" + id);
+  const more = document.getElementById("desc-more-" + id);
+  if (!el) return;
+  const isExpanded = el.dataset.expanded === "true";
+  if (isExpanded) {
+    el.innerHTML = esc(trunc(ev.description, 200)) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Read more</span>`;
+    el.dataset.expanded = "false";
+  } else {
+    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Show less</span>`;
+    el.dataset.expanded = "true";
+  }
+}
 
 function safeOn(id, evt, fn) {
   const el = document.getElementById(id);
@@ -1097,6 +1144,7 @@ const ROOMS = [
   { name:"Wellness room",      url:"https://gather.daybalancer.com/events/336936/504368" },
   { name:"Community Care room",url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
   { name:"The Commons",        url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",        url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
 ];
 
 function openRoomSchedule() {
