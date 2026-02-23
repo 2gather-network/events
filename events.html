@@ -238,9 +238,14 @@
       <input class="input" id="f-host" placeholder="Full name">
     </div>
 
+    <div class="field">
+      <label class="field-label">Is there an associated coop link? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <input class="input" id="f-cooplink" type="url" placeholder="https://...">
+    </div>
+
     <div class="field" id="passcode-field">
-      <label class="field-label">Edit passcode * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, save this to edit later</span></label>
-      <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;">
+      <label class="field-label">Private edit PIN * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, only you need this to edit later. Do not share.</span></label>
+      <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;" autocomplete="off">
     </div>
 
     <p class="error-msg" id="post-error"></p>
@@ -273,7 +278,7 @@
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:36px;margin-bottom:8px;">✅</div>
       <div class="modal-title" style="margin-bottom:4px;">Event posted!</div>
-      <p style="font-size:14px;color:var(--muted);">Save this info - you'll need the passcode to edit later.</p>
+      <p style="font-size:14px;color:var(--muted);">Save your private edit PIN - you'll need it to make changes later. Don't share it.</p>
     </div>
     <div id="summary-body" style="background:var(--light);border-radius:10px;padding:18px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:inherit;color:var(--dark);"></div>
     <div style="display:flex;gap:10px;">
@@ -289,10 +294,10 @@
 <!-- PASSCODE MODAL -->
 <div class="modal-overlay" id="passcode-modal">
   <div class="modal" style="max-width:360px;">
-    <div class="modal-title" style="font-size:18px;">Enter your edit passcode</div>
+    <div class="modal-title" style="font-size:18px;">Enter your private edit PIN</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">This is the 4-digit code you set when you posted the event.</p>
     <div class="field">
-      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;">
+      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off">
     </div>
     <p class="error-msg" id="passcode-error">Incorrect passcode. Please try again.</p>
     <div class="modal-actions">
@@ -341,6 +346,7 @@ function evToSheet(ev) {
     description: ev.description || "",
     host:        ev.host || "",
     passcode:    ev.passcode || "",
+    cooplink:    ev.cooplink || "",
     going:       ev.going || 0,
   };
 }
@@ -382,6 +388,7 @@ function sheetToEv(row) {
     description: row.description || "",
     host:        row.host || "",
     passcode:    row.passcode || "",
+    cooplink:    row.cooplink || "",
     going:       parseInt(row.going) || 0,
   };
 }
@@ -428,6 +435,8 @@ async function loadEvents() {
     events = [];
   } finally {
     showLoading(false);
+    renderEvents();
+    checkEventLink();
   }
 }
 
@@ -499,7 +508,10 @@ function updateRoomPreview() {
         if (!cat) return [];
         return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
       })
-  )];
+  )].filter(r => {
+    const roomObj = ROOMS.find(ro => ro.name === r);
+    return !roomObj?.hidden;
+  });
 
   if (rooms.length === 0) { preview.style.display = "none"; selectedRoom = null; return; }
 
@@ -601,6 +613,7 @@ function renderEvents() {
 
     const card = document.createElement("div");
     card.className = "event-card";
+    card.dataset.eventId = ev.id;
     card.innerHTML = `
       <div class="event-card-top">
         <div class="event-title">${esc(ev.title)}</div>
@@ -613,6 +626,7 @@ function renderEvents() {
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
           <div class="event-meta-item"><span>👤</span>Hosted by ${esc(ev.host)}</div>
+          ${ev.cooplink ? "<div class=\"event-meta-item\"><span>🔗</span><a href=\"" + esc(ev.cooplink) + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--blue);text-decoration:none;\">Cooperative link</a></div>" : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
@@ -624,6 +638,8 @@ function renderEvents() {
             ${gone ? "✓ Interested" : "🙋 Interested?"}
           </button>
           ${roomBadge}
+          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
+          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 10px;">📅</button>
           <button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>
         </div>
       </div>`;
@@ -672,6 +688,7 @@ function saveDraft() {
     location: document.getElementById("f-location")?.value || "",
     desc:     document.getElementById("f-desc")?.value || "",
     host:     document.getElementById("f-host")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "",
     passcode: document.getElementById("f-passcode")?.value || "",
     cats:     [...selectedCats],
     format:   selectedFormat,
@@ -694,7 +711,8 @@ function restoreDraft() {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
-    document.getElementById("f-passcode").value = d.passcode || "";
+    document.getElementById("f-cooplink").value  = d.cooplink || "";
+    document.getElementById("f-passcode").value  = d.passcode || "";
     if (d.cats?.length) {
       selectedCats = new Set(d.cats);
       buildFormChips();
@@ -735,7 +753,7 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-desc","f-host","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -808,7 +826,7 @@ function loadEditForm(id) {
   document.getElementById("f-location").value = ev.location || "";
   document.getElementById("f-desc").value = ev.description || "";
   document.getElementById("f-host").value = ev.host || "";
-
+  document.getElementById("f-cooplink").value = ev.cooplink || "";
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
   });
@@ -856,6 +874,65 @@ function toggleDesc(id) {
   }
 }
 
+function addToCalendar(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev || !ev.date) return;
+
+  // Build datetime strings in YYYYMMDDTHHMMSS format (local, no Z = local time)
+  function toCalDT(date, time) {
+    const t = time || "00:00";
+    return date.replace(/-/g, "") + "T" + t.replace(":", "") + "00";
+  }
+
+  const start = toCalDT(ev.date, ev.time);
+  const end   = toCalDT(ev.date, ev.endtime || ev.time);
+
+  const roomObj = ROOMS.find(r => r.name === ev.room);
+  const location = ev.format === "virtual"
+    ? (roomObj ? roomObj.url : "Virtual")
+    : (ev.location || "");
+
+  const details = [
+    ev.description || "",
+    roomObj ? "Room: " + roomObj.url : "",
+    ev.cooplink ? "Cooperative link: " + ev.cooplink : "",
+    "\nHosted by " + ev.host,
+  ].filter(Boolean).join("\n\n");
+
+  const params = new URLSearchParams({
+    text:     ev.title,
+    dates:    start + "/" + end,
+    details:  details,
+    location: location,
+  });
+
+  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
+}
+
+function shareEvent(id) {
+  const url = window.location.origin + window.location.pathname + "?event=" + id;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast("🔗 Link copied to clipboard!");
+  }).catch(() => {
+    prompt("Copy this link:", url);
+  });
+}
+
+function checkEventLink() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("event");
+  if (!id) return;
+  const card = document.querySelector(`[data-event-id="${id}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.style.outline = "3px solid var(--blue)";
+  card.style.boxShadow = "0 0 0 4px rgba(27,104,150,0.15)";
+  setTimeout(() => {
+    card.style.outline = "";
+    card.style.boxShadow = "";
+  }, 3000);
+}
+
 function safeOn(id, evt, fn) {
   const el = document.getElementById(id);
   if (el) el.addEventListener(evt, fn);
@@ -892,7 +969,7 @@ function showSummary(ev) {
     ``,
     `─────────────────────────`,
     `Edit passcode:  ${ev.passcode}`,
-    `To edit: open the bulletin board, click ✏️ on your event, and enter your passcode.`,
+    `To edit: open the bulletin board, click ✏️ on your event, and enter your private PIN.`,
   ].filter(l => l !== "").join("\n");
 
   document.getElementById("summary-body").textContent = lines;
@@ -933,6 +1010,7 @@ async function submitEvent() {
   const location = document.getElementById("f-location").value.trim();
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
+  const cooplink = document.getElementById("f-cooplink").value.trim();
   const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
 
@@ -944,7 +1022,7 @@ async function submitEvent() {
   if (!time) missing.push("start time");
   if (!endtime) missing.push("end time");
   if (!host) missing.push("host name");
-  if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit passcode");
+  if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
 
   if (missing.length > 0) {
     errEl.textContent = "Please add: " + missing.join(", ") + ".";
@@ -981,7 +1059,7 @@ async function submitEvent() {
     title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    description: desc, host,
+    description: desc, host, cooplink,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
 
@@ -1071,7 +1149,7 @@ function cloneEvent() {
     document.getElementById("location-field").style.display = showLoc ? "block" : "none";
     buildFormChips();
     updateRoomPreview();
-    showToast("Event cloned - set a new date and passcode!");
+    showToast("Event cloned - set a new date and private PIN!");
   }, 100);
 }
 
@@ -1102,14 +1180,18 @@ function getEventMs(ev) {
 }
 
 function checkConflict(room, date, time, excludeId) {
-  if (!room || !date) return null;
-  const newMs = new Date(date + "T" + (time || "09:00")).getTime();
+  if (!room || !date || !time) return null;
+  const newMs = new Date(date + "T" + time).getTime();
+  if (isNaN(newMs)) return null;
   const buffer = ROOM_BUFFER_MINS * 60 * 1000;
   return events.find(ev => {
     if (ev.id === excludeId) return false;
     if (ev.room !== room) return false;
-    const evMs = getEventMs(ev);
-    if (!evMs) return false;
+    if (!ev.date || !ev.time) return false;
+    // Must be same date
+    if (ev.date !== date) return false;
+    const evMs = new Date(ev.date + "T" + ev.time).getTime();
+    if (isNaN(evMs)) return false;
     return Math.abs(newMs - evMs) < buffer;
   }) || null;
 }
@@ -1119,19 +1201,21 @@ function checkAndWarnConflict() {
   const warningEl = document.getElementById("conflict-warning");
   const submitBtn = document.getElementById("submit-btn");
   if (!warningEl) return;
-  if (!selectedRoom || !document.getElementById("f-date").value) {
+  if (!selectedRoom || !document.getElementById("f-date").value || !document.getElementById("f-time").value) {
     warningEl.style.display = "none";
     submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
     return;
   }
   const date = document.getElementById("f-date").value;
   const time = document.getElementById("f-time").value;
   const conflict = checkConflict(selectedRoom, date, time, editingId);
   if (conflict) {
-    warningEl.textContent = `⚠️ "${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`;
+    warningEl.textContent = `⚠️ "${selectedRoom}" may already be booked around this time for "${conflict.title}". You can still post, but consider a different time or room.`;
     warningEl.style.display = "block";
-    submitBtn.disabled = true;
-    submitBtn.style.opacity = "0.5";
+    // Warning only - don't block submission
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
   } else {
     warningEl.style.display = "none";
     submitBtn.disabled = false;
@@ -1141,12 +1225,13 @@ function checkAndWarnConflict() {
 
 // ── Room schedule modal ───────────────────────
 const ROOMS = [
-  { name:"Conference room",    url:"https://gather.daybalancer.com/events/335887/502618" },
-  { name:"Co-create room",     url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
-  { name:"Wellness room",      url:"https://gather.daybalancer.com/events/336936/504368" },
-  { name:"Community Care room",url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"The Commons",        url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
-  { name:"Ikigai room",        url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"Conference room",      url:"https://gather.daybalancer.com/events/335887/502618" },
+  { name:"Co-create room",       url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Wellness room",        url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",  url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"The Commons",          url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",          url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding", hidden: true },
 ];
 
 function openRoomSchedule() {
@@ -1197,7 +1282,7 @@ function closeRoomModal() {
   document.getElementById("room-modal").classList.remove("open");
 }
 
-loadEvents().then(() => { renderPills(); renderEvents(); });
+loadEvents().then(() => { renderPills(); });
 </script>
 </body>
 </html>
