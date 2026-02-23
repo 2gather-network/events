@@ -76,9 +76,9 @@
   .going-count span { color:var(--green); font-weight:800; }
   .room-badge { font-size:12px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:5px 10px; border-radius:6px; white-space:nowrap; }
 
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; }
   .modal-overlay.open { display:flex; }
-  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); overscroll-behavior:contain; touch-action:pan-y; }
   .modal-title { font-size:22px; font-weight:800; margin-bottom:24px; }
   .modal-actions { display:flex; gap:10px; margin-top:8px; }
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -323,7 +323,7 @@ let activeFilter = "all";
 let activeTab = "upcoming"; // "upcoming" | "past"
 let selectedCats = new Set(); // for the form
 
-// ── Google Sheets API ─────────────────────────
+// ── Google Sheets API via JSONP ───────────────
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
 function evToSheet(ev) {
@@ -362,11 +362,42 @@ function sheetToEv(row) {
   };
 }
 
+// JSONP loader - bypasses CORS entirely
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      reject(new Error("JSONP timeout"));
+    }, 10000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+
+    const qs = Object.entries({ ...params, callback: cbName })
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`)
+      .join("&");
+
+    const script = document.createElement("script");
+    script.src = GS_URL + "?" + qs;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      reject(new Error("JSONP failed"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
 async function loadEvents() {
   try {
     showLoading(true);
-    const res = await fetch(GS_URL + "?t=" + Date.now());
-    const data = await res.json();
+    const data = await jsonp({ t: Date.now() });
     events = (data.events || []).filter(r => r.id).map(sheetToEv);
   } catch(e) {
     console.error("Failed to load events:", e);
@@ -376,23 +407,10 @@ async function loadEvents() {
   }
 }
 
-async function apiCall(params) {
-  try {
-    const qs = Object.entries(params)
-      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`)
-      .join("&");
-    const res = await fetch(GS_URL + "?" + qs);
-    return await res.json();
-  } catch(e) {
-    console.error("API error:", e);
-    return { status: "error" };
-  }
-}
-
-async function apiAdd(ev)          { return apiCall({ action: "add",    event: evToSheet(ev) }); }
-async function apiUpdate(ev)       { return apiCall({ action: "update", event: evToSheet(ev) }); }
-async function apiDelete(id)       { return apiCall({ action: "delete", id }); }
-async function apiGoing(id, delta) { return apiCall({ action: "going",  id, delta }); }
+async function apiAdd(ev)          { return jsonp({ action: "add",    event: evToSheet(ev) }); }
+async function apiUpdate(ev)       { return jsonp({ action: "update", event: evToSheet(ev) }); }
+async function apiDelete(id)       { return jsonp({ action: "delete", id }); }
+async function apiGoing(id, delta) { return jsonp({ action: "going",  id, delta }); }
 
 function showLoading(on) {
   let el = document.getElementById("loading-bar");
@@ -626,7 +644,9 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  document.getElementById("f-time").value = "12:00";
+  document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
 }
 
@@ -701,6 +721,27 @@ function loadEditForm(id) {
   updateRoomPreview();
 }
 function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
+// ── Swipe trap - prevent back-swipe closing modals ──
+(function() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.querySelectorAll(".modal").forEach(modal => {
+    modal.addEventListener("touchstart", e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    modal.addEventListener("touchmove", e => {
+      const dx = Math.abs(e.touches[0].clientX - touchStartX);
+      const dy = Math.abs(e.touches[0].clientY - touchStartY);
+      // If horizontal swipe is dominant, block it
+      if (dx > dy && dx > 10) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, { passive: false });
+  });
+})();
+
 function safeOn(id, evt, fn) {
   const el = document.getElementById(id);
   if (el) el.addEventListener(evt, fn);
