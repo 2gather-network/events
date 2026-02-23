@@ -644,7 +644,7 @@ async function markGoing(id) {
     ev.going = (ev.going || 0) + 1;
     localStorage.setItem(key, "1");
   }
-  await apiGoing(id, delta);
+  // Update UI instantly
   const nowGone = !!localStorage.getItem(key);
   const countEl = document.getElementById("going-" + id);
   const btn = document.getElementById("goin-btn-" + id);
@@ -654,6 +654,8 @@ async function markGoing(id) {
     btn.className = "btn btn-sm" + (nowGone ? " btn-outline" : "");
   }
   showToast(nowGone ? "Marked as interested!" : "Removed - no problem!");
+  // Sync to sheet in background
+  apiGoing(id, delta);
 }
 
 // ── Modal ─────────────────────────────────────
