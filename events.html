@@ -566,7 +566,12 @@ function renderEvents() {
     const gone = localStorage.getItem("db-going-" + ev.id);
 
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
-    const roomBadge = ev.room ? `<span class="room-badge">🏠 ${esc(ev.room)}</span>` : "";
+    const roomObj = ROOMS.find(r => r.name === ev.room);
+    const roomBadge = ev.room
+      ? roomObj
+        ? `<a href="${roomObj.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none;">🏠 ${esc(ev.room)}</a>`
+        : `<span class="room-badge">🏠 ${esc(ev.room)}</span>`
+      : "";
 
     const card = document.createElement("div");
     card.className = "event-card";
