@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 1.3
+  Version 1.4
 -->
 <html lang="en">
 <head>
@@ -326,7 +326,7 @@ const CATEGORIES = [
   { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons" },
   { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room" },
   { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons" },
-  { id:"wealth",       label:"Wealth/exchange",          emoji:"💰", room:"The Commons" },
+  { id:"wealth",       label:"Wealth/abundance",          emoji:"🌳", room:"Abundance room" },
 ];
 
 let events = [];
@@ -1248,50 +1248,71 @@ function checkAndWarnConflict() {
 
 // ── Room schedule modal ───────────────────────
 const ROOMS = [
-  { name:"Conference room",      url:"https://gather.daybalancer.com/events/335887/502618" },
-  { name:"Co-create room",       url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
-  { name:"Wellness room",        url:"https://gather.daybalancer.com/events/336936/504368" },
-  { name:"Community Care room",  url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"The Commons",          url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
-  { name:"Ikigai room",          url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
   { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding", hidden: true },
+  { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
+  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"The Commons",            url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"Abundance room",         url:"", comingSoon: true },
 ];
 
 function openRoomSchedule() {
   const body = document.getElementById("room-schedule-body");
-  const now = Date.now();
+  const now  = Date.now();
   body.innerHTML = "";
 
-  ROOMS.forEach(({ name, url }) => {
+  // Visible rooms for the schedule (include hidden onboarding, exclude nothing)
+  const visibleRooms = ROOMS;
+
+  // ── Jump menu at top ──
+  const nav = document.createElement("div");
+  nav.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;";
+  visibleRooms.forEach(({ name, hidden, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const pill = document.createElement("a");
+    pill.href = "#room-" + slug;
+    pill.style.cssText = "font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;border:1.5px solid var(--border);color:var(--primary);background:var(--white);white-space:nowrap;";
+    pill.textContent = (hidden ? "🚀 " : comingSoon ? "🌳 " : "🏠 ") + name;
+    nav.appendChild(pill);
+  });
+  body.appendChild(nav);
+
+  // ── Room sections ──
+  visibleRooms.forEach(({ name, url, hidden, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
     const upcoming = events
       .filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000)
       .sort((a,b) => getEventMs(a) - getEventMs(b))
       .slice(0, 5);
 
     const section = document.createElement("div");
+    section.id = "room-" + slug;
     section.className = "room-section";
+    section.style.cssText = "margin-bottom:28px;scroll-margin-top:20px;";
 
-    // Header with visit button
-    const header = document.createElement("div");
-    header.className = "room-section-title";
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
-    header.innerHTML = `
-      <span>🏠 ${name}</span>
-      <a href="${url}" target="_blank" rel="noopener"
-        style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:4px 10px;border-radius:6px;white-space:nowrap;">
-        Visit room →
-      </a>`;
-    section.appendChild(header);
+    // Room header
+    const roomEmoji = hidden ? "🚀" : comingSoon ? "🌳" : "🏠";
+    const visitBtn  = comingSoon
+      ? `<span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--light);padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);">Coming soon</span>`
+      : `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:5px 12px;border-radius:6px;white-space:nowrap;">Visit room →</a>`;
+
+    section.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);">
+        <span style="font-size:15px;font-weight:800;color:var(--dark);">${roomEmoji} ${name}</span>
+        ${visitBtn}
+      </div>`;
 
     if (upcoming.length === 0) {
-      section.innerHTML += `<div class="room-empty">Nothing scheduled yet - wide open!</div>`;
+      section.innerHTML += `<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0 4px;">Nothing scheduled yet - wide open!</div>`;
     } else {
       upcoming.forEach(ev => {
         const row = document.createElement("div");
-        row.className = "room-event-row";
+        row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
         row.innerHTML = `
-          <div class="room-event-name">${esc(ev.title)}</div>
-          <div class="room-event-time">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>`;
+          <span style="font-size:13px;font-weight:700;color:var(--dark);">${esc(ev.title)}</span>
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
         section.appendChild(row);
       });
     }
