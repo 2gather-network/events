@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 2.9
+  Version 3.0
 -->
 <html lang="en">
 <head>
@@ -645,7 +645,6 @@ function renderEvents() {
             onclick="markGoing('${ev.id}')">
             ${gone ? "✓ Interested" : "🙋 Interested?"}
           </button>
-          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
           <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
           ${!ev.recurring ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
