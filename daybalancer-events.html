@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 2.1
+  Version 2.3
 -->
 <html lang="en">
 <head>
@@ -652,7 +652,7 @@ function renderEvents() {
           </button>
           ${roomBadge}
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
-          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 10px;">📅</button>
+          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
           ${!ev.recurring ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
@@ -1310,7 +1310,13 @@ function getAllRecurring(count = 2) {
 }
 
 function getPublicRecurring(count = 2) {
-  return RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
+  const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
+  return generated.filter(rec =>
+    !events.some(e =>
+      e.title.trim().toLowerCase() === rec.title.trim().toLowerCase() &&
+      e.date === rec.date
+    )
+  );
 }
 
 // Keep for room schedule (all recurring including admin-only)
@@ -1400,7 +1406,13 @@ function openRoomSchedule() {
   });
   body.appendChild(nav);
 
-  const allEventsForSchedule = [...events, ...getNextMondays(2)];
+  const allRecurring = getAllRecurring(2).filter(rec =>
+    !events.some(e =>
+      e.title.trim().toLowerCase() === rec.title.trim().toLowerCase() &&
+      e.date === rec.date
+    )
+  );
+  const allEventsForSchedule = [...events, ...allRecurring];
   // ── Room sections ──
   visibleRooms.forEach(({ name, url, hidden, comingSoon }) => {
     const slug = name.toLowerCase().replace(/\s+/g, "-");
@@ -1433,7 +1445,7 @@ function openRoomSchedule() {
         const row = document.createElement("div");
         row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
         row.innerHTML = `
-          <span style="font-size:13px;color:var(--muted);">${esc(ev.title)}</span>
+          <span style="font-size:13px;font-weight:400;color:var(--dark);">${esc(ev.title)}</span>
           <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
         section.appendChild(row);
       });
