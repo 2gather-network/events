@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 2.3
+  Version 2.5
 -->
 <html lang="en">
 <head>
@@ -1223,7 +1223,7 @@ const RECURRING_EVENTS = [
     adminOnly:  true,
   },
   {
-    title:      "Ikigai Room",
+    title:      "Ikigai Tuesdays",
     dayOfWeek:  2, // Tuesday
     time:       "12:00",
     endtime:    "13:00",
@@ -1311,12 +1311,8 @@ function getAllRecurring(count = 2) {
 
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
-  return generated.filter(rec =>
-    !events.some(e =>
-      e.title.trim().toLowerCase() === rec.title.trim().toLowerCase() &&
-      e.date === rec.date
-    )
-  );
+  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
+  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
 }
 
 // Keep for room schedule (all recurring including admin-only)
@@ -1406,13 +1402,15 @@ function openRoomSchedule() {
   });
   body.appendChild(nav);
 
-  const allRecurring = getAllRecurring(2).filter(rec =>
-    !events.some(e =>
-      e.title.trim().toLowerCase() === rec.title.trim().toLowerCase() &&
-      e.date === rec.date
-    )
+  const allRecurring = getAllRecurring(2);
+  // Combine sheet events + recurring, then dedup by room+date+time - sheet events win
+  const seen = new Set(
+    events.map(e => `${e.room}|${e.date}|${e.time}`)
   );
-  const allEventsForSchedule = [...events, ...allRecurring];
+  const uniqueRecurring = allRecurring.filter(rec =>
+    !seen.has(`${rec.room}|${rec.date}|${rec.time}`)
+  );
+  const allEventsForSchedule = [...events, ...uniqueRecurring];
   // ── Room sections ──
   visibleRooms.forEach(({ name, url, hidden, comingSoon }) => {
     const slug = name.toLowerCase().replace(/\s+/g, "-");
