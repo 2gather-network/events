@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 4.3
+  Version 4.4
 -->
 <html lang="en">
 <head>
@@ -507,7 +507,7 @@ function jsonp(params) {
       delete window[cbName];
       script.remove();
       reject(new Error("JSONP timeout"));
-    }, 10000);
+    }, 5000);
 
     window[cbName] = (data) => {
       clearTimeout(timeout);
@@ -534,6 +534,9 @@ function jsonp(params) {
 async function loadEvents() {
   try {
     showLoading(true);
+    // Show recurring events immediately while sheet loads
+    events = [];
+    renderEvents();
     const data = await jsonp({ t: Date.now() });
     events = (data.events || []).filter(r => r.id).map(sheetToEv);
   } catch(e) {
@@ -700,16 +703,13 @@ function renderEvents() {
     const matchMode  = q ? true : activeMode === "all"
       ? true
       : activeMode === "virtual" ? isVirtual : isInPerson;
-    // Location filter (in-person only)
+    // Location filter (in-person only) - only filter if state is specifically selected
     let matchLocation = true;
     if (activeMode === "inperson") {
-      const region  = document.getElementById("filter-region")?.value || "";
-      const country = document.getElementById("filter-country")?.value || "";
-      const state   = document.getElementById("filter-state")?.value || "";
-      const loc     = (e.location || "").toLowerCase();
-      if (state)   matchLocation = loc.includes(state.toLowerCase());
-      else if (country) matchLocation = loc.includes(country.toLowerCase());
-      else if (region)  matchLocation = loc.length > 0; // has any location
+      const state = document.getElementById("filter-state")?.value || "";
+      const loc   = (e.location || "").toLowerCase();
+      // Only filter if a specific state is chosen - country/region alone is too restrictive
+      if (state) matchLocation = loc.includes(state.toLowerCase());
     }
     return matchCat && matchQ && matchTab && matchMode && matchLocation;
   });
