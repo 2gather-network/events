@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 3.3
+  Version 3.4
 -->
 <html lang="en">
 <head>
@@ -245,7 +245,10 @@
 
     <div id="location-field" style="display:none;" class="field">
       <label class="field-label">Full address</label>
-      <input class="input" id="f-location" placeholder="Full address">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="input" id="f-location" placeholder="City, State, Country" style="flex:1;">
+        <button type="button" id="form-geo-btn" onclick="useMyLocationForForm()" style="white-space:nowrap;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
+      </div>
     </div>
 
     <div class="field">
@@ -1217,10 +1220,49 @@ function setMode(mode) {
   document.getElementById("mode-virtual").classList.toggle("active", mode === "virtual");
   document.getElementById("mode-inperson").classList.toggle("active", mode === "inperson");
   document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
+  if (mode === "inperson") {
+    // Default to North America > United States
+    const regionEl = document.getElementById("filter-region");
+    if (!regionEl.value) {
+      regionEl.value = "North America";
+      onRegionChange();
+      document.getElementById("filter-country").value = "United States";
+      onCountryChange();
+    }
+  }
   renderEvents();
 }
 
-// ── Location filter data ───────────────────────
+function useMyLocationForForm() {
+  const btn = document.getElementById("form-geo-btn");
+  btn.textContent = "📍 Detecting...";
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+          const addr  = data.address || {};
+          const parts = [
+            addr.city || addr.town || addr.village || "",
+            addr.state || "",
+            addr.country || ""
+          ].filter(Boolean);
+          document.getElementById("f-location").value = parts.join(", ");
+          btn.textContent = "📍 Location set";
+          btn.disabled = false;
+        })
+        .catch(() => { btn.textContent = "📍 Use my location"; btn.disabled = false; });
+    },
+    () => {
+      btn.textContent = "📍 Use my location";
+      btn.disabled = false;
+      alert("Could not detect your location. Please enter manually.");
+    }
+  );
+}
+
+
 const NORTH_AMERICA_COUNTRIES = ["United States", "Canada", "Mexico"];
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Washington D.C."];
 
