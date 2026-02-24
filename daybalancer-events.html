@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 3.2
+  Version 3.3
 -->
 <html lang="en">
 <head>
@@ -172,6 +172,40 @@
       <button class="format-chip" id="tab-past" onclick="setTab('past')">Past events</button>
     </div>
   </div>
+
+  <!-- Virtual / In-person toggle -->
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button class="format-chip active" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
+    <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
+  </div>
+
+  <!-- In-person location filter -->
+  <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+      <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Filter by location</span>
+      <button onclick="useMyLocation()" id="geo-btn" style="font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="filter-region" class="input" style="width:auto;padding:7px 12px;font-size:13px;" onchange="onRegionChange()">
+        <option value="">All regions</option>
+        <option>North America</option>
+        <option>South America</option>
+        <option>Europe</option>
+        <option>Asia</option>
+        <option>Africa</option>
+        <option>Oceania</option>
+        <option>Antarctica</option>
+      </select>
+      <select id="filter-country" class="input" style="width:auto;padding:7px 12px;font-size:13px;display:none;" onchange="onCountryChange()">
+        <option value="">All countries</option>
+      </select>
+      <select id="filter-state" class="input" style="width:auto;padding:7px 12px;font-size:13px;display:none;" onchange="renderEvents()">
+        <option value="">All states</option>
+      </select>
+      <button onclick="clearLocationFilter()" style="font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px;">✕ Clear</button>
+    </div>
+  </div>
+
   <div class="filter-row">
     <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
   </div>
@@ -335,7 +369,8 @@ const CATEGORIES = [
 
 let events = [];
 let activeFilter = "all";
-let activeTab = "upcoming"; // "upcoming" | "past"
+let activeTab    = "upcoming"; // "upcoming" | "past"
+let activeMode   = "virtual";  // "virtual" | "inperson"
 let selectedCats = new Set(); // for the form
 
 // ── Google Sheets API via JSONP ───────────────
@@ -589,16 +624,31 @@ function renderEvents() {
 
   let list = allEvents.filter(e => {
     const cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
-    const matchCat = activeFilter === "all" || cats.includes(activeFilter);
-    const matchQ = !q ||
+    const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
+    const matchQ    = !q ||
       e.title.toLowerCase().includes(q) ||
       (e.description||"").toLowerCase().includes(q) ||
       (e.location||"").toLowerCase().includes(q) ||
       (e.host||"").toLowerCase().includes(q);
-    const evMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
-    const isPast = evMs < now;
-    const matchTab = activeTab === "past" ? isPast : !isPast;
-    return matchCat && matchQ && matchTab;
+    const evMs      = new Date(e.date + "T" + (e.time||"00:00")).getTime();
+    const isPast    = evMs < now;
+    const matchTab  = activeTab === "past" ? isPast : !isPast;
+    // Mode filter
+    const isVirtual   = e.format === "virtual" || e.format === "both";
+    const isInPerson  = e.format === "inperson" || e.format === "both";
+    const matchMode   = activeMode === "virtual" ? isVirtual : isInPerson;
+    // Location filter (in-person only)
+    let matchLocation = true;
+    if (activeMode === "inperson") {
+      const region  = document.getElementById("filter-region")?.value || "";
+      const country = document.getElementById("filter-country")?.value || "";
+      const state   = document.getElementById("filter-state")?.value || "";
+      const loc     = (e.location || "").toLowerCase();
+      if (state)   matchLocation = loc.includes(state.toLowerCase());
+      else if (country) matchLocation = loc.includes(country.toLowerCase());
+      else if (region)  matchLocation = loc.length > 0; // has any location
+    }
+    return matchCat && matchQ && matchTab && matchMode && matchLocation;
   });
 
   list.sort((a, b) => {
@@ -1160,6 +1210,114 @@ function setTab(tab) {
   document.getElementById("tab-past").classList.toggle("active", tab === "past");
   document.getElementById("page-title").textContent = tab === "past" ? "Past events" : "What's happening";
   renderEvents();
+}
+
+function setMode(mode) {
+  activeMode = mode;
+  document.getElementById("mode-virtual").classList.toggle("active", mode === "virtual");
+  document.getElementById("mode-inperson").classList.toggle("active", mode === "inperson");
+  document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
+  renderEvents();
+}
+
+// ── Location filter data ───────────────────────
+const NORTH_AMERICA_COUNTRIES = ["United States", "Canada", "Mexico"];
+const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Washington D.C."];
+
+function onRegionChange() {
+  const region  = document.getElementById("filter-region").value;
+  const countEl = document.getElementById("filter-country");
+  const stateEl = document.getElementById("filter-state");
+  countEl.innerHTML = '<option value="">All countries</option>';
+  stateEl.innerHTML = '<option value="">All states</option>';
+  stateEl.style.display = "none";
+  if (region === "North America") {
+    NORTH_AMERICA_COUNTRIES.forEach(c => countEl.innerHTML += `<option>${c}</option>`);
+    countEl.style.display = "block";
+  } else {
+    countEl.style.display = "none";
+  }
+  renderEvents();
+}
+
+function onCountryChange() {
+  const country = document.getElementById("filter-country").value;
+  const stateEl = document.getElementById("filter-state");
+  stateEl.innerHTML = '<option value="">All states</option>';
+  if (country === "United States") {
+    US_STATES.forEach(s => stateEl.innerHTML += `<option>${s}</option>`);
+    stateEl.style.display = "block";
+  } else {
+    stateEl.style.display = "none";
+  }
+  renderEvents();
+}
+
+function clearLocationFilter() {
+  document.getElementById("filter-region").value = "";
+  document.getElementById("filter-country").innerHTML = '<option value="">All countries</option>';
+  document.getElementById("filter-country").style.display = "none";
+  document.getElementById("filter-state").innerHTML = '<option value="">All states</option>';
+  document.getElementById("filter-state").style.display = "none";
+  renderEvents();
+}
+
+function useMyLocation() {
+  const btn = document.getElementById("geo-btn");
+  btn.textContent = "📍 Detecting...";
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+        .then(r => r.json())
+        .then(data => {
+          const addr    = data.address || {};
+          const country = addr.country || "";
+          const state   = addr.state || "";
+          // Set region
+          const regionEl = document.getElementById("filter-region");
+          if (["United States","Canada","Mexico"].some(c => country.includes(c) || c.includes(country))) {
+            regionEl.value = "North America";
+          } else if (["Brazil","Argentina","Colombia","Chile","Peru"].some(c => country.includes(c))) {
+            regionEl.value = "South America";
+          } else if (["United Kingdom","France","Germany","Spain","Italy","Netherlands"].some(c => country.includes(c))) {
+            regionEl.value = "Europe";
+          } else if (["China","Japan","India","South Korea","Indonesia"].some(c => country.includes(c))) {
+            regionEl.value = "Asia";
+          } else if (["Nigeria","Kenya","South Africa","Ethiopia","Ghana"].some(c => country.includes(c))) {
+            regionEl.value = "Africa";
+          } else if (["Australia","New Zealand","Papua New Guinea"].some(c => country.includes(c))) {
+            regionEl.value = "Oceania";
+          }
+          onRegionChange();
+          // Set country
+          const countEl = document.getElementById("filter-country");
+          if (country.includes("United States") || country.includes("USA")) {
+            countEl.value = "United States";
+            onCountryChange();
+            // Set state
+            if (state) {
+              const stateEl = document.getElementById("filter-state");
+              const match = US_STATES.find(s => s.toLowerCase() === state.toLowerCase());
+              if (match) stateEl.value = match;
+            }
+          } else if (country.includes("Canada")) {
+            countEl.value = "Canada";
+          } else if (country.includes("Mexico")) {
+            countEl.value = "Mexico";
+          }
+          renderEvents();
+          btn.textContent = "📍 Location set";
+          btn.disabled = false;
+        })
+        .catch(() => { btn.textContent = "📍 Use my location"; btn.disabled = false; });
+    },
+    () => {
+      btn.textContent = "📍 Use my location";
+      btn.disabled = false;
+      alert("Could not detect your location. Please select manually.");
+    }
+  );
 }
 
 // ── Clone event ───────────────────────────────
