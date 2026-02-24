@@ -1,490 +1,412 @@
 <!DOCTYPE html>
-<html lang="en">
 <!--
-  Find a Time · A free scheduling tool
-  Brought to you by DayBalancer LLC
+  Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 1.5
+  Version 1.2
 -->
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DayBalancer · Find a Time</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayBalancer · Community Events - Beta Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1B6896; --primary-dark: #154F74; --primary-light: #E8F2F9;
+    --green: #4CAF7D; --light: #F5F7FA; --border: #DCE3EA;
+    --dark: #2C3A47; --muted: #6B7C8D; --white: #FFFFFF;
+  }
+  body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); min-height:100vh; }
 
-    :root {
-      --primary:      #1B6896;
-      --primary-dark: #154F74;
-      --green:        #2E7D52;
-      --teal:         #1A6B7A;
-      --light:        #F5F7FA;
-      --border:       #DCE3EA;
-      --dark:         #2C3A47;
-      --muted:        #5A6B7A;
-      --white:        #FFFFFF;
-      --slot-green:   #4CAF7D;
-      --slot-teal:    #2A8FA8;
-      --error:        #B91C1C;
-    }
+  .header { background:var(--primary); padding:14px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .logo { font-size:22px; font-weight:800; color:white; letter-spacing:-0.3px; }
+  .logo span { color:#fff; font-weight:400; }
+  .tagline { font-size:11px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:.05em; }
+  .header-right { margin-left:auto; }
 
-    body {
-      font-family: 'Nunito Sans', 'Segoe UI', sans-serif;
-      background: var(--light);
-      color: var(--dark);
-      min-height: 100vh;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+  .btn { display:inline-block; background:var(--primary); color:white; border:none; border-radius:8px; padding:11px 22px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s; white-space:nowrap; text-decoration:none; }
+  .btn:hover { background:var(--primary-dark); }
+  .btn-outline { background:var(--white); color:var(--dark); border:1.5px solid var(--border); }
+  .btn-outline:hover { background:var(--light); }
+  .btn-green { background:var(--green); color:white; border:none; }
+  .btn-green:hover { background:#3d9e6a; }
+  .btn-sm { padding:8px 14px; font-size:13px; }
+  .btn-white { background:rgba(255,255,255,.95); color:var(--primary-dark); }
+  .btn-white:hover { background:white; }
 
-    /* ── Header ── */
-    .header {
-      background: var(--primary);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .logo { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.3px; }
-    .logo span { font-weight: 400; color: white; }
-    .tagline { font-size: 11px; color: rgba(255,255,255,0.75); text-transform: uppercase; letter-spacing: 0.05em; }
-    .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input,.textarea { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
+  .input:focus,.textarea:focus { border-color:var(--primary); }
+  .textarea { resize:vertical; min-height:90px; }
+  .field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+  .field { margin-bottom:18px; }
 
-    /* ── Layout ── */
-    .page { max-width: 480px; margin: 0 auto; padding: 40px 20px; }
-    .page-wide { max-width: 860px; margin: 0 auto; padding: 20px; }
-    .grid-layout { display: grid; grid-template-columns: 1fr 220px; gap: 20px; align-items: start; }
-    .results-layout { display: grid; grid-template-columns: 1fr 260px; gap: 20px; align-items: start; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; }
+  .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+  .page-title { font-size:28px; font-weight:800; }
+  .page-sub { color:var(--muted); font-size:15px; margin-top:4px; }
 
-    /* ── Card ── */
-    .card {
-      background: var(--white);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      padding: 24px;
-    }
-    .share-card {
-      background: var(--primary);
-      border-radius: 12px;
-      padding: 18px;
-      color: white;
-    }
-    .share-card .code-box {
-      background: white;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-align: center;
-      color: var(--dark);
-      margin: 8px 0 12px;
-    }
+  .filter-row { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-search { flex:1; min-width:200px; border:1.5px solid var(--border); border-radius:8px; padding:9px 14px; font-size:14px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; }
+  .filter-search:focus { border-color:var(--primary); }
 
-    /* ── Buttons ── */
-    .btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 11px 20px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      white-space: nowrap;
-      line-height: 1;
-    }
-    .btn:hover { background: var(--primary-dark); }
-    .btn-outline { background: var(--white); color: var(--dark); border: 1.5px solid var(--border); }
-    .btn-outline:hover { background: var(--light); }
-    .btn-dark { background: var(--primary-dark); }
-    .btn-dark:hover { background: #0f3d5a; }
-    .btn-ghost { background: rgba(255,255,255,0.15); color: white; border: 1.5px solid rgba(255,255,255,0.4); }
-    .btn-ghost:hover { background: rgba(255,255,255,0.25); }
-    .btn-full { width: 100%; display: block; text-align: center; }
-    .btn-lg { padding: 14px 20px; font-size: 15px; }
-    .btn-sm { padding: 7px 12px; font-size: 12px; }
-    .btn-disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
-    .btn-disabled:hover { background: var(--border); }
-    .btn-success { background: var(--green); }
-    .btn-success:hover { background: #245f40; }
+  .cat-pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+  .cat-pill { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:5px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; }
+  .cat-pill:hover { border-color:var(--primary); color:var(--primary); }
+  .cat-pill.active { background:#154F74; border-color:#154F74; color:white; }
 
-    /* ── Form ── */
-    .field { margin-bottom: 18px; }
-    .field-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .input {
-      width: 100%;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      padding: 11px 16px;
-      font-size: 15px;
-      font-family: inherit;
-      background: var(--white);
-      outline: none;
-      color: var(--dark);
-    }
-    .input:focus { border-color: var(--primary); }
-    .input-code { font-size: 18px; font-weight: 600; letter-spacing: 0.04em; }
-    .error-msg { color: var(--error); font-size: 14px; font-weight: 600; margin-top: 8px; display: none; }
+  /* Form category chips */
+  .form-cat-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .form-cat-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; user-select:none; }
+  .form-cat-chip:hover { border-color:var(--primary); color:var(--primary); }
+  .form-cat-chip.selected { background:#154F74; border-color:#154F74; color:white; }
 
-    /* ── Name row ── */
-    .name-row {
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-    .name-row .name-field { flex: 1 1 180px; }
+  .event-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .event-card { background:var(--white); border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,.05); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s,transform .15s; }
+  .event-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.1); transform:translateY(-2px); }
 
-    /* ── Week nav ── */
-    .week-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .nav-btn {
-      width: 30px; height: 30px;
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--dark);
-      flex-shrink: 0;
-    }
-    .nav-btn:hover { background: var(--light); }
-    .week-label { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
+  .event-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:8px; }
+  .event-cats { display:flex; gap:6px; flex-wrap:wrap; }
+  .event-cat-tag { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:10px; }
 
-    /* ── Grid ── */
-    .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .avail-grid {
-      display: grid;
-      gap: 2px;
-    }
-    .day-header { text-align: center; padding: 4px 2px; }
-    .day-name { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; }
-    .day-num {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 2px auto 0;
-      font-size: 12px; font-weight: 700;
-      color: var(--dark);
-    }
-    .day-num.today { background: var(--primary); color: white; }
-    .time-label {
-      font-size: 10px; color: var(--muted);
-      text-align: right; padding-right: 6px;
-      line-height: 28px; white-space: nowrap;
-    }
-    .slot {
-      height: 28px;
-      border-radius: 4px;
-      background: #EEF2F6;
-      border: 1.5px solid transparent;
-      cursor: pointer;
-      transition: background 0.08s;
-    }
-    .slot.selected { background: var(--slot-green); border-color: var(--primary-dark); }
-    .slot.r0  { background: #EEEEEE; cursor: default; }
-    .slot.r1  { background: #A8D8B4; }
-    .slot.r33 { background: var(--slot-green); }
-    .slot.r66 { background: var(--slot-teal); }
-    .slot.r99 { background: var(--primary); }
+  .event-card-body { padding:14px 18px; flex:1; }
+  .event-meta { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .event-meta-item { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); }
+  .event-desc { font-size:13px; color:var(--muted); line-height:1.5; }
 
-    /* ── Chips ── */
-    .chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--white);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 12px; font-weight: 700;
-      color: var(--dark);
-      border: 1.5px solid var(--border);
-    }
-    .chip-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-    .chips-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+  .event-card-footer { padding:12px 18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .going-count { font-size:13px; color:var(--muted); font-weight:600; }
+  .going-count span { color:var(--green); font-weight:800; }
+  .room-badge { font-size:12px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:5px 10px; border-radius:6px; white-space:nowrap; }
 
-    /* ── Legend ── */
-    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; }
-    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
-    .legend-swatch { width: 13px; height: 13px; border-radius: 3px; border: 1px solid var(--border); flex-shrink: 0; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); overscroll-behavior:contain; touch-action:pan-y; }
+  .modal-title { font-size:22px; font-weight:800; margin-bottom:24px; }
+  .modal-actions { display:flex; gap:10px; margin-top:8px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
-    /* ── Responded list ── */
-    .responded-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .room-preview { display:none; margin-bottom:18px; padding:14px 16px; background:var(--white); border-radius:8px; border:1.5px solid var(--border); }
+  .loading-bar { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--primary), var(--green)); z-index:9999; animation: loadpulse 1s ease-in-out infinite; }
+  @keyframes loadpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .room-chip { background:var(--light); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--dark); transition:all .15s; white-space:nowrap; }
+  .room-chip:hover { border-color:var(--primary); color:var(--primary); background:var(--white); }
+  .room-chip.selected { background:#154F74; border-color:#154F74; color:white; }
+  .format-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; }
+  .format-chip:hover { border-color:var(--primary); color:var(--primary); }
+  .format-chip.selected { background:#154F74; border-color:#154F74; color:white; }
 
-    /* ── Best times ── */
-    .best-time-item {
-      background: var(--light);
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 10px 12px;
-      margin-bottom: 10px;
-    }
-    .best-time-title { font-weight: 700; font-size: 13px; }
-    .best-time-names { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .progress-bar { margin-top: 6px; height: 4px; border-radius: 2px; background: #EEF2F6; overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 2px; background: var(--slot-green); }
+  .room-schedule-modal { max-width:640px; }
+  .room-section { margin-bottom:24px; }
+  .room-section-title { font-size:14px; font-weight:800; color:var(--dark); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .room-event-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--light); gap:10px; flex-wrap:wrap; }
+  .room-event-row:last-child { border-bottom:none; }
+  .room-event-name { font-size:14px; font-weight:700; }
+  .room-event-time { font-size:12px; color:var(--muted); }
+  .room-empty { font-size:13px; color:var(--muted); font-style:italic; padding:6px 0; }
+  .conflict-warning { background:#FFF3E0; border:1.5px solid #E8732A; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#b85a00; font-weight:700; display:none; }
+  .empty-icon { font-size:48px; margin-bottom:16px; }
+  .empty-title { font-size:18px; font-weight:700; margin-bottom:8px; color:var(--dark); }
+  .error-msg { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
 
-    /* ── How it works ── */
-    .how-it-works { padding: 16px; }
-    .how-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 8px; }
-    .how-list { padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.9; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
 
-    /* ── Views ── */
-    .view { display: none; }
-    .view.active { display: block; }
-
-    /* ── Loading ── */
-    .spinner { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
-
-    /* ── Hint text ── */
-    .hint { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-    .hint-green { color: var(--green); font-weight: 700; }
-
-    /* ── Share card label ── */
-    .share-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.75); margin-bottom: 2px; }
-    .share-title { font-weight: 700; font-size: 14px; color: white; margin-bottom: 14px; }
-    .share-btns { display: flex; gap: 8px; }
-    .share-btns .btn { flex: 1; font-size: 13px; padding: 9px 8px; text-align: center; }
-
-    /* ── Already responded ── */
-    .responded-section { margin-top: 16px; }
-
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .page { padding: 24px 14px; }
-      .page-wide { padding: 14px 12px; }
-      .grid-layout { grid-template-columns: 1fr; }
-      .results-layout { grid-template-columns: 1fr; }
-      .header { padding: 12px 14px; }
-      .logo { font-size: 18px; }
-      h1 { font-size: 28px !important; }
-    }
-  </style>
+  /* ── Responsive ───────────────────────────── */
+  @media(max-width:768px) {
+    .header { padding:12px 16px; gap:8px; }
+    .header-right { display:flex; gap:8px; flex-wrap:wrap; }
+    .page-body { padding:16px 12px; }
+    .event-grid { grid-template-columns:1fr; gap:12px; }
+    .filter-row { flex-direction:column; gap:8px; }
+    .filter-search { width:100%; min-width:unset; box-sizing:border-box; }
+    .cat-pills { gap:6px; margin-bottom:16px; }
+    .modal { padding:20px 16px; margin:12px; border-radius:12px; }
+    .two-col { grid-template-columns:1fr; gap:0; }
+    .event-card-footer { flex-direction:column; align-items:flex-start; gap:8px; }
+    .room-schedule-modal { max-width:100%; }
+    .room-event-row { flex-direction:column; align-items:flex-start; gap:4px; }
+    .btn-sm { font-size:12px; padding:6px 10px; }
+    .modal-actions { flex-wrap:wrap; }
+  }
+  @media(max-width:420px) {
+    .event-title { font-size:15px; }
+    .modal { padding:16px 14px; }
+    .modal-title { font-size:18px; }
+    .btn { font-size:13px; padding:9px 14px; }
+    .event-grid { gap:10px; }
+    .format-chip { font-size:12px; padding:6px 12px; }
+  }
+  @media(min-width:1024px) {
+    .page-body { padding:32px 40px; }
+    .event-grid { grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+  }
+  @media(min-width:1400px) {
+    .event-grid { grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
+  }
+</style>
 </head>
 <body>
 
-<!-- ── Header ─────────────────────────────────────── -->
+<div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div>
-    <div class="logo" onclick="showView('home')" style="cursor:pointer;">Day<span>Balancer</span></div>
-    <div class="tagline" id="header-tagline">Find a time · Together</div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;">Day<span>Balancer</span></div>
+    <div class="tagline">Community events - beta test</div>
   </div>
-  <div class="header-right" id="header-actions"></div>
-</div>
-
-<!-- ── HOME ──────────────────────────────────────── -->
-<div class="view active" id="view-home">
-  <div class="page">
-    <h1 style="font-size:36px;font-weight:800;line-height:1.1;margin-bottom:14px;">
-      When works<br>for everyone?
-    </h1>
-    <p style="color:var(--muted);font-size:15px;line-height:1.6;margin-bottom:28px;">
-      Pick a meeting time without the back-and-forth. Share a code - let others mark when they're free, and you'll see the best times at a glance.
-    </p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
-      <button class="btn btn-full btn-lg" onclick="showView('create')">🗓️ Start scheduling</button>
-      <button class="btn btn-outline btn-full btn-lg" onclick="showView('join')">🔑 Enter a session code</button>
-    </div>
-    <div class="chips-row">
-      <span class="chip" style="border-color:var(--primary)">No sign-up needed</span>
-      <span class="chip" style="border-color:var(--green)">Real calendar dates</span>
-      <span class="chip" style="border-color:var(--teal)">See who's free</span>
-    </div>
+  <div class="header-right" style="display:flex;gap:10px;">
+    <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
+    <button class="btn btn-white btn-sm" onclick="openModal()">+ Post an event</button>
   </div>
 </div>
 
-<!-- ── CREATE ─────────────────────────────────────── -->
-<div class="view" id="view-create">
-  <div class="page">
-    <div class="card">
-      <h2 style="font-size:22px;font-weight:800;margin-bottom:20px;">What are you scheduling?</h2>
+<div class="page-body">
+  <div class="page-title-row">
+    <div>
+      <div class="page-title" id="page-title">What's happening</div>
+      <div class="page-sub">Events posted by DayBalancer members</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="format-chip active" id="tab-upcoming" onclick="setTab('upcoming')">Upcoming</button>
+      <button class="format-chip" id="tab-past" onclick="setTab('past')">Past events</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
+  </div>
+  <div class="cat-pills" id="cat-pills"></div>
+  <div class="event-grid" id="event-grid"></div>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Post an event</div>
+    <div id="draft-notice" style="display:none; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:8px 12px; font-size:13px; margin-bottom:16px;">✏️ Your draft was restored - pick up where you left off!</div>
+
+    <div class="field">
+      <label class="field-label">Event title *</label>
+      <input class="input" id="f-title" placeholder="Give your event a clear name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Categories * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- select all that apply</span></label>
+      <div class="form-cat-chips" id="f-cat-chips"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Virtual or in-person? *</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="format-chip" id="fmt-virtual" onclick="setFormat('virtual')">💻 Virtual</button>
+        <button type="button" class="format-chip" id="fmt-inperson" onclick="setFormat('inperson')">📍 In-person</button>
+        <button type="button" class="format-chip" id="fmt-both" onclick="setFormat('both')">✨ Both</button>
+      </div>
+    </div>
+
+    <div class="room-preview" id="room-preview">
+      <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
+      <div class="form-cat-chips" id="room-options"></div>
+    </div>
+
+    <div id="location-field" style="display:none;" class="field">
+      <label class="field-label">Full address</label>
+      <input class="input" id="f-location" placeholder="Full address">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Description</label>
+      <textarea class="textarea" id="f-desc" placeholder="Tell people what to expect..."></textarea>
+    </div>
+
+    <div class="two-col">
       <div class="field">
-        <label class="field-label">Give it a name</label>
-        <input class="input" id="session-title-input" placeholder="e.g. Team check-in, Coffee chat, Strategy sync..." onkeydown="if(event.key==='Enter') createSession()">
+        <label class="field-label">Date *</label>
+        <input class="input" id="f-date" type="date">
       </div>
-      <button class="btn btn-full" onclick="createSession()">Create and get your code →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── JOIN ───────────────────────────────────────── -->
-<div class="view" id="view-join">
-  <div class="page">
-    <div class="card">
-      <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">Enter a session code</h2>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:20px;">
-        Someone should have sent you a code like <strong style="color:var(--dark)">oak-river-247</strong>.
-      </p>
       <div class="field">
-        <label class="field-label">Your code</label>
-        <input class="input input-code" id="join-code-input" placeholder="oak-river-247" onkeydown="if(event.key==='Enter') joinSession()">
-        <p class="error-msg" id="join-error">We couldn't find that session. Double-check the code and try again.</p>
+        <label class="field-label">Start time *</label>
+        <input class="input" id="f-time" type="time">
       </div>
-      <button class="btn btn-full" onclick="joinSession()">Join session →</button>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label">End time *</label>
+        <input class="input" id="f-endtime" type="time">
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Who's hosting? *</label>
+      <input class="input" id="f-host" placeholder="Full name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Is there an associated coop link? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <input class="input" id="f-cooplink" type="url" placeholder="https://...">
+    </div>
+
+    <div class="field" id="passcode-field">
+      <label class="field-label">Private edit PIN * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, only you need this to edit later. Do not share.</span></label>
+      <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;" autocomplete="off">
+    </div>
+
+    <p class="error-msg" id="post-error"></p>
+    <div class="conflict-warning" id="conflict-warning"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="cloneEvent()" title="Clone this event">⧉ Clone</button>
+      <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
     </div>
   </div>
 </div>
 
-<!-- ── ENTER AVAILABILITY ─────────────────────────── -->
-<div class="view" id="view-enter">
-  <div class="page-wide">
-    <div class="grid-layout">
-      <!-- Left: grid -->
-      <div>
-        <div class="name-row">
-          <div class="name-field">
-            <label class="field-label">Your name</label>
-            <input class="input" id="participant-name-input" placeholder="What name do you go by?" oninput="onNameInput()">
-            <p id="edit-hint" style="display:none;font-size:12px;color:var(--green);font-weight:700;margin-top:5px;">✏️ We found your previous entry - update your times and save again.</p>
-          </div>
-          <button class="btn btn-dark" id="save-btn" onclick="submitAvailability()" disabled>Save my times →</button>
-          <button class="btn btn-outline" id="view-results-btn" onclick="showView('results')" style="display:none;">View results</button>
-        </div>
-        <p class="hint">Click and drag to mark when you're free. <span class="hint-green">Green = available.</span></p>
-        <div class="week-nav" id="enter-week-nav"></div>
-        <div class="grid-wrap">
-          <div class="avail-grid" id="enter-grid"></div>
-        </div>
-        <div class="responded-section" id="already-responded" style="display:none;">
-          <label class="field-label" style="margin-bottom:8px;">Already responded</label>
-          <div id="responded-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-        </div>
-      </div>
-      <!-- Right: share card + how it works -->
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div class="share-card" id="enter-share-card"></div>
-        <div class="card how-it-works">
-          <p class="how-label">How it works</p>
-          <ol class="how-list">
-            <li>Enter your name above</li>
-            <li>Mark when you're free on the calendar</li>
-            <li>Click <strong style="color:var(--dark)">Save my times</strong></li>
-            <li>Share the code, so others can do the same</li>
-          </ol>
-        </div>
-      </div>
+<!-- ROOM SCHEDULE MODAL -->
+<div class="modal-overlay" id="room-modal">
+  <div class="modal room-schedule-modal">
+    <div class="modal-title">Room schedules</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">Upcoming events by virtual room. Check availability before posting.</p>
+    <div id="room-schedule-body"></div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-outline btn-full" onclick="closeRoomModal()">Close</button>
     </div>
   </div>
 </div>
 
-<!-- ── RESULTS ────────────────────────────────────── -->
-<div class="view" id="view-results">
-  <div class="page-wide">
-    <div class="results-layout">
-      <!-- Left: overview grid -->
-      <div>
-        <h2 style="font-size:24px;font-weight:800;margin-bottom:4px;">Availability overview</h2>
-        <p id="results-subtitle" style="color:var(--muted);font-size:14px;margin-bottom:12px;"></p>
-        <div class="week-nav" id="results-week-nav"></div>
-        <div class="grid-wrap">
-          <div class="avail-grid" id="results-grid"></div>
-        </div>
-        <div class="legend">
-          <div class="legend-item"><div class="legend-swatch" style="background:#EEEEEE"></div> No one</div>
-          <div class="legend-item"><div class="legend-swatch" style="background:#A8D8B4"></div> Some</div>
-          <div class="legend-item"><div class="legend-swatch" style="background:var(--slot-green)"></div> Many</div>
-          <div class="legend-item"><div class="legend-swatch" style="background:var(--slot-teal)"></div> Most</div>
-          <div class="legend-item"><div class="legend-swatch" style="background:var(--primary)"></div> All</div>
-        </div>
-      </div>
-      <!-- Right: sidebar -->
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div class="card" id="best-times-card">
-          <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">Best times</h3>
-          <div id="best-times-list"></div>
-        </div>
-        <div class="card" id="who-responded-card">
-          <h3 style="font-size:15px;font-weight:800;margin-bottom:12px;">Who's responded</h3>
-          <div id="who-responded-list"></div>
-          <button class="btn btn-outline" style="width:100%;margin-top:12px;font-size:13px;" onclick="goAddMine()">✏️ Edit my times</button>
-        </div>
-        <div class="share-card" id="results-share-card"></div>
-      </div>
+<!-- EVENT SUMMARY MODAL -->
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal" style="max-width:480px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:8px;">✅</div>
+      <div class="modal-title" style="margin-bottom:4px;">Event posted!</div>
+      <p style="font-size:14px;color:var(--muted);">Save your private edit PIN - you'll need it to make changes later. Don't share it.</p>
+    </div>
+    <div id="summary-body" style="background:var(--light);border-radius:10px;padding:18px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:inherit;color:var(--dark);"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-green" style="flex:1;" onclick="copySummary()">📋 Copy all</button>
+      <button class="btn btn-outline" style="flex:1;" id="summary-cal-btn" onclick="addToCalendarFromSummary()">📅 Add to calendar</button>
+      <button class="btn btn-outline" onclick="closeSummaryModal()">Done</button>
+    </div>
+    <p id="copy-confirm" style="text-align:center;font-size:13px;color:var(--green);font-weight:700;margin-top:10px;display:none;">Copied to clipboard!</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- PASSCODE MODAL -->
+<div class="modal-overlay" id="passcode-modal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" style="font-size:18px;">Enter your private edit PIN</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">This is the 4-digit code you set when you posted the event.</p>
+    <div class="field">
+      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off">
+    </div>
+    <p class="error-msg" id="passcode-error">Incorrect passcode. Please try again.</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="verifyPasscode()">Unlock</button>
+      <button class="btn btn-outline" onclick="closePasscodeModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── Config ─────────────────────────────────────────────────
-// Replace this with your deployed Apps Script URL
-const GS_URL = "https://script.google.com/macros/s/AKfycbzorQnmouatmpXCsPy1NBKnu-OdgpOdAkS5f4DikOIENU4TxzgqUhNbmRm2aXX2-g5c9w/exec";
+const CATEGORIES = [
+  { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-create room" },
+  { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room" },
+  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room", extraRooms:["Ikigai room"] },
+  { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:null },
+  { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room" },
+  { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-create room" },
+  { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room" },
+  { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons" },
+  { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room" },
+  { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons" },
+  { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room" },
+  { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons" },
+  { id:"wealth",       label:"Wealth/exchange",          emoji:"💰", room:"The Commons" },
+];
 
-// ── State ──────────────────────────────────────────────────
-let currentSession  = null;
-let sessionCode     = "";
-let selectedSlots   = new Set();
-let isDragging      = false;
-let dragMode        = null; // "add" | "remove"
-let weekStart       = getMondayOf(new Date());
-let currentView     = "home";
-let refreshInterval = null;
-let copied          = false;
+let events = [];
+let activeFilter = "all";
+let activeTab = "upcoming"; // "upcoming" | "past"
+let selectedCats = new Set(); // for the form
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7am–8pm
-const PARTICIPANT_COLORS = ["#1B6896","#2E7D52","#C05A14","#1A6B7A","#5B4FCF","#B5116A","#C07A00","#1D7A5C","#2860B0"];
+// ── Google Sheets API via JSONP ───────────────
+const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
-// ── Date helpers ───────────────────────────────────────────
-function getMondayOf(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-function getWeekDates(monday) {
-  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-}
-function dateKey(date) {
-  return date.toISOString().split("T")[0];
-}
-function slotKey(dateStr, hour) {
-  return `${dateStr}-${hour}`;
-}
-function fmtHour(h) {
-  if (h === 12) return "12 pm";
-  return h > 12 ? `${h - 12} pm` : `${h} am`;
-}
-function fmtDateRange(a, b) {
-  const opts = { month: "short", day: "numeric" };
-  return `${a.toLocaleDateString("en-US", opts)} – ${b.toLocaleDateString("en-US", opts)}`;
-}
-function fmtDayLabel(dateStr) {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+function evToSheet(ev) {
+  return {
+    id:          ev.id,
+    title:       ev.title || "",
+    categories:  Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
+    date:        ev.date || "",
+    startTime:   ev.time || "",
+    endTime:     ev.endtime || "",
+    format:      ev.format || "",
+    location:    ev.location || "",
+    room:        ev.room || "",
+    description: ev.description || "",
+    host:        ev.host || "",
+    passcode:    ev.passcode || "",
+    cooplink:    ev.cooplink || "",
+    going:       ev.going || 0,
+  };
 }
 
-// ── Code generator ─────────────────────────────────────────
-function generateCode() {
-  const words = ["oak","river","bloom","sky","stone","moss","tide","grove","glow","dawn","fern","vale"];
-  const pick  = () => words[Math.floor(Math.random() * words.length)];
-  return `${pick()}-${pick()}-${Math.floor(100 + Math.random() * 900)}`;
+function parseSheetDate(val) {
+  if (!val) return "";
+  const s = String(val);
+  // Already plain date like 2026-02-24
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // ISO timestamp - extract date part
+  if (s.includes("T")) return s.split("T")[0];
+  return s;
 }
 
-// ── JSONP API ──────────────────────────────────────────────
-function apiCall(params) {
+function parseSheetTime(val) {
+  if (!val) return "";
+  const s = String(val);
+  // Already plain time like 12:00
+  if (/^\d{2}:\d{2}$/.test(s)) return s;
+  // ISO timestamp - extract HH:MM from time part
+  if (s.includes("T")) {
+    const t = s.split("T")[1];
+    return t.substring(0, 5);
+  }
+  return s;
+}
+
+function sheetToEv(row) {
+  return {
+    id:          String(row.id || ""),
+    title:       row.title || "",
+    categories:  row.categories ? String(row.categories).split(",").filter(Boolean) : [],
+    date:        parseSheetDate(row.date),
+    time:        parseSheetTime(row.startTime),
+    endtime:     parseSheetTime(row.endTime),
+    format:      row.format || "",
+    location:    row.location || "",
+    room:        row.room || "",
+    description: row.description || "",
+    host:        row.host || "",
+    passcode:    row.passcode || "",
+    cooplink:    row.cooplink || "",
+    going:       parseInt(row.going) || 0,
+  };
+}
+
+// JSONP loader - bypasses CORS entirely
+function jsonp(params) {
   return new Promise((resolve, reject) => {
-    const cbName  = "cb_" + Math.random().toString(36).slice(2);
+    const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
     const timeout = setTimeout(() => {
       delete window[cbName];
       script.remove();
-      reject(new Error("Request timed out"));
-    }, 12000);
+      reject(new Error("JSONP timeout"));
+    }, 10000);
 
     window[cbName] = (data) => {
       clearTimeout(timeout);
@@ -502,504 +424,881 @@ function apiCall(params) {
     script.onerror = () => {
       clearTimeout(timeout);
       delete window[cbName];
-      reject(new Error("Network error"));
+      reject(new Error("JSONP failed"));
     };
     document.head.appendChild(script);
   });
 }
 
-async function apiGetSession(code)   { return apiCall({ action: "get",    code }); }
-async function apiSaveSession(session){ return apiCall({ action: "save",   session }); }
-
-// ── Views ──────────────────────────────────────────────────
-function showView(name) {
-  isSubmitting = false;
-  if (name === "home") {
-    currentSession = null;
-    sessionCode    = "";
-    selectedSlots  = new Set();
-    document.getElementById("session-title-input").value = "";
-    document.getElementById("join-code-input").value     = "";
-    document.getElementById("join-error").style.display  = "none";
+async function loadEvents() {
+  try {
+    showLoading(true);
+    const data = await jsonp({ t: Date.now() });
+    events = (data.events || []).filter(r => r.id).map(sheetToEv);
+  } catch(e) {
+    console.error("Failed to load events:", e);
+    events = [];
+  } finally {
+    showLoading(false);
+    renderEvents();
+    checkEventLink();
   }
-  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-  document.getElementById("view-" + name).classList.add("active");
-  currentView = name;
-  updateHeader();
-  if (name === "enter")   { renderEnterView(); }
-  if (name === "results") { renderResultsView(); startRefresh(); }
-  else                    { stopRefresh(); }
 }
 
-function updateHeader() {
-  const tagline = document.getElementById("header-tagline");
-  const actions = document.getElementById("header-actions");
-  tagline.textContent = currentSession ? currentSession.title : "Find a time · Together";
+async function apiAdd(ev)          { return jsonp({ action: "add",    event: evToSheet(ev) }); }
+async function apiUpdate(ev)       { return jsonp({ action: "update", event: evToSheet(ev) }); }
+async function apiDelete(id)       { return jsonp({ action: "delete", id }); }
+async function apiGoing(id, delta) { return jsonp({ action: "going",  id, delta }); }
 
-  if (currentView === "home" || currentView === "create" || currentView === "join") {
-    actions.innerHTML = currentView !== "home"
-      ? `<button class="btn btn-outline btn-sm" onclick="showView('home')">← Back</button>` : "";
+function showLoading(on) {
+  let el = document.getElementById("loading-bar");
+  if (!el) return;
+  el.style.display = on ? "block" : "none";
+}
+
+// ── Build form category chips ─────────────────
+function buildFormChips() {
+  const container = document.getElementById("f-cat-chips");
+  container.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "form-cat-chip" + (selectedCats.has(cat.id) ? " selected" : "");
+    chip.textContent = `${cat.emoji} ${cat.label}`;
+    chip.onclick = () => toggleFormCat(cat.id, chip);
+    container.appendChild(chip);
+  });
+}
+
+function toggleFormCat(id, chip) {
+  if (selectedCats.has(id)) {
+    selectedCats.delete(id);
+    chip.classList.remove("selected");
+  } else {
+    selectedCats.add(id);
+    chip.classList.add("selected");
+  }
+  updateRoomPreview();
+}
+
+let selectedRoom = null;
+let selectedFormat = null;
+let editingId = null; // null = new event, string = editing existing
+
+function setFormat(fmt) {
+  selectedFormat = fmt;
+  ["virtual","inperson","both"].forEach(f => {
+    document.getElementById("fmt-" + f).classList.toggle("selected", f === fmt);
+  });
+  // Show/hide location
+  const showLoc = fmt === "inperson" || fmt === "both";
+  document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+  // Show/hide room (only for virtual or both, and only if rooms available)
+  updateRoomPreview();
+}
+
+function updateRoomPreview() {
+  const preview = document.getElementById("room-preview");
+  const label = document.getElementById("room-preview-label");
+  const roomOptions = document.getElementById("room-options");
+  if (!preview || !label || !roomOptions) return;
+
+  const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
+  if (!showRooms) { preview.style.display = "none"; selectedRoom = null; return; }
+
+  const rooms = [...new Set(
+    Array.from(selectedCats)
+      .flatMap(id => {
+        const cat = CATEGORIES.find(c => c.id === id);
+        if (!cat) return [];
+        return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
+      })
+  )].filter(r => {
+    const roomObj = ROOMS.find(ro => ro.name === r);
+    return !roomObj?.hidden;
+  });
+
+  if (rooms.length === 0) { preview.style.display = "none"; selectedRoom = null; return; }
+
+  if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
+  if (rooms.length === 1) selectedRoom = rooms[0];
+
+  // Update label based on choice count
+  label.textContent = rooms.length === 1 ? "DayBalancer virtual room for this event:" : "Which DayBalancer virtual room is best for this event?";
+
+  preview.style.display = "block";
+  roomOptions.innerHTML = "";
+  rooms.forEach(room => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    // Single room: show as a plain badge, not clickable
+    if (rooms.length === 1) {
+      chip.className = "room-chip selected";
+      chip.style.cursor = "default";
+      chip.textContent = room;
+    } else {
+      chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
+      chip.textContent = room;
+      chip.onclick = () => {
+        selectedRoom = room;
+        roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+        checkAndWarnConflict();
+      };
+    }
+    roomOptions.appendChild(chip);
+  });
+}
+
+// ── Filter pills ──────────────────────────────
+function renderPills() {
+  const c = document.getElementById("cat-pills");
+  c.innerHTML = "";
+  const all = makeFilterBtn("All events", activeFilter === "all", () => setFilter("all"));
+  c.appendChild(all);
+  CATEGORIES.forEach(cat => {
+    const btn = makeFilterBtn(`${cat.emoji} ${cat.label}`, activeFilter === cat.id, () => setFilter(cat.id));
+    c.appendChild(btn);
+  });
+}
+function makeFilterBtn(text, isActive, onClick) {
+  const b = document.createElement("button");
+  b.className = "cat-pill" + (isActive ? " active" : "");
+  b.textContent = text;
+  b.onclick = onClick;
+  return b;
+}
+function setFilter(id) { activeFilter = id; renderPills(); renderEvents(); }
+
+// ── Render events ─────────────────────────────
+function renderEvents() {
+  const grid = document.getElementById("event-grid");
+  const q = document.getElementById("search-input").value.toLowerCase();
+  const now = Date.now();
+
+  let list = events.filter(e => {
+    const cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
+    const matchCat = activeFilter === "all" || cats.includes(activeFilter);
+    const matchQ = !q ||
+      e.title.toLowerCase().includes(q) ||
+      (e.description||"").toLowerCase().includes(q) ||
+      (e.location||"").toLowerCase().includes(q) ||
+      (e.host||"").toLowerCase().includes(q);
+    const evMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
+    const isPast = evMs < now;
+    const matchTab = activeTab === "past" ? isPast : !isPast;
+    return matchCat && matchQ && matchTab;
+  });
+
+  list.sort((a, b) => {
+    const da = new Date(a.date + "T" + (a.time||"00:00")).getTime();
+    const db = new Date(b.date + "T" + (b.time||"00:00")).getTime();
+    return activeTab === "past" ? db - da : da - db;
+  });
+
+  grid.innerHTML = "";
+  if (list.length === 0) {
+    const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p>${msg}</p></div>`;
     return;
   }
 
-  actions.innerHTML = `
-    <button class="btn btn-outline btn-sm" id="header-copy-btn" onclick="copyCode()">📋 Code: ${sessionCode}</button>
-    <button class="btn btn-outline btn-sm" onclick="showView('home')" title="Start a new session">+ New session</button>
-    ${currentView === "results" ? `<button class="btn btn-outline btn-sm" onclick="goAddMine()">+ Add mine</button>` : ""}
-  `;
-}
+  list.forEach(ev => {
+    const cats = Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean);
+    const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
+    const gone = localStorage.getItem("db-going-" + ev.id);
 
-// ── Create ─────────────────────────────────────────────────
-async function createSession() {
-  const title = document.getElementById("session-title-input").value.trim();
-  if (!title) return;
-  const code    = generateCode();
-  const session = { code, title, participants: [], createdAt: Date.now() };
-  try {
-    await apiSaveSession(session);
-  } catch(e) {
-    // Fallback: save locally and continue - works for single device
-    console.warn("Could not save to server, using local session", e);
-  }
-  currentSession = session;
-  sessionCode    = code;
-  selectedSlots  = new Set();
-  showView("enter");
-}
+    const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
+    const roomObj = ROOMS.find(r => r.name === ev.room);
+    const roomBadge = ev.room
+      ? roomObj
+        ? `<a href="${roomObj.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none;">🏠 ${esc(ev.room)}</a>`
+        : `<span class="room-badge">🏠 ${esc(ev.room)}</span>`
+      : "";
 
-// ── Join ───────────────────────────────────────────────────
-async function joinSession() {
-  const code = document.getElementById("join-code-input").value.trim().toLowerCase();
-  if (!code) return;
-  const errEl = document.getElementById("join-error");
-  try {
-    const result = await apiGetSession(code);
-    if (result && result.session) {
-      currentSession = result.session;
-      sessionCode    = code;
-      selectedSlots  = new Set();
-      errEl.style.display = "none";
-      showView("enter");
-    } else {
-      errEl.style.display = "block";
-    }
-  } catch(e) {
-    errEl.style.display = "block";
-  }
-}
-
-// ── Submit availability ────────────────────────────────────
-let isSubmitting = false;
-
-async function submitAvailability() {
-  if (isSubmitting) return;
-  const name = document.getElementById("participant-name-input").value.trim();
-  if (!name || selectedSlots.size === 0) return;
-
-  isSubmitting = true;
-  const btn = document.getElementById("save-btn");
-  if (btn) { btn.disabled = true; btn.className = "btn btn-disabled"; btn.textContent = "Saved ✓"; }
-
-  // Build updated session locally first
-  const latest = currentSession;
-  const existingIndex = latest.participants.findIndex(
-    p => p.name.toLowerCase() === name.toLowerCase()
-  );
-
-  let participants;
-  if (existingIndex >= 0) {
-    participants = latest.participants.map((p, i) =>
-      i === existingIndex ? { ...p, slots: Array.from(selectedSlots) } : p
-    );
-  } else {
-    const newP = {
-      name,
-      slots: Array.from(selectedSlots),
-      color: PARTICIPANT_COLORS[latest.participants.length % PARTICIPANT_COLORS.length],
-    };
-    participants = [...latest.participants, newP];
-  }
-
-  const updated = { ...latest, participants };
-
-  // Show results immediately with local data
-  currentSession = updated;
-  showView("results");
-
-  // Save to server in background - no await blocking the UI
-  apiGetSession(sessionCode)
-    .then(r => r && r.session ? r.session : latest)
-    .catch(() => latest)
-    .then(serverLatest => {
-      // Re-apply this person's submission on top of latest server state
-      const idx = serverLatest.participants.findIndex(
-        p => p.name.toLowerCase() === name.toLowerCase()
-      );
-      let serverParticipants;
-      if (idx >= 0) {
-        serverParticipants = serverLatest.participants.map((p, i) =>
-          i === idx ? { ...p, slots: Array.from(selectedSlots) } : p
-        );
-      } else {
-        serverParticipants = [...serverLatest.participants, {
-          name,
-          slots: Array.from(selectedSlots),
-          color: PARTICIPANT_COLORS[serverLatest.participants.length % PARTICIPANT_COLORS.length],
-        }];
-      }
-      const serverUpdated = { ...serverLatest, participants: serverParticipants };
-      return apiSaveSession(serverUpdated).then(() => serverUpdated);
-    })
-    .then(saved => {
-      // Quietly update with authoritative server version
-      currentSession = saved;
-      if (currentView === "results") renderResultsView();
-    })
-    .catch(() => {})
-    .finally(() => { isSubmitting = false; });
-}
-
-function goAddMine() {
-  selectedSlots = new Set();
-  isSubmitting  = false;
-  document.getElementById("participant-name-input").value = "";
-  showView("enter");
-}
-
-// Load existing slots when name is typed and matches a previous entry
-function onNameInput() {
-  updateSaveBtn();
-  const name = document.getElementById("participant-name-input").value.trim().toLowerCase();
-  if (!name || !currentSession) return;
-  const existing = currentSession.participants.find(p => p.name.toLowerCase() === name);
-  if (existing) {
-    // Pre-fill their previous slots so they can edit
-    selectedSlots = new Set(existing.slots);
-    renderEnterView(); // re-render grid with slots pre-selected
-    document.getElementById("participant-name-input").value = existing.name; // restore name after re-render
-    const hint = document.getElementById("edit-hint");
-    if (hint) hint.style.display = "block";
-  } else {
-    const hint = document.getElementById("edit-hint");
-    if (hint) hint.style.display = "none";
-  }
-}
-
-// ── Week nav ───────────────────────────────────────────────
-function renderWeekNav(containerId, onPrev, onNext) {
-  const el = document.getElementById(containerId);
-  const weekDates = getWeekDates(weekStart);
-  const today     = getMondayOf(new Date());
-  el.innerHTML = `
-    <button class="nav-btn" onclick="${onPrev}">‹</button>
-    <span class="week-label">${fmtDateRange(weekDates[0], weekDates[6])}</span>
-    <button class="nav-btn" onclick="${onNext}">›</button>
-    ${weekStart > today ? `<button class="btn btn-outline btn-sm" onclick="goToday()">Today</button>` : ""}
-  `;
-}
-
-function prevWeek() { weekStart = addDays(weekStart, -7); renderCurrentView(); }
-function nextWeek() { weekStart = addDays(weekStart,  7); renderCurrentView(); }
-function goToday()  { weekStart = getMondayOf(new Date()); renderCurrentView(); }
-
-function renderCurrentView() {
-  if (currentView === "enter")   renderEnterView();
-  if (currentView === "results") renderResultsView();
-}
-
-// ── Drag handling ──────────────────────────────────────────
-function handleSlotMouseDown(key) {
-  const adding = !selectedSlots.has(key);
-  dragMode = adding ? "add" : "remove";
-  isDragging = true;
-  adding ? selectedSlots.add(key) : selectedSlots.delete(key);
-  updateSlotVisual(key);
-  updateSaveBtn();
-}
-
-function handleSlotMouseEnter(key) {
-  if (!isDragging) return;
-  dragMode === "add" ? selectedSlots.add(key) : selectedSlots.delete(key);
-  updateSlotVisual(key);
-  updateSaveBtn();
-}
-
-function updateSlotVisual(key) {
-  const el = document.querySelector(`[data-key="${key}"]`);
-  if (!el) return;
-  if (selectedSlots.has(key)) {
-    el.classList.add("selected");
-  } else {
-    el.classList.remove("selected");
-  }
-}
-
-document.addEventListener("mouseup",  () => { isDragging = false; });
-document.addEventListener("touchend", () => { isDragging = false; });
-
-function handleTouchMove(e) {
-  if (!isDragging) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const el    = document.elementFromPoint(touch.clientX, touch.clientY);
-  if (el && el.dataset.key) {
-    const key = el.dataset.key;
-    dragMode === "add" ? selectedSlots.add(key) : selectedSlots.delete(key);
-    updateSlotVisual(key);
-    updateSaveBtn();
-  }
-}
-
-function updateSaveBtn() {
-  const name = document.getElementById("participant-name-input")?.value.trim();
-  const btn  = document.getElementById("save-btn");
-  if (!btn) return;
-  const canSave = name && selectedSlots.size > 0;
-  btn.disabled = !canSave;
-  btn.className = "btn" + (canSave ? " btn-dark" : " btn-disabled");
-}
-
-// ── Render Enter View ──────────────────────────────────────
-function renderEnterView() {
-  const weekDates = getWeekDates(weekStart);
-  const isMobile  = window.innerWidth < 640;
-  const visible   = isMobile ? weekDates.slice(0, 4) : weekDates;
-  const cols      = visible.length;
-  const todayStr  = dateKey(new Date());
-
-  renderWeekNav("enter-week-nav", "prevWeek()", "nextWeek()");
-
-  const grid = document.getElementById("enter-grid");
-  grid.style.gridTemplateColumns = `44px repeat(${cols}, 1fr)`;
-
-  let html = '<div></div>';
-  visible.forEach(date => {
-    const dk      = dateKey(date);
-    const isToday = dk === todayStr;
-    html += `<div class="day-header">
-      <div class="day-name">${date.toLocaleDateString("en-US",{weekday:"short"})}</div>
-      <div class="day-num${isToday?" today":""}">${date.getDate()}</div>
-    </div>`;
-  });
-
-  HOURS.forEach(h => {
-    html += `<div class="time-label">${fmtHour(h)}</div>`;
-    visible.forEach(date => {
-      const key = slotKey(dateKey(date), h);
-      const sel = selectedSlots.has(key) ? " selected" : "";
-      html += `<div class="slot${sel}" data-key="${key}"
-        onmousedown="handleSlotMouseDown('${key}')"
-        onmouseenter="handleSlotMouseEnter('${key}')"
-        ontouchstart="isDragging=true;dragMode=!selectedSlots.has('${key}')? 'add':'remove';handleSlotMouseDown('${key}')"
-      ></div>`;
-    });
-  });
-
-  grid.innerHTML = html;
-  grid.addEventListener("touchmove", handleTouchMove, { passive: false });
-
-  updateSaveBtn();
-
-  // View results btn
-  const vrBtn = document.getElementById("view-results-btn");
-  if (currentSession?.participants.length > 0) {
-    vrBtn.style.display = "inline-block";
-  }
-
-  // Already responded
-  const respondedSection = document.getElementById("already-responded");
-  const respondedChips   = document.getElementById("responded-chips");
-  if (currentSession?.participants.length > 0) {
-    respondedSection.style.display = "block";
-    respondedChips.innerHTML = currentSession.participants.map(p =>
-      `<span class="chip" style="border-color:${p.color}">
-        <span class="chip-dot" style="background:${p.color}"></span>${esc(p.name)}
-      </span>`
-    ).join("");
-  }
-
-  // Share card
-  renderShareCard("enter-share-card");
-}
-
-// ── Render Results View ────────────────────────────────────
-function renderResultsView() {
-  const overlap   = getOverlapData();
-  const total     = currentSession?.participants.length || 0;
-  const weekDates = getWeekDates(weekStart);
-  const isMobile  = window.innerWidth < 640;
-  const visible   = isMobile ? weekDates.slice(0, 4) : weekDates;
-  const cols      = visible.length;
-  const todayStr  = dateKey(new Date());
-
-  document.getElementById("results-subtitle").textContent =
-    `${total} ${total === 1 ? "person has" : "people have"} responded. Darker = more people free.`;
-
-  renderWeekNav("results-week-nav", "prevWeek()", "nextWeek()");
-
-  const grid = document.getElementById("results-grid");
-  grid.style.gridTemplateColumns = `44px repeat(${cols}, 1fr)`;
-
-  let html = '<div></div>';
-  visible.forEach(date => {
-    const dk      = dateKey(date);
-    const isToday = dk === todayStr;
-    html += `<div class="day-header">
-      <div class="day-name">${date.toLocaleDateString("en-US",{weekday:"short"})}</div>
-      <div class="day-num${isToday?" today":""}">${date.getDate()}</div>
-    </div>`;
-  });
-
-  HOURS.forEach(h => {
-    html += `<div class="time-label">${fmtHour(h)}</div>`;
-    visible.forEach(date => {
-      const key   = slotKey(dateKey(date), h);
-      const ps    = overlap[key] || [];
-      const ratio = ps.length / Math.max(total, 1);
-      const cls   = ps.length === 0 ? "r0"
-        : ratio >= 0.99 ? "r99"
-        : ratio >= 0.66 ? "r66"
-        : ratio >= 0.33 ? "r33"
-        : "r1";
-      const title = ps.length > 0 ? ps.map(p => p.name).join(", ") : "";
-      html += `<div class="slot ${cls}" title="${esc(title)}"></div>`;
-    });
-  });
-
-  grid.innerHTML = html;
-
-  // Best times
-  const bestTimes = getBestTimes();
-  const btList    = document.getElementById("best-times-list");
-  if (bestTimes.length === 0) {
-    btList.innerHTML = `<p style="color:var(--muted);font-size:14px;">Add more responses to find overlaps.</p>`;
-  } else {
-    btList.innerHTML = bestTimes.map(([key, ps]) => {
-      const parts    = key.split("-");
-      const hour     = parseInt(parts[parts.length - 1]);
-      const datePart = parts.slice(0, 3).join("-");
-      const pct      = Math.round((ps.length / total) * 100);
-      return `<div class="best-time-item">
-        <div class="best-time-title">${fmtDayLabel(datePart)} · ${fmtHour(hour)}</div>
-        <div class="best-time-names">${ps.map(p => esc(p.name)).join(", ")} (${ps.length}/${total})</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${ps.length===total?"var(--primary)":"var(--slot-green)"}"></div></div>
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.dataset.eventId = ev.id;
+    card.innerHTML = `
+      <div class="event-card-top">
+        <div class="event-title">${esc(ev.title)}</div>
+        <div class="event-cats">${catTags}</div>
+      </div>
+      <div class="event-card-body">
+        <div class="event-meta">
+          <div class="event-meta-item"><span>📅</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
+          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
+          ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
+          ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
+          <div class="event-meta-item"><span>👤</span>Hosted by ${esc(ev.host)}</div>
+          ${ev.cooplink ? "<div class=\"event-meta-item\"><span>🔗</span><a href=\"" + esc(ev.cooplink) + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--blue);text-decoration:none;\">Cooperative link</a></div>" : ""}
+        </div>
+        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+      </div>
+      <div class="event-card-footer">
+        <div class="going-count"><span id="going-${ev.id}">${ev.going||0}</span> interested</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-sm ${gone?"btn-outline":""}" id="goin-btn-${ev.id}"
+            onclick="markGoing('${ev.id}')">
+            ${gone ? "✓ Interested" : "🙋 Interested?"}
+          </button>
+          ${roomBadge}
+          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
+          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 10px;">📅</button>
+          <button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>
+        </div>
       </div>`;
-    }).join("");
-  }
-
-  // Who responded
-  const wrList = document.getElementById("who-responded-list");
-  if (total === 0) {
-    wrList.innerHTML = `<p style="color:var(--muted);font-size:14px;">No responses yet.</p>`;
-  } else {
-    wrList.innerHTML = currentSession.participants.map(p =>
-      `<div class="responded-row">
-        <div style="width:9px;height:9px;border-radius:50%;background:${p.color};flex-shrink:0;"></div>
-        <span style="font-size:14px;font-weight:500;">${esc(p.name)}</span>
-        <span style="font-size:12px;color:var(--muted);margin-left:auto;">${p.slots.length} slots</span>
-      </div>`
-    ).join("");
-  }
-
-  renderShareCard("results-share-card");
-  updateHeader();
-}
-
-// ── Share card ─────────────────────────────────────────────
-function renderShareCard(containerId) {
-  const el = document.getElementById(containerId);
-  if (!el || !currentSession) return;
-  el.innerHTML = `
-    <p class="share-label">Session</p>
-    <p class="share-title">${esc(currentSession.title)}</p>
-    <p class="share-label">Share this code</p>
-    <div class="code-box">${sessionCode}</div>
-    <div class="share-btns">
-      <button class="btn btn-outline" id="${containerId}-copy" onclick="copyCode('${containerId}-copy')">📋 Copy code</button>
-      <button class="btn btn-ghost" onclick="shareInvite()">⬆️ Share invite</button>
-    </div>
-  `;
-}
-
-function copyCode(btnId) {
-  navigator.clipboard.writeText(sessionCode).catch(() => {});
-  const btn = document.getElementById(btnId || "header-copy-btn");
-  if (btn) {
-    const orig = btn.textContent;
-    btn.textContent = "✓ Copied!";
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  }
-}
-
-function shareInvite() {
-  const text = `📅 ${currentSession?.title || "Find a time"}\n\nJoin and mark your availability - use this code:\n${sessionCode}`;
-  if (navigator.share) {
-    navigator.share({ title: currentSession?.title, text }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(text).catch(() => {});
-    alert("Invite copied to clipboard!\n\n" + text);
-  }
-}
-
-// ── Overlap + best times ───────────────────────────────────
-function getOverlapData() {
-  if (!currentSession) return {};
-  const map = {};
-  currentSession.participants.forEach(p => {
-    p.slots.forEach(slot => {
-      if (!map[slot]) map[slot] = [];
-      map[slot].push(p);
-    });
+    grid.appendChild(card);
   });
-  return map;
 }
 
-function getBestTimes() {
-  const overlap = getOverlapData();
-  const total   = currentSession?.participants.length || 0;
-  if (total === 0) return [];
-  return Object.entries(overlap)
-    .sort((a, b) => b[1].length - a[1].length)
-    .filter(([, ps]) => ps.length > 1)
-    .slice(0, 5);
+async function markGoing(id) {
+  const key = "db-going-" + id;
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  const already = localStorage.getItem(key);
+  const delta = already ? -1 : 1;
+  if (already) {
+    ev.going = Math.max((ev.going || 1) - 1, 0);
+    localStorage.removeItem(key);
+  } else {
+    ev.going = (ev.going || 0) + 1;
+    localStorage.setItem(key, "1");
+  }
+  // Update UI instantly
+  const nowGone = !!localStorage.getItem(key);
+  const countEl = document.getElementById("going-" + id);
+  const btn = document.getElementById("goin-btn-" + id);
+  if (countEl) countEl.textContent = ev.going;
+  if (btn) {
+    btn.textContent = nowGone ? "✓ Interested" : "🙋 Interested?";
+    btn.className = "btn btn-sm" + (nowGone ? " btn-outline" : "");
+  }
+  showToast(nowGone ? "Marked as interested!" : "Removed - no problem!");
+  // Sync to sheet in background
+  apiGoing(id, delta);
 }
 
-// ── Auto-refresh ───────────────────────────────────────────
-function startRefresh() {
-  stopRefresh();
-  refreshInterval = setInterval(async () => {
-    if (!sessionCode) return;
-    try {
-      const r = await apiGetSession(sessionCode);
-      if (r && r.session) {
-        currentSession = r.session;
-        renderResultsView();
+// ── Modal ─────────────────────────────────────
+// ── Draft auto-save ───────────────────────────
+const DRAFT_KEY = "db-event-draft";
+
+function saveDraft() {
+  if (editingId) return; // don't overwrite draft when editing existing event
+  const draft = {
+    title:    document.getElementById("f-title")?.value || "",
+    date:     document.getElementById("f-date")?.value || "",
+    time:     document.getElementById("f-time")?.value || "",
+    endtime:  document.getElementById("f-endtime")?.value || "",
+    location: document.getElementById("f-location")?.value || "",
+    desc:     document.getElementById("f-desc")?.value || "",
+    host:     document.getElementById("f-host")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "",
+    passcode: document.getElementById("f-passcode")?.value || "",
+    cats:     [...selectedCats],
+    format:   selectedFormat,
+    room:     selectedRoom,
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    // Only restore if there's actual content
+    if (!d.title && !d.desc && !d.host) return false;
+    document.getElementById("f-title").value    = d.title || "";
+    document.getElementById("f-date").value     = d.date || "";
+    document.getElementById("f-time").value     = d.time || "12:00";
+    document.getElementById("f-endtime").value  = d.endtime || "13:00";
+    document.getElementById("f-location").value = d.location || "";
+    document.getElementById("f-desc").value     = d.desc || "";
+    document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-cooplink").value  = d.cooplink || "";
+    document.getElementById("f-passcode").value  = d.passcode || "";
+    if (d.cats?.length) {
+      selectedCats = new Set(d.cats);
+      buildFormChips();
+    }
+    if (d.format) {
+      selectedFormat = d.format;
+      ["virtual","inperson","both"].forEach(f =>
+        document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format)
+      );
+      const showLoc = d.format === "inperson" || d.format === "both";
+      document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+      updateRoomPreview();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function openModal() {
+  editingId = null;
+  selectedCats = new Set();
+  selectedRoom = null;
+  selectedFormat = null;
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.remove("selected"));
+  document.getElementById("location-field").style.display = "none";
+  document.getElementById("post-modal").classList.add("open");
+  document.getElementById("post-error").style.display = "none";
+  document.getElementById("room-preview").style.display = "none";
+  document.getElementById("conflict-warning").style.display = "none";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("submit-btn").style.opacity = "";
+  document.getElementById("f-date").min = new Date().toISOString().split("T")[0];
+  document.getElementById("modal-title").textContent = "Post an event";
+  document.getElementById("submit-btn").textContent = "Post event";
+  document.getElementById("passcode-field").style.display = "block";
+  document.getElementById("delete-btn").style.display = "none";
+  document.getElementById("clone-btn").style.display = "none";
+  ["f-title","f-date","f-location","f-desc","f-host","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  document.getElementById("f-time").value = "12:00";
+  document.getElementById("f-endtime").value = "13:00";
+  buildFormChips();
+
+  // Restore draft if available
+  const restored = restoreDraft();
+  if (restored) {
+    const notice = document.getElementById("draft-notice");
+    if (notice) { notice.style.display = "block"; setTimeout(() => notice.style.display = "none", 3000); }
+  }
+}
+
+let pendingEditId = null;
+function openEdit(id) {
+  pendingEditId = id;
+  document.getElementById("p-code").value = "";
+  document.getElementById("passcode-error").style.display = "none";
+  document.getElementById("passcode-modal").classList.add("open");
+  setTimeout(() => document.getElementById("p-code").focus(), 100);
+}
+
+function closePasscodeModal() {
+  document.getElementById("passcode-modal").classList.remove("open");
+  pendingEditId = null;
+}
+
+const MASTER_PASSCODE = "6090";
+
+function verifyPasscode() {
+  const entered = document.getElementById("p-code").value.trim();
+  const idToEdit = pendingEditId;
+  // Master passcode bypasses everything
+  if (entered === MASTER_PASSCODE) {
+    closePasscodeModal();
+    loadEditForm(idToEdit);
+    return;
+  }
+  const ev = events.find(e => e.id === idToEdit);
+  if (!ev) return;
+  if (entered !== ev.passcode) {
+    document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("p-code").value = "";
+    document.getElementById("p-code").focus();
+    return;
+  }
+  closePasscodeModal();
+  loadEditForm(idToEdit);
+}
+
+
+function loadEditForm(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  editingId = id;
+  selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+  selectedRoom = ev.room || null;
+  selectedFormat = ev.format || null;
+
+  document.getElementById("post-modal").classList.add("open");
+  document.getElementById("post-error").style.display = "none";
+  document.getElementById("modal-title").textContent = "Edit event";
+  document.getElementById("submit-btn").textContent = "Save changes";
+  document.getElementById("passcode-field").style.display = "none";
+  document.getElementById("delete-btn").style.display = "block";
+  document.getElementById("clone-btn").style.display = "block";
+  document.getElementById("f-title").value = ev.title || "";
+  document.getElementById("f-date").value = ev.date || "";
+  document.getElementById("f-time").value = ev.time || "";
+  document.getElementById("f-endtime").value = ev.endtime || "";
+  document.getElementById("f-location").value = ev.location || "";
+  document.getElementById("f-desc").value = ev.description || "";
+  document.getElementById("f-host").value = ev.host || "";
+  document.getElementById("f-cooplink").value = ev.cooplink || "";
+  ["virtual","inperson","both"].forEach(f => {
+    document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
+  });
+  const showLoc = selectedFormat === "inperson" || selectedFormat === "both";
+  document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+
+  buildFormChips();
+  updateRoomPreview();
+}
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
+// ── Swipe trap - prevent back-swipe closing modals ──
+(function() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.querySelectorAll(".modal").forEach(modal => {
+    modal.addEventListener("touchstart", e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    modal.addEventListener("touchmove", e => {
+      const dx = Math.abs(e.touches[0].clientX - touchStartX);
+      const dy = Math.abs(e.touches[0].clientY - touchStartY);
+      // If horizontal swipe is dominant, block it
+      if (dx > dy && dx > 10) {
+        e.stopPropagation();
+        e.preventDefault();
       }
-    } catch {}
-  }, 20000);
+    }, { passive: false });
+  });
+})();
+
+function toggleDesc(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev || ev.description.length <= 200) return;
+  const el = document.getElementById("desc-" + id);
+  const more = document.getElementById("desc-more-" + id);
+  if (!el) return;
+  const isExpanded = el.dataset.expanded === "true";
+  if (isExpanded) {
+    el.innerHTML = esc(trunc(ev.description, 200)) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Read more</span>`;
+    el.dataset.expanded = "false";
+  } else {
+    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Show less</span>`;
+    el.dataset.expanded = "true";
+  }
 }
 
-function stopRefresh() {
-  if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = null;
+function addToCalendar(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev || !ev.date) return;
+
+  // Build datetime strings in YYYYMMDDTHHMMSS format (local, no Z = local time)
+  function toCalDT(date, time) {
+    const t = time || "00:00";
+    return date.replace(/-/g, "") + "T" + t.replace(":", "") + "00";
+  }
+
+  const start = toCalDT(ev.date, ev.time);
+  const end   = toCalDT(ev.date, ev.endtime || ev.time);
+
+  const roomObj = ROOMS.find(r => r.name === ev.room);
+  const location = ev.format === "virtual"
+    ? (roomObj ? roomObj.url : "Virtual")
+    : (ev.location || "");
+
+  const details = [
+    ev.description || "",
+    roomObj ? "Room: " + roomObj.url : "",
+    ev.cooplink ? "Cooperative link: " + ev.cooplink : "",
+    "\nHosted by " + ev.host,
+  ].filter(Boolean).join("\n\n");
+
+  const params = new URLSearchParams({
+    text:     ev.title,
+    dates:    start + "/" + end,
+    details:  details,
+    location: location,
+  });
+
+  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
-// ── Util ───────────────────────────────────────────────────
-function esc(str) {
-  return String(str || "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;");
+function shareEvent(id) {
+  const url = window.location.origin + window.location.pathname + "?event=" + id;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast("🔗 Link copied to clipboard!");
+  }).catch(() => {
+    prompt("Copy this link:", url);
+  });
 }
 
-// Responsive: re-render on resize
-let resizeTimer;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(renderCurrentView, 150);
+function checkEventLink() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("event");
+  if (!id) return;
+  const card = document.querySelector(`[data-event-id="${id}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.style.outline = "3px solid var(--blue)";
+  card.style.boxShadow = "0 0 0 4px rgba(27,104,150,0.15)";
+  setTimeout(() => {
+    card.style.outline = "";
+    card.style.boxShadow = "";
+  }, 3000);
+}
+
+function safeOn(id, evt, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(evt, fn);
+}
+safeOn("post-modal", "click", e => { if (e.target.id === "post-modal") closeModal(); });
+safeOn("f-date", "change", checkAndWarnConflict);
+safeOn("f-time", "change", checkAndWarnConflict);
+safeOn("f-endtime", "change", checkAndWarnConflict);
+safeOn("p-code", "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
+safeOn("passcode-modal", "click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") closeSummaryModal(); });
+safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
+
+// Auto-save draft on every input change
+["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => {
+  safeOn(id, "input", saveDraft);
+  safeOn(id, "change", saveDraft);
 });
-</script>
 
+// ── Summary modal ─────────────────────────────
+let summaryEventId = null;
+
+function showSummary(ev) {
+  summaryEventId = ev.id;
+  const roomObj = ROOMS.find(r => r.name === ev.room);
+  const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
+  const lines = [
+    `📅 ${ev.title}`,
+    ``,
+    `Date:       ${fmtDateShort(ev.date)}`,
+    `Time:       ${timeLine}`,
+    ev.format ? `Format:     ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
+    ev.location ? `Location:   ${ev.location}` : "",
+    ev.room ? `Room:       ${ev.room}` : "",
+    roomObj ? `Room link:  ${roomObj.url}` : "",
+    ev.description ? `\n${ev.description}` : "",
+    ``,
+    `─────────────────────────`,
+    `Edit passcode:  ${ev.passcode}`,
+    `To edit: open the bulletin board, click ✏️ on your event, and enter your private PIN.`,
+  ].filter(l => l !== "").join("\n");
+
+  document.getElementById("summary-body").textContent = lines;
+  document.getElementById("copy-confirm").style.display = "none";
+  document.getElementById("summary-modal").classList.add("open");
+}
+
+function addToCalendarFromSummary() {
+  if (summaryEventId) addToCalendar(summaryEventId);
+}
+
+function closeSummaryModal() {
+  document.getElementById("summary-modal").classList.remove("open");
+}
+
+function copySummary() {
+  const text = document.getElementById("summary-body").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById("copy-confirm").style.display = "block";
+    setTimeout(() => document.getElementById("copy-confirm").style.display = "none", 2500);
+  });
+}
+
+
+function fmt12(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
+}
+
+function fmtDateShort(date) {
+  if (!date) return "";
+  return new Date(date + "T12:00").toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+}
+
+async function submitEvent() {
+  const title    = document.getElementById("f-title").value.trim();
+  const date     = document.getElementById("f-date").value;
+  const time     = document.getElementById("f-time").value;
+  const endtime  = document.getElementById("f-endtime").value;
+  const location = document.getElementById("f-location").value.trim();
+  const desc     = document.getElementById("f-desc").value.trim();
+  const host     = document.getElementById("f-host").value.trim();
+  const cooplink = document.getElementById("f-cooplink").value.trim();
+  const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
+  const errEl    = document.getElementById("post-error");
+
+  const missing = [];
+  if (!title) missing.push("event title");
+  if (selectedCats.size === 0) missing.push("at least one category");
+  if (!selectedFormat) missing.push("virtual or in-person");
+  if (!date) missing.push("date");
+  if (!time) missing.push("start time");
+  if (!endtime) missing.push("end time");
+  if (!host) missing.push("host name");
+  if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
+
+  if (missing.length > 0) {
+    errEl.textContent = "Please add: " + missing.join(", ") + ".";
+    errEl.style.display = "block";
+    return;
+  }
+  if (time && endtime && endtime <= time) {
+    errEl.textContent = "End time must be after start time.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (checkAllFields()) {
+    errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed.";
+    errEl.style.display = "block";
+    return;
+  }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !selectedRoom) {
+    errEl.textContent = "Please select which virtual room is best for this event.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (selectedRoom && date) {
+    const conflict = checkConflict(selectedRoom, date, time, editingId);
+    if (conflict) {
+      errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`;
+      errEl.style.display = "block";
+      return;
+    }
+  }
+  errEl.style.display = "none";
+
+  const catIds = Array.from(selectedCats);
+  const eventData = {
+    title, categories: catIds, date, time, endtime,
+    format: selectedFormat,
+    location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
+    description: desc, host, cooplink,
+    room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
+  };
+
+  if (editingId) {
+    const idx = events.findIndex(e => e.id === editingId);
+    if (idx > -1) {
+      events[idx] = { ...events[idx], ...eventData };
+      await apiUpdate(events[idx]);
+    }
+    closeModal();
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    renderEvents();
+    showToast("✓ Event updated!");
+  } else {
+    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const newEv = { id: newId, ...eventData, passcode, going: 0 };
+
+    // Show results instantly - no waiting for API
+    events.unshift(newEv);
+    clearDraft();
+    closeModal();
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    renderEvents();
+    showSummary(newEv);
+
+    // Save to server in background
+    apiAdd(newEv).catch(() => {});
+  }
+}
+
+// ── Helpers ───────────────────────────────────
+function fmtDate(date, time, endtime) {
+  if (!date) return "Date TBD";
+  const d = new Date(date + "T" + (time||"00:00"));
+  const ds = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+  if (!time) return ds;
+  const ts = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  if (!endtime) return ds + " · " + ts;
+  const de = new Date(date + "T" + endtime);
+  const te = de.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  return ds + " · " + ts + " - " + te;
+}
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function trunc(s, n) { return s.length > n ? s.slice(0,n) + "…" : s; }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+async function deleteEvent() {
+  if (!editingId) return;
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
+  events = events.filter(e => e.id !== editingId);
+  await apiDelete(editingId);
+  closeModal();
+  renderEvents();
+  showToast("Event deleted.");
+}
+
+
+// ── Tab toggle ────────────────────────────────
+function setTab(tab) {
+  activeTab = tab;
+  document.getElementById("tab-upcoming").classList.toggle("active", tab === "upcoming");
+  document.getElementById("tab-past").classList.toggle("active", tab === "past");
+  document.getElementById("page-title").textContent = tab === "past" ? "Past events" : "What's happening";
+  renderEvents();
+}
+
+// ── Clone event ───────────────────────────────
+function cloneEvent() {
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  closeModal();
+  setTimeout(() => {
+    openModal();
+    document.getElementById("f-title").value = ev.title + " (copy)";
+    document.getElementById("f-location").value = ev.location || "";
+    document.getElementById("f-desc").value = ev.description || "";
+    document.getElementById("f-host").value = ev.host || "";
+    selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+    selectedRoom = ev.room || null;
+    selectedFormat = ev.format || null;
+    ["virtual","inperson","both"].forEach(f => {
+      document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
+    });
+    const showLoc = selectedFormat === "inperson" || selectedFormat === "both";
+    document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+    buildFormChips();
+    updateRoomPreview();
+    showToast("Event cloned - set a new date and private PIN!");
+  }, 100);
+}
+
+// ── Bad words filter ──────────────────────────
+const BAD_WORDS = ["fuck","shit","bitch","asshole","cunt","dick","cock","pussy","bastard","ass","crap","piss","prick","slut","whore","nigger","faggot","retard"];
+
+function containsBadWords(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some(w => {
+    const re = new RegExp("\\b" + w + "\\b");
+    return re.test(lower);
+  });
+}
+
+function checkAllFields() {
+  return ["f-title","f-desc","f-host","f-location"].some(id => {
+    const el = document.getElementById(id);
+    return el && containsBadWords(el.value);
+  });
+}
+
+const ROOM_BUFFER_MINS = 90;
+
+function getEventMs(ev) {
+  if (!ev.date) return null;
+  return new Date(ev.date + "T" + (ev.time || "09:00")).getTime();
+}
+
+function checkConflict(room, date, time, excludeId) {
+  if (!room || !date || !time) return null;
+  const newMs = new Date(date + "T" + time).getTime();
+  if (isNaN(newMs)) return null;
+  const buffer = ROOM_BUFFER_MINS * 60 * 1000;
+  return events.find(ev => {
+    if (ev.id === excludeId) return false;
+    if (ev.room !== room) return false;
+    if (!ev.date || !ev.time) return false;
+    // Must be same date
+    if (ev.date !== date) return false;
+    const evMs = new Date(ev.date + "T" + ev.time).getTime();
+    if (isNaN(evMs)) return false;
+    return Math.abs(newMs - evMs) < buffer;
+  }) || null;
+}
+
+// Watch for room/date/time changes to show live conflict warning
+function checkAndWarnConflict() {
+  const warningEl = document.getElementById("conflict-warning");
+  const submitBtn = document.getElementById("submit-btn");
+  if (!warningEl) return;
+  if (!selectedRoom || !document.getElementById("f-date").value || !document.getElementById("f-time").value) {
+    warningEl.style.display = "none";
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
+    return;
+  }
+  const date = document.getElementById("f-date").value;
+  const time = document.getElementById("f-time").value;
+  const conflict = checkConflict(selectedRoom, date, time, editingId);
+  if (conflict) {
+    warningEl.textContent = `⚠️ "${selectedRoom}" may already be booked around this time for "${conflict.title}". You can still post, but consider a different time or room.`;
+    warningEl.style.display = "block";
+    // Warning only - don't block submission
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
+  } else {
+    warningEl.style.display = "none";
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "";
+  }
+}
+
+// ── Room schedule modal ───────────────────────
+const ROOMS = [
+  { name:"Conference room",      url:"https://gather.daybalancer.com/events/335887/502618" },
+  { name:"Co-create room",       url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Wellness room",        url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",  url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"The Commons",          url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",          url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding", hidden: true },
+];
+
+function openRoomSchedule() {
+  const body = document.getElementById("room-schedule-body");
+  const now = Date.now();
+  body.innerHTML = "";
+
+  ROOMS.forEach(({ name, url }) => {
+    const upcoming = events
+      .filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000)
+      .sort((a,b) => getEventMs(a) - getEventMs(b))
+      .slice(0, 5);
+
+    const section = document.createElement("div");
+    section.className = "room-section";
+
+    // Header with visit button
+    const header = document.createElement("div");
+    header.className = "room-section-title";
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
+    header.innerHTML = `
+      <span>🏠 ${name}</span>
+      <a href="${url}" target="_blank" rel="noopener"
+        style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:4px 10px;border-radius:6px;white-space:nowrap;">
+        Visit room →
+      </a>`;
+    section.appendChild(header);
+
+    if (upcoming.length === 0) {
+      section.innerHTML += `<div class="room-empty">Nothing scheduled yet - wide open!</div>`;
+    } else {
+      upcoming.forEach(ev => {
+        const row = document.createElement("div");
+        row.className = "room-event-row";
+        row.innerHTML = `
+          <div class="room-event-name">${esc(ev.title)}</div>
+          <div class="room-event-time">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>`;
+        section.appendChild(row);
+      });
+    }
+    body.appendChild(section);
+  });
+
+  document.getElementById("room-modal").classList.add("open");
+}
+
+function closeRoomModal() {
+  document.getElementById("room-modal").classList.remove("open");
+}
+
+loadEvents().then(() => { renderPills(); });
+</script>
 </body>
 </html>
