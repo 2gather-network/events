@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 3.4
+  Version 3.8
 -->
 <html lang="en">
 <head>
@@ -246,9 +246,11 @@
     <div id="location-field" style="display:none;" class="field">
       <label class="field-label">Full address</label>
       <div style="display:flex;gap:8px;align-items:center;">
-        <input class="input" id="f-location" placeholder="City, State, Country" style="flex:1;">
+        <input class="input" id="f-location" placeholder="City, State, Country" style="flex:1;" oninput="document.getElementById('f-lat').value='';document.getElementById('f-lng').value='';">
         <button type="button" id="form-geo-btn" onclick="useMyLocationForForm()" style="white-space:nowrap;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
       </div>
+      <input type="hidden" id="f-lat">
+      <input type="hidden" id="f-lng">
     </div>
 
     <div class="field">
@@ -389,6 +391,8 @@ function evToSheet(ev) {
     endTime:     ev.endtime || "",
     format:      ev.format || "",
     location:    ev.location || "",
+    lat:         ev.lat || "",
+    lng:         ev.lng || "",
     room:        ev.room || "",
     description: ev.description || "",
     host:        ev.host || "",
@@ -432,6 +436,8 @@ function sheetToEv(row) {
     endtime:     parseSheetTime(row.endTime),
     format:      row.format || "",
     location:    row.location || "",
+    lat:         row.lat || "",
+    lng:         row.lng || "",
     room:        row.room || "",
     description: row.description || "",
     host:        row.host || "",
@@ -820,7 +826,7 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-location","f-desc","f-host","f-hostlink","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1015,7 +1021,7 @@ safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") clo
 safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 // Auto-save draft on every input change
-["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => {
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => {
   safeOn(id, "input", saveDraft);
   safeOn(id, "change", saveDraft);
 });
@@ -1083,6 +1089,8 @@ async function submitEvent() {
   const time     = document.getElementById("f-time").value;
   const endtime  = document.getElementById("f-endtime").value;
   const location = document.getElementById("f-location").value.trim();
+  const lat      = document.getElementById("f-lat")?.value || "";
+  const lng      = document.getElementById("f-lng")?.value || "";
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
   const hostlink = document.getElementById("f-hostlink").value.trim();
@@ -1130,11 +1138,40 @@ async function submitEvent() {
   }
   errEl.style.display = "none";
 
+  // ── Abuse prevention ──────────────────────────
+  // 1) Rate limit: max 4 new posts per device per 24h (edits don't count)
+  if (!editingId) {
+    const RL_KEY = "db-post-log";
+    const now24  = Date.now();
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
+    log = log.filter(t => now24 - t < 24 * 60 * 60 * 1000); // keep last 24h
+    if (log.length >= 4) {
+      errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow.";
+      errEl.style.display = "block";
+      return;
+    }
+  }
+  // 2) Duplicate title+date warning (same title, same day, not an edit)
+  if (!editingId) {
+    const dupExists = events.some(e =>
+      e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date
+    );
+    if (dupExists) {
+      errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`;
+      errEl.style.display = "block";
+      return;
+    }
+  }
+  // ─────────────────────────────────────────────
+
   const catIds = Array.from(selectedCats);
   const eventData = {
     title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
+    lat:      (selectedFormat === "inperson" || selectedFormat === "both") ? lat : "",
+    lng:      (selectedFormat === "inperson" || selectedFormat === "both") ? lng : "",
     description: desc, host, hostlink, cooplink,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
@@ -1146,18 +1183,36 @@ async function submitEvent() {
       await apiUpdate(events[idx]);
     }
     closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
     showToast("✓ Event updated!");
   } else {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
     const newEv = { id: newId, ...eventData, passcode, going: 0 };
 
+    // Log this post for rate limiting
+    const RL_KEY = "db-post-log";
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
+    log.push(Date.now());
+    localStorage.setItem(RL_KEY, JSON.stringify(log));
+
+    // Cooldown: disable submit button for 10s to prevent rapid fire
+    const submitBtn = document.getElementById("submit-btn");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Posted ✓";
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Post event";
+      }, 10000);
+    }
+
     // Show results instantly - no waiting for API
     events.unshift(newEv);
     clearDraft();
     closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
     showSummary(newEv);
 
@@ -1237,9 +1292,14 @@ function useMyLocationForForm() {
   const btn = document.getElementById("form-geo-btn");
   btn.textContent = "📍 Detecting...";
   btn.disabled = true;
+  if (!navigator.geolocation) {
+    btn.textContent = "📍 Not supported";
+    btn.disabled = false;
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     pos => {
-      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
         .then(r => r.json())
         .then(data => {
           const addr  = data.address || {};
@@ -1248,17 +1308,30 @@ function useMyLocationForForm() {
             addr.state || "",
             addr.country || ""
           ].filter(Boolean);
-          document.getElementById("f-location").value = parts.join(", ");
-          btn.textContent = "📍 Location set";
+          const location = parts.join(", ");
+          document.getElementById("f-location").value = location;
+          document.getElementById("f-lat").value = pos.coords.latitude;
+          document.getElementById("f-lng").value = pos.coords.longitude;
+          btn.textContent = `📍 ${parts[0] || "Location set"}`;
           btn.disabled = false;
         })
-        .catch(() => { btn.textContent = "📍 Use my location"; btn.disabled = false; });
+        .catch(() => {
+          btn.textContent = "📍 Try again";
+          btn.disabled = false;
+          alert("Location detected but couldn't look up your city. Please type it manually.");
+        });
     },
-    () => {
-      btn.textContent = "📍 Use my location";
+    err => {
       btn.disabled = false;
-      alert("Could not detect your location. Please enter manually.");
-    }
+      if (err.code === 1) {
+        btn.textContent = "📍 Permission denied";
+        alert("Location access was blocked. Please allow location in your browser settings, or type your address.");
+      } else {
+        btn.textContent = "📍 Use my location";
+        alert("Could not detect your location. Please type it manually.");
+      }
+    },
+    { timeout: 10000 }
   );
 }
 
@@ -1308,14 +1381,20 @@ function useMyLocation() {
   const btn = document.getElementById("geo-btn");
   btn.textContent = "📍 Detecting...";
   btn.disabled = true;
+  if (!navigator.geolocation) {
+    btn.textContent = "📍 Not supported";
+    btn.disabled = false;
+    return;
+  }
   navigator.geolocation.getCurrentPosition(
     pos => {
-      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`)
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
         .then(r => r.json())
         .then(data => {
           const addr    = data.address || {};
-          const country = addr.country || "";
+          const city    = addr.city || addr.town || addr.village || "";
           const state   = addr.state || "";
+          const country = addr.country || "";
           // Set region
           const regionEl = document.getElementById("filter-region");
           if (["United States","Canada","Mexico"].some(c => country.includes(c) || c.includes(country))) {
@@ -1337,7 +1416,6 @@ function useMyLocation() {
           if (country.includes("United States") || country.includes("USA")) {
             countEl.value = "United States";
             onCountryChange();
-            // Set state
             if (state) {
               const stateEl = document.getElementById("filter-state");
               const match = US_STATES.find(s => s.toLowerCase() === state.toLowerCase());
@@ -1349,16 +1427,28 @@ function useMyLocation() {
             countEl.value = "Mexico";
           }
           renderEvents();
-          btn.textContent = "📍 Location set";
+          // Show city feedback
+          const label = [city, state].filter(Boolean).join(", ") || country || "Location set";
+          btn.textContent = `📍 ${label}`;
           btn.disabled = false;
         })
-        .catch(() => { btn.textContent = "📍 Use my location"; btn.disabled = false; });
+        .catch(() => {
+          btn.textContent = "📍 Try again";
+          btn.disabled = false;
+          alert("Location detected but couldn't look up your city. Please select manually.");
+        });
     },
-    () => {
-      btn.textContent = "📍 Use my location";
+    err => {
       btn.disabled = false;
-      alert("Could not detect your location. Please select manually.");
-    }
+      if (err.code === 1) {
+        btn.textContent = "📍 Permission denied";
+        alert("Location access was blocked. Please allow location in your browser settings, or select manually.");
+      } else {
+        btn.textContent = "📍 Use my location";
+        alert("Could not detect your location. Please select manually.");
+      }
+    },
+    { timeout: 10000 }
   );
 }
 
