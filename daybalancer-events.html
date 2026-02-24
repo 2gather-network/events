@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 3.0
+  Version 3.2
 -->
 <html lang="en">
 <head>
@@ -240,6 +240,10 @@
     <div class="field">
       <label class="field-label">Who's hosting? *</label>
       <input class="input" id="f-host" placeholder="Full name">
+      <div style="margin-top:8px;">
+        <label class="field-label">Host page link <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input class="input" id="f-hostlink" type="url" placeholder="https://linkedin.com/in/...">
+      </div>
     </div>
 
     <div class="field">
@@ -350,6 +354,7 @@ function evToSheet(ev) {
     room:        ev.room || "",
     description: ev.description || "",
     host:        ev.host || "",
+    hostlink:    ev.hostlink || "",
     passcode:    ev.passcode || "",
     cooplink:    ev.cooplink || "",
     going:       ev.going || 0,
@@ -392,6 +397,7 @@ function sheetToEv(row) {
     room:        row.room || "",
     description: row.description || "",
     host:        row.host || "",
+    hostlink:    row.hostlink || "",
     passcode:    row.passcode || "",
     cooplink:    row.cooplink || "",
     going:       parseInt(row.going) || 0,
@@ -633,7 +639,7 @@ function renderEvents() {
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${esc(ev.host)}</div>
+          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
           ${ev.cooplink ? "<div class=\"event-meta-item\"><span>🔗</span><a href=\"" + esc(ev.cooplink) + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--blue);text-decoration:none;\">Cooperative link</a></div>" : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -694,6 +700,7 @@ function saveDraft() {
     location: document.getElementById("f-location")?.value || "",
     desc:     document.getElementById("f-desc")?.value || "",
     host:     document.getElementById("f-host")?.value || "",
+    hostlink: document.getElementById("f-hostlink")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "",
     passcode: document.getElementById("f-passcode")?.value || "",
     cats:     [...selectedCats],
@@ -717,6 +724,7 @@ function restoreDraft() {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-hostlink").value  = d.hostlink || "";
     document.getElementById("f-cooplink").value  = d.cooplink || "";
     document.getElementById("f-passcode").value  = d.passcode || "";
     if (d.cats?.length) {
@@ -759,7 +767,7 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-location","f-desc","f-host","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-desc","f-host","f-hostlink","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -832,6 +840,7 @@ function loadEditForm(id) {
   document.getElementById("f-location").value = ev.location || "";
   document.getElementById("f-desc").value = ev.description || "";
   document.getElementById("f-host").value = ev.host || "";
+  document.getElementById("f-hostlink").value = ev.hostlink || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
@@ -953,7 +962,7 @@ safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") clo
 safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 // Auto-save draft on every input change
-["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => {
+["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => {
   safeOn(id, "input", saveDraft);
   safeOn(id, "change", saveDraft);
 });
@@ -1023,6 +1032,7 @@ async function submitEvent() {
   const location = document.getElementById("f-location").value.trim();
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
+  const hostlink = document.getElementById("f-hostlink").value.trim();
   const cooplink = document.getElementById("f-cooplink").value.trim();
   const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
@@ -1072,7 +1082,7 @@ async function submitEvent() {
     title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    description: desc, host, cooplink,
+    description: desc, host, hostlink, cooplink,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
 
@@ -1083,7 +1093,7 @@ async function submitEvent() {
       await apiUpdate(events[idx]);
     }
     closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
     showToast("✓ Event updated!");
   } else {
@@ -1094,7 +1104,7 @@ async function submitEvent() {
     events.unshift(newEv);
     clearDraft();
     closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-hostlink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
     showSummary(newEv);
 
@@ -1211,6 +1221,8 @@ const RECURRING_EVENTS = [
     format:     "virtual",
     room:       "DayBalancer Onboarding",
     host:       "DayBalancer",
+    hostlink:   "",
+    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
     categories: ["learning"],
     description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
     adminOnly:  true,
@@ -1223,6 +1235,8 @@ const RECURRING_EVENTS = [
     format:     "virtual",
     room:       "Ikigai room",
     host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
     categories: ["learning"],
     description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
     adminOnly:  true,
@@ -1235,6 +1249,7 @@ const RECURRING_EVENTS = [
     format:     "virtual",
     room:       "Wellness room",
     host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories: ["care","faith","resources","movement","learning"],
     description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
     adminOnly:  false,
@@ -1247,6 +1262,7 @@ const RECURRING_EVENTS = [
     format:     "virtual",
     room:       "Co-create room",
     host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories: ["learning","professional","creative"],
     description:"Come with your small or big idea and receive supportive feedback.",
     adminOnly:  false,
@@ -1259,6 +1275,7 @@ const RECURRING_EVENTS = [
     format:     "virtual",
     room:       "The Commons",
     host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories: ["learning","professional","social","resources","care"],
     description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
     adminOnly:  false,
