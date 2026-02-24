@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 1.2
+  Version 1.3
 -->
 <html lang="en">
 <head>
@@ -17,7 +17,7 @@
     --green: #4CAF7D; --light: #F5F7FA; --border: #DCE3EA;
     --dark: #2C3A47; --muted: #6B7C8D; --white: #FFFFFF;
   }
-  body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); min-height:100vh; }
+  body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); }
 
   .header { background:var(--primary); padding:14px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .logo { font-size:22px; font-weight:800; color:white; letter-spacing:-0.3px; }
@@ -626,7 +626,7 @@ function renderEvents() {
       </div>
       <div class="event-card-body">
         <div class="event-meta">
-          <div class="event-meta-item"><span>📅</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
+          <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
@@ -977,7 +977,7 @@ function showSummary(ev) {
     ``,
     `─────────────────────────`,
     `Edit passcode:  ${ev.passcode}`,
-    `To edit: open the bulletin board, click ✏️ on your event, and enter your private PIN.`,
+    `To edit, open the event board, click ✏️ on your event, and enter your private PIN.`,
   ].filter(l => l !== "").join("\n");
 
   document.getElementById("summary-body").textContent = lines;
@@ -1103,16 +1103,23 @@ async function submitEvent() {
 }
 
 // ── Helpers ───────────────────────────────────
+function getTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+      .split("/").pop().replace(/_/g, " ");
+  } catch { return ""; }
+}
 function fmtDate(date, time, endtime) {
   if (!date) return "Date TBD";
-  const d = new Date(date + "T" + (time||"00:00"));
+  const d  = new Date(date + "T" + (time||"00:00"));
   const ds = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
   if (!time) return ds;
+  const tz = d.toLocaleTimeString("en-US", { timeZoneName:"short" }).split(" ").pop();
   const ts = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
-  if (!endtime) return ds + " · " + ts;
+  if (!endtime) return ds + " · " + ts + " " + tz;
   const de = new Date(date + "T" + endtime);
   const te = de.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
-  return ds + " · " + ts + " - " + te;
+  return ds + " · " + ts + " - " + te + " " + tz;
 }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s, n) { return s.length > n ? s.slice(0,n) + "…" : s; }
