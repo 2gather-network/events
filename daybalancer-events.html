@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 1.9
+  Version 2.1
 -->
 <html lang="en">
 <head>
@@ -1274,11 +1274,20 @@ const RECURRING_EVENTS = [
 
 function getNextOccurrences(template, count) {
   const results = [];
-  const d = new Date();
+  const now = new Date();
+  const d   = new Date();
   d.setHours(0,0,0,0);
   const today = d.getDay();
   let daysUntil = (template.dayOfWeek - today + 7) % 7;
-  if (daysUntil === 0) daysUntil = 0; // include today if it's that day
+
+  // If today is the day but the event end time has already passed, move to next week
+  if (daysUntil === 0) {
+    const [endH, endM] = (template.endtime || template.time).split(":").map(Number);
+    const endToday = new Date();
+    endToday.setHours(endH, endM, 0, 0);
+    if (now > endToday) daysUntil = 7;
+  }
+
   d.setDate(d.getDate() + daysUntil);
   for (let i = 0; i < count; i++) {
     const dateStr = d.toISOString().split("T")[0];
@@ -1424,7 +1433,7 @@ function openRoomSchedule() {
         const row = document.createElement("div");
         row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
         row.innerHTML = `
-          <span style="font-size:13px;font-weight:700;color:var(--dark);">${esc(ev.title)}</span>
+          <span style="font-size:13px;color:var(--muted);">${esc(ev.title)}</span>
           <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
         section.appendChild(row);
       });
