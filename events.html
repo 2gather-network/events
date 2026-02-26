@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 4.7
+  Version 4.8
 -->
 <html lang="en">
 <head>
@@ -42,6 +42,8 @@
   .field { margin-bottom:18px; }
 
   .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; }
+  .embed-mode .page-body { padding-top:8px; }
+  .embed-mode .header { display:none; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
   .page-title { font-size:28px; font-weight:800; }
   .page-sub { color:var(--muted); font-size:15px; margin-top:4px; }
@@ -276,8 +278,24 @@
     </div>
 
     <div class="room-preview" id="room-preview">
-      <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
-      <div class="form-cat-chips" id="room-options"></div>
+      <!-- Step 1: choose hosting option -->
+      <div id="hosting-choice" style="display:none;margin-bottom:12px;">
+        <div class="room-preview-label" style="margin-bottom:8px;">Where are you hosting this virtually?</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="format-chip" id="hopt-db" onclick="setHostingOption('db')">🏠 DayBalancer room</button>
+          <button type="button" class="format-chip" id="hopt-own" onclick="setHostingOption('own')">🔗 My own link</button>
+        </div>
+      </div>
+      <!-- Step 2a: DayBalancer room picker -->
+      <div id="db-room-section" style="display:none;">
+        <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
+        <div class="form-cat-chips" id="room-options"></div>
+      </div>
+      <!-- Step 2b: own link -->
+      <div id="own-link-section" style="display:none;" class="field">
+        <label class="field-label">Your meeting link</label>
+        <input class="input" id="f-meetinglink" placeholder="https://zoom.us/j/... or Google Meet link">
+      </div>
     </div>
 
     <div id="location-field" style="display:none;" class="field">
@@ -628,14 +646,21 @@ function setFormat(fmt) {
   updateRoomPreview();
 }
 
-function updateRoomPreview() {
-  const preview = document.getElementById("room-preview");
+let hostingOption = null; // "db" | "own"
+
+function setHostingOption(opt) {
+  hostingOption = opt;
+  document.getElementById("hopt-db").classList.toggle("selected", opt === "db");
+  document.getElementById("hopt-own").classList.toggle("selected", opt === "own");
+  document.getElementById("db-room-section").style.display  = opt === "db"  ? "block" : "none";
+  document.getElementById("own-link-section").style.display = opt === "own" ? "block" : "none";
+  if (opt === "db") renderRoomChips();
+  if (opt === "own") { selectedRoom = null; }
+}
+
+function renderRoomChips() {
   const label = document.getElementById("room-preview-label");
   const roomOptions = document.getElementById("room-options");
-  if (!preview || !label || !roomOptions) return;
-
-  const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
-  if (!showRooms) { preview.style.display = "none"; selectedRoom = null; return; }
 
   const rooms = [...new Set(
     Array.from(selectedCats)
@@ -649,20 +674,15 @@ function updateRoomPreview() {
     return !roomObj?.hidden;
   });
 
-  if (rooms.length === 0) { preview.style.display = "none"; selectedRoom = null; return; }
-
+  if (rooms.length === 0) { document.getElementById("db-room-section").style.display = "none"; return; }
   if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
   if (rooms.length === 1) selectedRoom = rooms[0];
 
-  // Update label based on choice count
   label.textContent = rooms.length === 1 ? "DayBalancer virtual room for this event:" : "Which DayBalancer virtual room is best for this event?";
-
-  preview.style.display = "block";
   roomOptions.innerHTML = "";
   rooms.forEach(room => {
     const chip = document.createElement("button");
     chip.type = "button";
-    // Single room: show as a plain badge, not clickable
     if (rooms.length === 1) {
       chip.className = "room-chip selected";
       chip.style.cursor = "default";
@@ -679,6 +699,23 @@ function updateRoomPreview() {
     }
     roomOptions.appendChild(chip);
   });
+}
+
+function updateRoomPreview() {
+  const preview = document.getElementById("room-preview");
+  const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
+  if (!showRooms) {
+    preview.style.display = "none";
+    document.getElementById("hosting-choice").style.display = "none";
+    document.getElementById("db-room-section").style.display = "none";
+    document.getElementById("own-link-section").style.display = "none";
+    selectedRoom = null; hostingOption = null;
+    return;
+  }
+  preview.style.display = "block";
+  document.getElementById("hosting-choice").style.display = "block";
+  // Re-render room chips if DB option already chosen
+  if (hostingOption === "db") renderRoomChips();
 }
 
 // ── Filter pills ──────────────────────────────
@@ -791,7 +828,7 @@ function renderEvents() {
       <div class="event-card-body">
         <div class="event-meta">
           <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
-          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
+          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : "Virtual"}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
           <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
@@ -907,7 +944,13 @@ function openModal() {
   selectedCats = new Set();
   selectedRoom = null;
   selectedFormat = null;
+  hostingOption = null;
   ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.remove("selected"));
+  document.getElementById("hopt-db").classList.remove("selected");
+  document.getElementById("hopt-own").classList.remove("selected");
+  document.getElementById("hosting-choice").style.display = "none";
+  document.getElementById("db-room-section").style.display = "none";
+  document.getElementById("own-link-section").style.display = "none";
   document.getElementById("location-field").style.display = "none";
   document.getElementById("post-modal").classList.add("open");
   document.getElementById("post-error").style.display = "none";
@@ -1286,7 +1329,12 @@ async function submitEvent() {
     errEl.style.display = "block";
     return;
   }
-  if ((selectedFormat === "virtual" || selectedFormat === "both") && !selectedRoom) {
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) {
+    errEl.textContent = "Please choose where you're hosting this - a DayBalancer room or your own link.";
+    errEl.style.display = "block";
+    return;
+  }
+  if (hostingOption === "db" && !selectedRoom) {
     errEl.textContent = "Please select which virtual room is best for this event.";
     errEl.style.display = "block";
     return;
@@ -1336,7 +1384,8 @@ async function submitEvent() {
     lat:      (selectedFormat === "inperson" || selectedFormat === "both") ? lat : "",
     lng:      (selectedFormat === "inperson" || selectedFormat === "both") ? lng : "",
     description: desc, host, hostlink, contactEmail, contactPhone, cooplink,
-    room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
+    room: (hostingOption === "db" && (selectedFormat === "virtual" || selectedFormat === "both")) ? selectedRoom : null,
+    meetinglink: (hostingOption === "own") ? (document.getElementById("f-meetinglink")?.value.trim() || "") : "",
   };
 
   if (editingId) {
@@ -1949,6 +1998,10 @@ function closeRoomModal() {
   document.getElementById("room-modal").classList.remove("open");
 }
 
+// Embed mode - strip header and top padding when ?embed=1
+if (new URLSearchParams(window.location.search).get("embed") === "1") {
+  document.body.classList.add("embed-mode");
+}
 renderPills();
 loadEvents();
 </script>
