@@ -1,5 +1,9 @@
-
 <!DOCTYPE html>
+<!--
+  Community Events · DayBalancer LLC
+  https://daybalancer.com
+  Version 4.6
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -13,7 +17,7 @@
     --green: #4CAF7D; --light: #F5F7FA; --border: #DCE3EA;
     --dark: #2C3A47; --muted: #6B7C8D; --white: #FFFFFF;
   }
-  body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); min-height:100vh; }
+  body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); }
 
   .header { background:var(--primary); padding:14px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .logo { font-size:22px; font-weight:800; color:white; letter-spacing:-0.3px; }
@@ -83,6 +87,40 @@
   .modal-actions { display:flex; gap:10px; margin-top:8px; }
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
+  /* ── Bottom sheet on mobile ───────────────── */
+  @media(max-width:768px) {
+    .modal-overlay {
+      align-items:flex-end;
+      justify-content:stretch;
+      padding:0;
+    }
+    .modal {
+      border-radius:20px 20px 0 0;
+      max-width:100%;
+      width:100%;
+      max-height:92vh;
+      padding:8px 20px 32px;
+      margin:0;
+      box-shadow:0 -4px 24px rgba(0,0,0,.15);
+      transform:translateY(100%);
+      transition:transform .3s cubic-bezier(.32,.72,0,1);
+    }
+    .modal-overlay.open .modal {
+      transform:translateY(0);
+    }
+    /* Drag handle */
+    .modal::before {
+      content:"";
+      display:block;
+      width:40px;
+      height:4px;
+      background:var(--border);
+      border-radius:2px;
+      margin:8px auto 20px;
+    }
+    .modal-title { font-size:20px; }
+  }
+
   .room-preview { display:none; margin-bottom:18px; padding:14px 16px; background:var(--white); border-radius:8px; border:1.5px solid var(--border); }
   .loading-bar { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--primary), var(--green)); z-index:9999; animation: loadpulse 1s ease-in-out infinite; }
   @keyframes loadpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -92,6 +130,7 @@
   .format-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; }
   .format-chip:hover { border-color:var(--primary); color:var(--primary); }
   .format-chip.selected { background:#154F74; border-color:#154F74; color:white; }
+  .format-chip.active   { background:#154F74; border-color:#154F74; color:white; }
 
   .room-schedule-modal { max-width:640px; }
   .room-section { margin-bottom:24px; }
@@ -118,7 +157,6 @@
     .filter-row { flex-direction:column; gap:8px; }
     .filter-search { width:100%; min-width:unset; box-sizing:border-box; }
     .cat-pills { gap:6px; margin-bottom:16px; }
-    .modal { padding:20px 16px; margin:12px; border-radius:12px; }
     .two-col { grid-template-columns:1fr; gap:0; }
     .event-card-footer { flex-direction:column; align-items:flex-start; gap:8px; }
     .room-schedule-modal { max-width:100%; }
@@ -148,7 +186,7 @@
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div>
-    <div class="logo">Day<span>Balancer</span></div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;">Day<span>Balancer</span></div>
     <div class="tagline">Community events - beta test</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
@@ -168,6 +206,43 @@
       <button class="format-chip" id="tab-past" onclick="setTab('past')">Past events</button>
     </div>
   </div>
+
+  <!-- Virtual / In-person toggle -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;gap:8px;">
+      <button class="format-chip active" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
+      <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
+    </div>
+    <button class="format-chip" id="mode-all" onclick="setMode('all')" style="margin-left:auto;">🌐 All events</button>
+  </div>
+
+  <!-- In-person location filter -->
+  <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+      <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Filter by location</span>
+      <button onclick="useMyLocation()" id="geo-btn" style="font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="filter-region" class="input" style="width:auto;padding:7px 12px;font-size:13px;" onchange="onRegionChange()">
+        <option value="">All regions</option>
+        <option>North America</option>
+        <option>South America</option>
+        <option>Europe</option>
+        <option>Asia</option>
+        <option>Africa</option>
+        <option>Oceania</option>
+        <option>Antarctica</option>
+      </select>
+      <select id="filter-country" class="input" style="width:auto;padding:7px 12px;font-size:13px;display:none;" onchange="onCountryChange()">
+        <option value="">All countries</option>
+      </select>
+      <select id="filter-state" class="input" style="width:auto;padding:7px 12px;font-size:13px;display:none;" onchange="renderEvents()">
+        <option value="">All states</option>
+      </select>
+      <button onclick="clearLocationFilter()" style="font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px;">✕ Clear</button>
+    </div>
+  </div>
+
   <div class="filter-row">
     <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
   </div>
@@ -194,7 +269,7 @@
     <div class="field">
       <label class="field-label">Virtual or in-person? *</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button type="button" class="format-chip" id="fmt-virtual" onclick="setFormat('virtual')">💻 Virtual</button>
+        <button type="button" class="format-chip selected" id="fmt-virtual" onclick="setFormat('virtual')">💻 Virtual</button>
         <button type="button" class="format-chip" id="fmt-inperson" onclick="setFormat('inperson')">📍 In-person</button>
         <button type="button" class="format-chip" id="fmt-both" onclick="setFormat('both')">✨ Both</button>
       </div>
@@ -207,7 +282,12 @@
 
     <div id="location-field" style="display:none;" class="field">
       <label class="field-label">Full address</label>
-      <input class="input" id="f-location" placeholder="Full address">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="input" id="f-location" placeholder="City, State, Country" style="flex:1;" oninput="document.getElementById('f-lat').value='';document.getElementById('f-lng').value='';">
+        <button type="button" id="form-geo-btn" onclick="useMyLocationForForm()" style="white-space:nowrap;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
+      </div>
+      <input type="hidden" id="f-lat">
+      <input type="hidden" id="f-lng">
     </div>
 
     <div class="field">
@@ -236,6 +316,20 @@
     <div class="field">
       <label class="field-label">Who's hosting? *</label>
       <input class="input" id="f-host" placeholder="Full name">
+      <div style="margin-top:8px;">
+        <label class="field-label">Host DayBalancer page link <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input class="input" id="f-hostlink" type="url" placeholder="https://app.daybalancer.com/...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;">
+          <label class="field-label">Contact email <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input class="input" id="f-contact-email" type="email" placeholder="hello@example.com">
+        </div>
+        <div style="flex:1;min-width:140px;">
+          <label class="field-label">Contact phone <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input class="input" id="f-contact-phone" type="tel" placeholder="e.g. 206-555-0100">
+        </div>
+      </div>
     </div>
 
     <div class="field">
@@ -281,8 +375,9 @@
       <p style="font-size:14px;color:var(--muted);">Save your private edit PIN - you'll need it to make changes later. Don't share it.</p>
     </div>
     <div id="summary-body" style="background:var(--light);border-radius:10px;padding:18px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:inherit;color:var(--dark);"></div>
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-green" style="flex:1;" onclick="copySummary()">📋 Copy all</button>
+      <button class="btn btn-outline" style="flex:1;" id="summary-cal-btn" onclick="addToCalendarFromSummary()">📅 Add to calendar</button>
       <button class="btn btn-outline" onclick="closeSummaryModal()">Done</button>
     </div>
     <p id="copy-confirm" style="text-align:center;font-size:13px;color:var(--green);font-weight:700;margin-top:10px;display:none;">Copied to clipboard!</p>
@@ -309,24 +404,25 @@
 
 <script>
 const CATEGORIES = [
-  { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-create room" },
-  { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room" },
-  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room", extraRooms:["Ikigai room"] },
-  { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:null },
-  { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room" },
-  { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-create room" },
-  { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room" },
-  { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons" },
-  { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room" },
-  { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons" },
-  { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room" },
-  { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons" },
-  { id:"wealth",       label:"Wealth/exchange",          emoji:"💰", room:"The Commons" },
+  { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-create room",     extraRooms:["Coworking room"] },
+  { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
+  { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
+  { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
+  { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-create room",     extraRooms:["Coworking room"] },
+  { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons",         extraRooms:["Coworking room"] },
+  { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons",         extraRooms:["Coworking room"] },
+  { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
+  { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons",         extraRooms:["Coworking room"] },
+  { id:"wealth",       label:"Wealth/abundance",         emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
 ];
 
 let events = [];
 let activeFilter = "all";
-let activeTab = "upcoming"; // "upcoming" | "past"
+let activeTab    = "upcoming"; // "upcoming" | "past"
+let activeMode   = "virtual";  // "virtual" | "inperson"
 let selectedCats = new Set(); // for the form
 
 // ── Google Sheets API via JSONP ───────────────
@@ -342,9 +438,14 @@ function evToSheet(ev) {
     endTime:     ev.endtime || "",
     format:      ev.format || "",
     location:    ev.location || "",
+    lat:         ev.lat || "",
+    lng:         ev.lng || "",
     room:        ev.room || "",
     description: ev.description || "",
     host:        ev.host || "",
+    hostlink:    ev.hostlink || "",
+    contactEmail: ev.contactEmail || "",
+    contactPhone: ev.contactPhone || "",
     passcode:    ev.passcode || "",
     cooplink:    ev.cooplink || "",
     going:       ev.going || 0,
@@ -384,9 +485,14 @@ function sheetToEv(row) {
     endtime:     parseSheetTime(row.endTime),
     format:      row.format || "",
     location:    row.location || "",
+    lat:         row.lat || "",
+    lng:         row.lng || "",
     room:        row.room || "",
     description: row.description || "",
-    host:        row.host || "",
+    host:         row.host || "",
+    hostlink:     row.hostlink || "",
+    contactEmail: row.contactEmail || "",
+    contactPhone: row.contactPhone || "",
     passcode:    row.passcode || "",
     cooplink:    row.cooplink || "",
     going:       parseInt(row.going) || 0,
@@ -401,7 +507,7 @@ function jsonp(params) {
       delete window[cbName];
       script.remove();
       reject(new Error("JSONP timeout"));
-    }, 10000);
+    }, 12000);
 
     window[cbName] = (data) => {
       clearTimeout(timeout);
@@ -425,14 +531,44 @@ function jsonp(params) {
   });
 }
 
+// Apply any saved recurring event overrides from localStorage
+(function applyRecurringOverrides() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}");
+    Object.entries(saved).forEach(([slug, overrides]) => {
+      const idx = RECURRING_EVENTS.findIndex(t =>
+        t.title.toLowerCase().replace(/\s+/g,"-") === slug
+      );
+      if (idx > -1) RECURRING_EVENTS[idx] = { ...RECURRING_EVENTS[idx], ...overrides };
+    });
+  } catch(e) {}
+})();
+
 async function loadEvents() {
   try {
     showLoading(true);
+    events = [];
+    renderEvents();
     const data = await jsonp({ t: Date.now() });
     events = (data.events || []).filter(r => r.id).map(sheetToEv);
   } catch(e) {
-    console.error("Failed to load events:", e);
-    events = [];
+    // Retry once after 4 seconds (handles Google Apps Script cold start)
+    console.warn("Events load failed, retrying...", e);
+    try {
+      await new Promise(r => setTimeout(r, 4000));
+      const data = await jsonp({ t: Date.now() });
+      events = (data.events || []).filter(r => r.id).map(sheetToEv);
+    } catch(e2) {
+      console.warn("Events retry also failed - showing recurring events only", e2);
+      // Show a soft warning rather than a console error
+      const grid = document.getElementById("events-grid");
+      if (grid && !events.length) {
+        const warn = document.createElement("div");
+        warn.style.cssText = "font-size:13px;color:var(--muted);text-align:center;padding:10px;";
+        warn.textContent = "Could not reach the server - showing scheduled events only.";
+        grid.prepend(warn);
+      }
+    }
   } finally {
     showLoading(false);
     renderEvents();
@@ -477,7 +613,7 @@ function toggleFormCat(id, chip) {
 }
 
 let selectedRoom = null;
-let selectedFormat = null;
+let selectedFormat = "virtual";
 let editingId = null; // null = new event, string = editing existing
 
 function setFormat(fmt) {
@@ -568,21 +704,51 @@ function setFilter(id) { activeFilter = id; renderPills(); renderEvents(); }
 // ── Render events ─────────────────────────────
 function renderEvents() {
   const grid = document.getElementById("event-grid");
-  const q = document.getElementById("search-input").value.toLowerCase();
-  const now = Date.now();
+  const q    = document.getElementById("search-input").value.toLowerCase();
+  const now  = Date.now();
 
-  let list = events.filter(e => {
-    const cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
-    const matchCat = activeFilter === "all" || cats.includes(activeFilter);
-    const matchQ = !q ||
+  // Public recurring events appear on the board; admin-only ones don't
+  const allEvents = activeTab === "upcoming"
+    ? [...events, ...getPublicRecurring(2)]
+    : events;
+
+  let list = allEvents.filter(e => {
+    let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
+    // Normalize: if a category value matches a label instead of an id, convert it
+    cats = cats.map(c => {
+      const byId    = CATEGORIES.find(cat => cat.id    === c);
+      if (byId) return c;
+      const byLabel = CATEGORIES.find(cat => cat.label.toLowerCase() === c.toLowerCase());
+      if (byLabel) return byLabel.id;
+      // Partial match - e.g. "wellness" matches "Mental health/wellness" or "Physical health/wellness"
+      const partial = CATEGORIES.find(cat => cat.label.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(cat.id.toLowerCase()));
+      return partial ? partial.id : c;
+    });
+    const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
+    const matchQ    = !q ||
       e.title.toLowerCase().includes(q) ||
       (e.description||"").toLowerCase().includes(q) ||
       (e.location||"").toLowerCase().includes(q) ||
       (e.host||"").toLowerCase().includes(q);
-    const evMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
-    const isPast = evMs < now;
-    const matchTab = activeTab === "past" ? isPast : !isPast;
-    return matchCat && matchQ && matchTab;
+    const evMs      = new Date(e.date + "T" + (e.time||"00:00")).getTime();
+    const isPast    = evMs < now;
+    const matchTab  = activeTab === "past" ? isPast : !isPast;
+    // Mode filter - "all" shows everything; missing format events always show
+    const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
+    const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
+    // If there's a search query, skip mode filter so search finds everything
+    const matchMode  = q ? true : activeMode === "all"
+      ? true
+      : activeMode === "virtual" ? isVirtual : isInPerson;
+    // Location filter (in-person only) - only filter if state is specifically selected
+    let matchLocation = true;
+    if (activeMode === "inperson") {
+      const state = document.getElementById("filter-state")?.value || "";
+      const loc   = (e.location || "").toLowerCase();
+      // Only filter if a specific state is chosen - country/region alone is too restrictive
+      if (state) matchLocation = loc.includes(state.toLowerCase());
+    }
+    return matchCat && matchQ && matchTab && matchMode && matchLocation;
   });
 
   list.sort((a, b) => {
@@ -599,33 +765,36 @@ function renderEvents() {
   }
 
   list.forEach(ev => {
-    const cats = Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean);
+    let cats = Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean);
+    cats = cats.map(c => {
+      const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
+      const byLabel = CATEGORIES.find(cat => cat.label.toLowerCase() === c.toLowerCase()); if (byLabel) return byLabel.id;
+      const partial = CATEGORIES.find(cat => cat.label.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(cat.id.toLowerCase())); return partial ? partial.id : c;
+    });
     const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
     const gone = localStorage.getItem("db-going-" + ev.id);
 
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const roomObj = ROOMS.find(r => r.name === ev.room);
-    const roomBadge = ev.room
-      ? roomObj
-        ? `<a href="${roomObj.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none;">🏠 ${esc(ev.room)}</a>`
-        : `<span class="room-badge">🏠 ${esc(ev.room)}</span>`
-      : "";
 
     const card = document.createElement("div");
     card.className = "event-card";
     card.dataset.eventId = ev.id;
+    const recurringBadge = ev.recurring
+      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
+      : "";
     card.innerHTML = `
       <div class="event-card-top">
-        <div class="event-title">${esc(ev.title)}</div>
+        <div class="event-title">${esc(ev.title)}${recurringBadge}</div>
         <div class="event-cats">${catTags}</div>
       </div>
       <div class="event-card-body">
         <div class="event-meta">
-          <div class="event-meta-item"><span>📅</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
+          <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>Virtual</div>` : ""}
-          ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? esc(ev.location) : "In-person"}</div>` : ""}
-          ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span>${esc(ev.location)}</div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${esc(ev.host)}</div>
+          ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
+          ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
+          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
           ${ev.cooplink ? "<div class=\"event-meta-item\"><span>🔗</span><a href=\"" + esc(ev.cooplink) + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--blue);text-decoration:none;\">Cooperative link</a></div>" : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -637,10 +806,8 @@ function renderEvents() {
             onclick="markGoing('${ev.id}')">
             ${gone ? "✓ Interested" : "🙋 Interested?"}
           </button>
-          ${roomBadge}
-          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
-          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 10px;">📅</button>
-          <button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>
+          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
+          ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
     grid.appendChild(card);
@@ -687,7 +854,10 @@ function saveDraft() {
     endtime:  document.getElementById("f-endtime")?.value || "",
     location: document.getElementById("f-location")?.value || "",
     desc:     document.getElementById("f-desc")?.value || "",
-    host:     document.getElementById("f-host")?.value || "",
+    host:         document.getElementById("f-host")?.value || "",
+    hostlink:     document.getElementById("f-hostlink")?.value || "",
+    contactEmail: document.getElementById("f-contact-email")?.value || "",
+    contactPhone: document.getElementById("f-contact-phone")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "",
     passcode: document.getElementById("f-passcode")?.value || "",
     cats:     [...selectedCats],
@@ -711,6 +881,9 @@ function restoreDraft() {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-hostlink").value  = d.hostlink || "";
+    document.getElementById("f-contact-email").value = d.contactEmail || "";
+    document.getElementById("f-contact-phone").value = d.contactPhone || "";
     document.getElementById("f-cooplink").value  = d.cooplink || "";
     document.getElementById("f-passcode").value  = d.passcode || "";
     if (d.cats?.length) {
@@ -753,7 +926,7 @@ function openModal() {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-location","f-desc","f-host","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -783,7 +956,7 @@ function closePasscodeModal() {
 const MASTER_PASSCODE = "6090";
 
 function verifyPasscode() {
-  const entered = document.getElementById("p-code").value.trim();
+  const entered  = document.getElementById("p-code").value.trim();
   const idToEdit = pendingEditId;
   // Master passcode bypasses everything
   if (entered === MASTER_PASSCODE) {
@@ -791,10 +964,20 @@ function verifyPasscode() {
     loadEditForm(idToEdit);
     return;
   }
-  const ev = events.find(e => e.id === idToEdit);
-  if (!ev) return;
+  const found = findEvById(idToEdit);
+  if (!found) return;
+  const ev = found.ev;
+  // Recurring events have no individual passcode - master only
+  if (found.isRecurring || !ev.passcode) {
+    document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("passcode-error").textContent = "Recurring events require the master passcode.";
+    document.getElementById("p-code").value = "";
+    document.getElementById("p-code").focus();
+    return;
+  }
   if (entered !== ev.passcode) {
     document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("passcode-error").textContent = "Incorrect passcode. Please try again.";
     document.getElementById("p-code").value = "";
     document.getElementById("p-code").focus();
     return;
@@ -804,9 +987,21 @@ function verifyPasscode() {
 }
 
 
+function findEvById(id) {
+  // Check sheet events first
+  const sheetEv = events.find(e => e.id === id);
+  if (sheetEv) return { ev: sheetEv, isRecurring: false };
+  // Check generated recurring events
+  const allRec = getAllRecurring(4);
+  const recEv = allRec.find(e => e.id === id);
+  if (recEv) return { ev: recEv, isRecurring: true };
+  return null;
+}
+
 function loadEditForm(id) {
-  const ev = events.find(e => e.id === id);
-  if (!ev) return;
+  const found = findEvById(id);
+  if (!found) return;
+  const ev = found.ev;
   editingId = id;
   selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
   selectedRoom = ev.room || null;
@@ -814,18 +1009,37 @@ function loadEditForm(id) {
 
   document.getElementById("post-modal").classList.add("open");
   document.getElementById("post-error").style.display = "none";
-  document.getElementById("modal-title").textContent = "Edit event";
-  document.getElementById("submit-btn").textContent = "Save changes";
+  document.getElementById("modal-title").textContent = found.isRecurring ? "Edit recurring event" : "Edit event";
+  document.getElementById("submit-btn").textContent  = "Save changes";
   document.getElementById("passcode-field").style.display = "none";
   document.getElementById("delete-btn").style.display = "block";
-  document.getElementById("clone-btn").style.display = "block";
+  document.getElementById("clone-btn").style.display  = "block";
+
+  // Show note for recurring events
+  let recurNote = document.getElementById("recur-edit-note");
+  if (found.isRecurring) {
+    if (!recurNote) {
+      recurNote = document.createElement("p");
+      recurNote.id = "recur-edit-note";
+      recurNote.style.cssText = "font-size:13px;color:var(--blue);background:#EEF6FF;border-radius:8px;padding:10px 12px;margin-bottom:12px;";
+      document.getElementById("post-error").after(recurNote);
+    }
+    recurNote.textContent = "🔁 You're editing a recurring event. Changes apply to all future occurrences.";
+    recurNote.style.display = "block";
+  } else if (recurNote) {
+    recurNote.style.display = "none";
+  }
+
   document.getElementById("f-title").value = ev.title || "";
-  document.getElementById("f-date").value = ev.date || "";
-  document.getElementById("f-time").value = ev.time || "";
+  document.getElementById("f-date").value  = ev.date || "";
+  document.getElementById("f-time").value  = ev.time || "";
   document.getElementById("f-endtime").value = ev.endtime || "";
   document.getElementById("f-location").value = ev.location || "";
-  document.getElementById("f-desc").value = ev.description || "";
-  document.getElementById("f-host").value = ev.host || "";
+  document.getElementById("f-desc").value  = ev.description || "";
+  document.getElementById("f-host").value  = ev.host || "";
+  document.getElementById("f-hostlink").value = ev.hostlink || "";
+  document.getElementById("f-contact-email").value = ev.contactEmail || "";
+  document.getElementById("f-contact-phone").value = ev.contactPhone || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   ["virtual","inperson","both"].forEach(f => {
     document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
@@ -837,24 +1051,48 @@ function loadEditForm(id) {
   updateRoomPreview();
 }
 function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
-// ── Swipe trap - prevent back-swipe closing modals ──
+// ── Bottom sheet: swipe down to dismiss on mobile ──
 (function() {
-  let touchStartX = 0;
-  let touchStartY = 0;
-  document.querySelectorAll(".modal").forEach(modal => {
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    const modal = overlay.querySelector(".modal");
+    if (!modal) return;
+    let startY = 0, startScrollTop = 0, dragging = false;
+
     modal.addEventListener("touchstart", e => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
+      startY = e.touches[0].clientY;
+      startScrollTop = modal.scrollTop;
+      dragging = false;
     }, { passive: true });
+
     modal.addEventListener("touchmove", e => {
-      const dx = Math.abs(e.touches[0].clientX - touchStartX);
-      const dy = Math.abs(e.touches[0].clientY - touchStartY);
-      // If horizontal swipe is dominant, block it
-      if (dx > dy && dx > 10) {
-        e.stopPropagation();
+      const dy = e.touches[0].clientY - startY;
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) return;
+      // Only allow swipe-down dismiss when at top of scroll
+      if (dy > 0 && startScrollTop === 0) {
+        dragging = true;
+        modal.style.transform = `translateY(${Math.max(0, dy * 0.6)}px)`;
+        modal.style.transition = "none";
         e.preventDefault();
       }
     }, { passive: false });
+
+    modal.addEventListener("touchend", e => {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile || !dragging) return;
+      const dy = e.changedTouches[0].clientY - startY;
+      modal.style.transition = "";
+      modal.style.transform = "";
+      dragging = false;
+      if (dy > 100) {
+        // Find which close function to call
+        const id = overlay.id;
+        if (id === "post-modal") closeModal();
+        else if (id === "room-modal") closeRoomModal();
+        else if (id === "summary-modal") closeSummary();
+        else if (id === "passcode-modal") closePasscodeModal();
+      }
+    }, { passive: true });
   });
 })();
 
@@ -897,6 +1135,8 @@ function addToCalendar(id) {
     roomObj ? "Room: " + roomObj.url : "",
     ev.cooplink ? "Cooperative link: " + ev.cooplink : "",
     "\nHosted by " + ev.host,
+    ev.contactEmail ? "Email: " + ev.contactEmail : "",
+    ev.contactPhone ? "Phone: " + ev.contactPhone : "",
   ].filter(Boolean).join("\n\n");
 
   const params = new URLSearchParams({
@@ -947,13 +1187,16 @@ safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") clo
 safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
 
 // Auto-save draft on every input change
-["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => {
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => {
   safeOn(id, "input", saveDraft);
   safeOn(id, "change", saveDraft);
 });
 
 // ── Summary modal ─────────────────────────────
+let summaryEventId = null;
+
 function showSummary(ev) {
+  summaryEventId = ev.id;
   const roomObj = ROOMS.find(r => r.name === ev.room);
   const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
   const lines = [
@@ -969,12 +1212,16 @@ function showSummary(ev) {
     ``,
     `─────────────────────────`,
     `Edit passcode:  ${ev.passcode}`,
-    `To edit: open the bulletin board, click ✏️ on your event, and enter your private PIN.`,
+    `To edit, open the event board, click ✏️ on your event, and enter your private PIN.`,
   ].filter(l => l !== "").join("\n");
 
   document.getElementById("summary-body").textContent = lines;
   document.getElementById("copy-confirm").style.display = "none";
   document.getElementById("summary-modal").classList.add("open");
+}
+
+function addToCalendarFromSummary() {
+  if (summaryEventId) addToCalendar(summaryEventId);
 }
 
 function closeSummaryModal() {
@@ -1008,8 +1255,13 @@ async function submitEvent() {
   const time     = document.getElementById("f-time").value;
   const endtime  = document.getElementById("f-endtime").value;
   const location = document.getElementById("f-location").value.trim();
+  const lat      = document.getElementById("f-lat")?.value || "";
+  const lng      = document.getElementById("f-lng")?.value || "";
   const desc     = document.getElementById("f-desc").value.trim();
   const host     = document.getElementById("f-host").value.trim();
+  const hostlink    = document.getElementById("f-hostlink").value.trim();
+  const contactEmail = document.getElementById("f-contact-email")?.value.trim() || "";
+  const contactPhone = document.getElementById("f-contact-phone")?.value.trim() || "";
   const cooplink = document.getElementById("f-cooplink").value.trim();
   const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
@@ -1054,49 +1306,134 @@ async function submitEvent() {
   }
   errEl.style.display = "none";
 
+  // ── Abuse prevention ──────────────────────────
+  // 1) Rate limit: max 4 new posts per device per 24h (edits don't count)
+  if (!editingId) {
+    const RL_KEY = "db-post-log";
+    const now24  = Date.now();
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
+    log = log.filter(t => now24 - t < 24 * 60 * 60 * 1000); // keep last 24h
+    if (log.length >= 4) {
+      errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow.";
+      errEl.style.display = "block";
+      return;
+    }
+  }
+  // 2) Duplicate title+date warning (same title, same day, not an edit)
+  if (!editingId) {
+    const dupExists = events.some(e =>
+      e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date
+    );
+    if (dupExists) {
+      errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`;
+      errEl.style.display = "block";
+      return;
+    }
+  }
+  // ─────────────────────────────────────────────
+
   const catIds = Array.from(selectedCats);
   const eventData = {
     title, categories: catIds, date, time, endtime,
     format: selectedFormat,
     location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    description: desc, host, cooplink,
+    lat:      (selectedFormat === "inperson" || selectedFormat === "both") ? lat : "",
+    lng:      (selectedFormat === "inperson" || selectedFormat === "both") ? lng : "",
+    description: desc, host, hostlink, contactEmail, contactPhone, cooplink,
     room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : null,
   };
 
   if (editingId) {
-    const idx = events.findIndex(e => e.id === editingId);
-    if (idx > -1) {
-      events[idx] = { ...events[idx], ...eventData };
-      await apiUpdate(events[idx]);
+    const isRec = editingId.startsWith("recurring-");
+    if (isRec) {
+      // Find which template this belongs to by matching the slug in the id
+      const slug = editingId.replace(/^recurring-/, "").replace(/-\d{4}-\d{2}-\d{2}$/, "");
+      const tIdx = RECURRING_EVENTS.findIndex(t =>
+        t.title.toLowerCase().replace(/\s+/g,"-") === slug
+      );
+      if (tIdx > -1) {
+        // Update the live template
+        RECURRING_EVENTS[tIdx] = {
+          ...RECURRING_EVENTS[tIdx],
+          title, categories: catIds, time, endtime,
+          description: desc, host, hostlink, cooplink,
+          format: selectedFormat,
+          room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : RECURRING_EVENTS[tIdx].room,
+        };
+        // Persist to localStorage so edits survive page reload
+        const saved = {};
+        try { Object.assign(saved, JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}")); } catch {}
+        saved[slug] = RECURRING_EVENTS[tIdx];
+        localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
+      }
+      closeModal();
+      renderEvents();
+      showToast("🔁 Recurring event updated for all future occurrences!");
+    } else {
+      const idx = events.findIndex(e => e.id === editingId);
+      if (idx > -1) {
+        events[idx] = { ...events[idx], ...eventData };
+        await apiUpdate(events[idx]);
+      }
+      closeModal();
+      renderEvents();
+      showToast("✓ Event updated!");
     }
-    closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-    renderEvents();
-    showToast("✓ Event updated!");
+    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   } else {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
     const newEv = { id: newId, ...eventData, passcode, going: 0 };
+
+    // Log this post for rate limiting
+    const RL_KEY = "db-post-log";
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
+    log.push(Date.now());
+    localStorage.setItem(RL_KEY, JSON.stringify(log));
+
+    // Cooldown: disable submit button for 10s to prevent rapid fire
+    const submitBtn = document.getElementById("submit-btn");
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Posted ✓";
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Post event";
+      }, 10000);
+    }
+
+    // Show results instantly - no waiting for API
     events.unshift(newEv);
-    await apiAdd(newEv);
     clearDraft();
     closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-desc","f-host","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
     renderEvents();
     showSummary(newEv);
+
+    // Save to server in background
+    apiAdd(newEv).catch(() => {});
   }
 }
 
 // ── Helpers ───────────────────────────────────
+function getTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+      .split("/").pop().replace(/_/g, " ");
+  } catch { return ""; }
+}
 function fmtDate(date, time, endtime) {
   if (!date) return "Date TBD";
-  const d = new Date(date + "T" + (time||"00:00"));
+  const d  = new Date(date + "T" + (time||"00:00"));
   const ds = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
   if (!time) return ds;
+  const tz = d.toLocaleTimeString("en-US", { timeZoneName:"short" }).split(" ").pop();
   const ts = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
-  if (!endtime) return ds + " · " + ts;
+  if (!endtime) return ds + " · " + ts + " " + tz;
   const de = new Date(date + "T" + endtime);
   const te = de.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
-  return ds + " · " + ts + " - " + te;
+  return ds + " · " + ts + " - " + te + " " + tz;
 }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s, n) { return s.length > n ? s.slice(0,n) + "…" : s; }
@@ -1126,6 +1463,188 @@ function setTab(tab) {
   document.getElementById("tab-past").classList.toggle("active", tab === "past");
   document.getElementById("page-title").textContent = tab === "past" ? "Past events" : "What's happening";
   renderEvents();
+}
+
+function setMode(mode) {
+  activeMode = mode;
+  document.getElementById("mode-virtual").classList.toggle("active", mode === "virtual");
+  document.getElementById("mode-inperson").classList.toggle("active", mode === "inperson");
+  document.getElementById("mode-all").classList.toggle("active", mode === "all");
+  document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
+  if (mode === "inperson") {
+    const regionEl = document.getElementById("filter-region");
+    if (!regionEl.value) {
+      regionEl.value = "North America";
+      onRegionChange();
+      document.getElementById("filter-country").value = "United States";
+      onCountryChange();
+    }
+  }
+  renderEvents();
+}
+
+function useMyLocationForForm() {
+  const btn = document.getElementById("form-geo-btn");
+  btn.textContent = "📍 Detecting...";
+  btn.disabled = true;
+  if (!navigator.geolocation) {
+    btn.textContent = "📍 Not supported";
+    btn.disabled = false;
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
+        .then(r => r.json())
+        .then(data => {
+          const addr  = data.address || {};
+          const parts = [
+            addr.city || addr.town || addr.village || "",
+            addr.state || "",
+            addr.country || ""
+          ].filter(Boolean);
+          const location = parts.join(", ");
+          document.getElementById("f-location").value = location;
+          document.getElementById("f-lat").value = pos.coords.latitude;
+          document.getElementById("f-lng").value = pos.coords.longitude;
+          btn.textContent = `📍 ${parts[0] || "Location set"}`;
+          btn.disabled = false;
+        })
+        .catch(() => {
+          btn.textContent = "📍 Try again";
+          btn.disabled = false;
+          alert("Location detected but couldn't look up your city. Please type it manually.");
+        });
+    },
+    err => {
+      btn.disabled = false;
+      if (err.code === 1) {
+        btn.textContent = "📍 Permission denied";
+        alert("Location access was blocked. Please allow location in your browser settings, or type your address.");
+      } else {
+        btn.textContent = "📍 Use my location";
+        alert("Could not detect your location. Please type it manually.");
+      }
+    },
+    { timeout: 10000 }
+  );
+}
+
+
+const NORTH_AMERICA_COUNTRIES = ["United States", "Canada", "Mexico"];
+const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Washington D.C."];
+
+function onRegionChange() {
+  const region  = document.getElementById("filter-region").value;
+  const countEl = document.getElementById("filter-country");
+  const stateEl = document.getElementById("filter-state");
+  countEl.innerHTML = '<option value="">All countries</option>';
+  stateEl.innerHTML = '<option value="">All states</option>';
+  stateEl.style.display = "none";
+  if (region === "North America") {
+    NORTH_AMERICA_COUNTRIES.forEach(c => countEl.innerHTML += `<option>${c}</option>`);
+    countEl.style.display = "block";
+  } else {
+    countEl.style.display = "none";
+  }
+  renderEvents();
+}
+
+function onCountryChange() {
+  const country = document.getElementById("filter-country").value;
+  const stateEl = document.getElementById("filter-state");
+  stateEl.innerHTML = '<option value="">All states</option>';
+  if (country === "United States") {
+    US_STATES.forEach(s => stateEl.innerHTML += `<option>${s}</option>`);
+    stateEl.style.display = "block";
+  } else {
+    stateEl.style.display = "none";
+  }
+  renderEvents();
+}
+
+function clearLocationFilter() {
+  document.getElementById("filter-region").value = "";
+  document.getElementById("filter-country").innerHTML = '<option value="">All countries</option>';
+  document.getElementById("filter-country").style.display = "none";
+  document.getElementById("filter-state").innerHTML = '<option value="">All states</option>';
+  document.getElementById("filter-state").style.display = "none";
+  renderEvents();
+}
+
+function useMyLocation() {
+  const btn = document.getElementById("geo-btn");
+  btn.textContent = "📍 Detecting...";
+  btn.disabled = true;
+  if (!navigator.geolocation) {
+    btn.textContent = "📍 Not supported";
+    btn.disabled = false;
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
+        .then(r => r.json())
+        .then(data => {
+          const addr    = data.address || {};
+          const city    = addr.city || addr.town || addr.village || "";
+          const state   = addr.state || "";
+          const country = addr.country || "";
+          // Set region
+          const regionEl = document.getElementById("filter-region");
+          if (["United States","Canada","Mexico"].some(c => country.includes(c) || c.includes(country))) {
+            regionEl.value = "North America";
+          } else if (["Brazil","Argentina","Colombia","Chile","Peru"].some(c => country.includes(c))) {
+            regionEl.value = "South America";
+          } else if (["United Kingdom","France","Germany","Spain","Italy","Netherlands"].some(c => country.includes(c))) {
+            regionEl.value = "Europe";
+          } else if (["China","Japan","India","South Korea","Indonesia"].some(c => country.includes(c))) {
+            regionEl.value = "Asia";
+          } else if (["Nigeria","Kenya","South Africa","Ethiopia","Ghana"].some(c => country.includes(c))) {
+            regionEl.value = "Africa";
+          } else if (["Australia","New Zealand","Papua New Guinea"].some(c => country.includes(c))) {
+            regionEl.value = "Oceania";
+          }
+          onRegionChange();
+          // Set country
+          const countEl = document.getElementById("filter-country");
+          if (country.includes("United States") || country.includes("USA")) {
+            countEl.value = "United States";
+            onCountryChange();
+            if (state) {
+              const stateEl = document.getElementById("filter-state");
+              const match = US_STATES.find(s => s.toLowerCase() === state.toLowerCase());
+              if (match) stateEl.value = match;
+            }
+          } else if (country.includes("Canada")) {
+            countEl.value = "Canada";
+          } else if (country.includes("Mexico")) {
+            countEl.value = "Mexico";
+          }
+          renderEvents();
+          // Show city feedback
+          const label = [city, state].filter(Boolean).join(", ") || country || "Location set";
+          btn.textContent = `📍 ${label}`;
+          btn.disabled = false;
+        })
+        .catch(() => {
+          btn.textContent = "📍 Try again";
+          btn.disabled = false;
+          alert("Location detected but couldn't look up your city. Please select manually.");
+        });
+    },
+    err => {
+      btn.disabled = false;
+      if (err.code === 1) {
+        btn.textContent = "📍 Permission denied";
+        alert("Location access was blocked. Please allow location in your browser settings, or select manually.");
+      } else {
+        btn.textContent = "📍 Use my location";
+        alert("Could not detect your location. Please select manually.");
+      }
+    },
+    { timeout: 10000 }
+  );
 }
 
 // ── Clone event ───────────────────────────────
@@ -1173,6 +1692,128 @@ function checkAllFields() {
 }
 
 const ROOM_BUFFER_MINS = 90;
+
+// ── Recurring onboarding events ───────────────
+// Every Monday, shown 2 weeks ahead, never stored in the sheet
+// ── Recurring events ──────────────────────────
+// dayOfWeek: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+const RECURRING_EVENTS = [
+  {
+    title:      "DayBalancer Onboarding",
+    dayOfWeek:  1, // Monday
+    time:       "12:00",
+    endtime:    "13:00",
+    format:     "virtual",
+    room:       "DayBalancer Onboarding",
+    host:       "DayBalancer",
+    hostlink:   "",
+    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
+    categories: ["learning"],
+    description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
+    adminOnly:  true,
+  },
+  {
+    title:      "Ikigai Tuesdays",
+    dayOfWeek:  2, // Tuesday
+    time:       "12:00",
+    endtime:    "13:00",
+    format:     "virtual",
+    room:       "Ikigai room",
+    host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
+    categories: ["learning"],
+    description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
+    adminOnly:  true,
+  },
+  {
+    title:      "Wellness Wednesdays",
+    dayOfWeek:  3, // Wednesday
+    time:       "12:00",
+    endtime:    "13:00",
+    format:     "virtual",
+    room:       "Wellness room",
+    host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories: ["care","faith","resources","movement","learning"],
+    description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
+    adminOnly:  false,
+  },
+  {
+    title:      "Feedback Fridays",
+    dayOfWeek:  5, // Friday
+    time:       "12:00",
+    endtime:    "13:00",
+    format:     "virtual",
+    room:       "Co-create room",
+    host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories: ["learning","professional","creative"],
+    description:"Come with your small or big idea and receive supportive feedback.",
+    adminOnly:  false,
+  },
+  {
+    title:      "Monday Kickoff",
+    dayOfWeek:  1, // Monday
+    time:       "09:00",
+    endtime:    "10:00",
+    format:     "virtual",
+    room:       "The Commons",
+    host:       "Jessie Upp",
+    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories: ["learning","professional","social","resources","care"],
+    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
+    adminOnly:  false,
+  },
+];
+
+function getNextOccurrences(template, count) {
+  const results = [];
+  const now = new Date();
+  const d   = new Date();
+  d.setHours(0,0,0,0);
+  const today = d.getDay();
+  let daysUntil = (template.dayOfWeek - today + 7) % 7;
+
+  // If today is the day but the event end time has already passed, move to next week
+  if (daysUntil === 0) {
+    const [endH, endM] = (template.endtime || template.time).split(":").map(Number);
+    const endToday = new Date();
+    endToday.setHours(endH, endM, 0, 0);
+    if (now > endToday) daysUntil = 7;
+  }
+
+  d.setDate(d.getDate() + daysUntil);
+  for (let i = 0; i < count; i++) {
+    const dateStr = d.toISOString().split("T")[0];
+    const slug    = template.title.toLowerCase().replace(/\s+/g,"-");
+    results.push({
+      ...template,
+      id:        `recurring-${slug}-${dateStr}`,
+      date:      dateStr,
+      passcode:  "",
+      going:     0,
+      recurring: true,
+    });
+    d.setDate(d.getDate() + 7);
+  }
+  return results;
+}
+
+function getAllRecurring(count = 2) {
+  return RECURRING_EVENTS.flatMap(t => getNextOccurrences(t, count));
+}
+
+function getPublicRecurring(count = 2) {
+  const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
+  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
+  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
+}
+
+// Keep for room schedule (all recurring including admin-only)
+function getNextMondays(count) {
+  return getAllRecurring(count);
+}
 
 function getEventMs(ev) {
   if (!ev.date) return null;
@@ -1225,50 +1866,80 @@ function checkAndWarnConflict() {
 
 // ── Room schedule modal ───────────────────────
 const ROOMS = [
-  { name:"Conference room",      url:"https://gather.daybalancer.com/events/335887/502618" },
-  { name:"Co-create room",       url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
-  { name:"Wellness room",        url:"https://gather.daybalancer.com/events/336936/504368" },
-  { name:"Community Care room",  url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"The Commons",          url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
-  { name:"Ikigai room",          url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
-  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding", hidden: true },
+  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding",         hidden: true },
+  { name:"The Commons",            url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox", comingSoon: false },
+  { name:"Abundance room",         url:"", comingSoon: true },
+  { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
 ];
 
 function openRoomSchedule() {
   const body = document.getElementById("room-schedule-body");
-  const now = Date.now();
+  const now  = Date.now();
   body.innerHTML = "";
 
-  ROOMS.forEach(({ name, url }) => {
-    const upcoming = events
+  // Visible rooms for the schedule (include hidden onboarding, exclude nothing)
+  const visibleRooms = ROOMS;
+
+  // ── Jump menu at top ──
+  const nav = document.createElement("div");
+  nav.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;";
+  visibleRooms.forEach(({ name, hidden, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const pill = document.createElement("a");
+    pill.href = "#room-" + slug;
+    pill.style.cssText = "font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;border:1.5px solid var(--border);color:var(--primary);background:var(--white);white-space:nowrap;";
+    pill.textContent = "🏠 " + name;
+    nav.appendChild(pill);
+  });
+  body.appendChild(nav);
+
+  const allRecurring = getAllRecurring(2);
+  // Combine sheet events + recurring, then dedup by room+date+time - sheet events win
+  const seen = new Set(
+    events.map(e => `${e.room}|${e.date}|${e.time}`)
+  );
+  const uniqueRecurring = allRecurring.filter(rec =>
+    !seen.has(`${rec.room}|${rec.date}|${rec.time}`)
+  );
+  const allEventsForSchedule = [...events, ...uniqueRecurring];
+  // ── Room sections ──
+  visibleRooms.forEach(({ name, url, hidden, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const upcoming = allEventsForSchedule
       .filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000)
       .sort((a,b) => getEventMs(a) - getEventMs(b))
       .slice(0, 5);
 
     const section = document.createElement("div");
+    section.id = "room-" + slug;
     section.className = "room-section";
+    section.style.cssText = "margin-bottom:28px;scroll-margin-top:20px;";
 
-    // Header with visit button
-    const header = document.createElement("div");
-    header.className = "room-section-title";
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;";
-    header.innerHTML = `
-      <span>🏠 ${name}</span>
-      <a href="${url}" target="_blank" rel="noopener"
-        style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:4px 10px;border-radius:6px;white-space:nowrap;">
-        Visit room →
-      </a>`;
-    section.appendChild(header);
+    // Room header - all rooms use 🏠
+    const visitBtn = comingSoon
+      ? `<span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--light);padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);">Link coming soon</span>`
+      : `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:5px 12px;border-radius:6px;white-space:nowrap;">Visit room →</a>`;
+
+    section.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);">
+        <span style="font-size:15px;font-weight:800;color:var(--dark);">🏠 ${name}</span>
+        ${visitBtn}
+      </div>`;
 
     if (upcoming.length === 0) {
-      section.innerHTML += `<div class="room-empty">Nothing scheduled yet - wide open!</div>`;
+      section.innerHTML += `<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0 4px;">Nothing scheduled yet - wide open!</div>`;
     } else {
       upcoming.forEach(ev => {
         const row = document.createElement("div");
-        row.className = "room-event-row";
+        row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
         row.innerHTML = `
-          <div class="room-event-name">${esc(ev.title)}</div>
-          <div class="room-event-time">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>`;
+          <span style="font-size:13px;font-weight:400;color:var(--dark);">${esc(ev.title)}</span>
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
         section.appendChild(row);
       });
     }
@@ -1282,7 +1953,8 @@ function closeRoomModal() {
   document.getElementById("room-modal").classList.remove("open");
 }
 
-loadEvents().then(() => { renderPills(); });
+renderPills();
+loadEvents();
 </script>
 </body>
 </html>
