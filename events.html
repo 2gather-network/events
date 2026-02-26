@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 4.6
+  Version 4.7
 -->
 <html lang="en">
 <head>
@@ -709,7 +709,7 @@ function renderEvents() {
 
   // Public recurring events appear on the board; admin-only ones don't
   const allEvents = activeTab === "upcoming"
-    ? [...events, ...getPublicRecurring(2)]
+    ? events
     : events;
 
   let list = allEvents.filter(e => {
@@ -800,12 +800,7 @@ function renderEvents() {
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
       <div class="event-card-footer">
-        <div class="going-count"><span id="going-${ev.id}">${ev.going||0}</span> interested</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-sm ${gone?"btn-outline":""}" id="goin-btn-${ev.id}"
-            onclick="markGoing('${ev.id}')">
-            ${gone ? "✓ Interested" : "🙋 Interested?"}
-          </button>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
@@ -1937,8 +1932,9 @@ function openRoomSchedule() {
       upcoming.forEach(ev => {
         const row = document.createElement("div");
         row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
+        const isRec = ev.recurring;
         row.innerHTML = `
-          <span style="font-size:13px;font-weight:400;color:var(--dark);">${esc(ev.title)}</span>
+          <span style="font-size:13px;font-weight:${isRec ? "600" : "400"};color:${isRec ? "var(--muted)" : "var(--dark)"};">${isRec ? "🚫 Blocked" : esc(ev.title)}</span>
           <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
         section.appendChild(row);
       });
