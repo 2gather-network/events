@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 1.0 (public)
+  Version 4.8
 -->
 <html lang="en">
 <head>
@@ -184,6 +184,16 @@
 <body>
 
 <div id="loading-bar" class="loading-bar"></div>
+<div class="header">
+  <div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;">Day<span>Balancer</span></div>
+    <div class="tagline">Community events - beta test</div>
+  </div>
+  <div class="header-right" style="display:flex;gap:10px;">
+    <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
+    <button class="btn btn-white btn-sm" onclick="openModal()">+ Post an event</button>
+  </div>
+</div>
 
 <div class="page-body">
   <div class="page-title-row">
@@ -827,7 +837,7 @@ function renderEvents() {
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
-          
+          ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
     grid.appendChild(card);
