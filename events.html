@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 5.3
+  Version 5.4
 -->
 <html lang="en">
 <head>
@@ -1176,13 +1176,21 @@ function addToCalendar(id) {
 
   // Recurring events - use ICS download with RRULE
   const RECURRING_IDS = ["kickoff-001", "onboarding-001", "ikigai-001"];
+  const RECURRING_TITLES = ["monday kickoff", "daybalancer onboarding", "ikigai tuesdays"];
   const RRULE_MAP = {
     "kickoff-001":    "RRULE:FREQ=WEEKLY;BYDAY=MO",
     "onboarding-001": "RRULE:FREQ=WEEKLY;BYDAY=MO",
     "ikigai-001":     "RRULE:FREQ=WEEKLY;BYDAY=TU",
+    "monday kickoff":          "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "daybalancer onboarding":  "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "ikigai tuesdays":         "RRULE:FREQ=WEEKLY;BYDAY=TU",
   };
 
-  if (RECURRING_IDS.includes(id)) {
+  const titleKey = (ev.title || "").toLowerCase().trim();
+  const isRecurring = RECURRING_IDS.includes(id) || RECURRING_TITLES.includes(titleKey);
+  const rrule = RRULE_MAP[id] || RRULE_MAP[titleKey];
+
+  if (isRecurring && rrule) {
     const rrule = RRULE_MAP[id];
     const uid = id + "@daybalancer.com";
     const ics = [
