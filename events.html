@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 4.9
+  Version 5.1
 -->
 <html lang="en">
 <head>
@@ -736,7 +736,7 @@ function makeFilterBtn(text, isActive, onClick) {
   b.onclick = onClick;
   return b;
 }
-function setFilter(id) { activeFilter = id; renderPills(); renderEvents(); }
+function setFilter(id) { activeFilter = id; localStorage.setItem("db-filter", id); renderPills(); renderEvents(); }
 
 // ── Render events ─────────────────────────────
 function renderEvents() {
@@ -1524,6 +1524,7 @@ function setMode(mode) {
       onCountryChange();
     }
   }
+  localStorage.setItem("db-mode", mode);
   renderEvents();
 }
 
@@ -1999,6 +2000,12 @@ function closeRoomModal() {
 }
 
 // Embed mode - strip header and top padding when ?embed=1
+// Restore saved filter/mode preferences
+const savedFilter = localStorage.getItem("db-filter");
+const savedMode   = localStorage.getItem("db-mode");
+if (savedFilter) activeFilter = savedFilter;
+if (savedMode)   activeMode   = savedMode;
+
 if (new URLSearchParams(window.location.search).get("embed") === "1") {
   document.body.classList.add("embed-mode");
 }
