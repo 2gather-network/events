@@ -2,13 +2,13 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 5.1
+  Version 5.3
 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DayBalancer · Community Events - Beta</title>
+<title>DayBalancer · Community Events - Beta Test</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -189,7 +189,7 @@
 <div class="header">
   <div>
     <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;">Day<span>Balancer</span></div>
-    <div class="tagline">Community events - beta test</div>
+    <div class="tagline">Community events - beta</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
@@ -422,12 +422,12 @@
 
 <script>
 const CATEGORIES = [
-  { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-create room",     extraRooms:["Coworking room"] },
+  { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-Create room",     extraRooms:["Coworking room"] },
   { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
   { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
-  { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-create room",     extraRooms:["Coworking room"] },
+  { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-Create room",     extraRooms:["Coworking room"] },
   { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons",         extraRooms:["Coworking room"] },
   { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
@@ -525,7 +525,7 @@ function jsonp(params) {
       delete window[cbName];
       script.remove();
       reject(new Error("JSONP timeout"));
-    }, 12000);
+    }, 20000);
 
     window[cbName] = (data) => {
       clearTimeout(timeout);
@@ -573,7 +573,7 @@ async function loadEvents() {
     // Retry once after 4 seconds (handles Google Apps Script cold start)
     console.warn("Events load failed, retrying...", e);
     try {
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 2000));
       const data = await jsonp({ t: Date.now() });
       events = (data.events || []).filter(r => r.id).map(sheetToEv);
     } catch(e2) {
@@ -828,7 +828,7 @@ function renderEvents() {
       <div class="event-card-body">
         <div class="event-meta">
           <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
-          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : "Virtual"}</div>` : ""}
+          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : `Virtual`)}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
           <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
@@ -1154,7 +1154,6 @@ function addToCalendar(id) {
   const ev = events.find(e => e.id === id);
   if (!ev || !ev.date) return;
 
-  // Build datetime strings in YYYYMMDDTHHMMSS format (local, no Z = local time)
   function toCalDT(date, time) {
     const t = time || "00:00";
     return date.replace(/-/g, "") + "T" + t.replace(":", "") + "00";
@@ -1162,12 +1161,10 @@ function addToCalendar(id) {
 
   const start = toCalDT(ev.date, ev.time);
   const end   = toCalDT(ev.date, ev.endtime || ev.time);
-
   const roomObj = ROOMS.find(r => r.name === ev.room);
   const location = ev.format === "virtual"
     ? (roomObj ? roomObj.url : "Virtual")
     : (ev.location || "");
-
   const details = [
     ev.description || "",
     roomObj ? "Room: " + roomObj.url : "",
@@ -1177,13 +1174,47 @@ function addToCalendar(id) {
     ev.contactPhone ? "Phone: " + ev.contactPhone : "",
   ].filter(Boolean).join("\n\n");
 
+  // Recurring events - use ICS download with RRULE
+  const RECURRING_IDS = ["kickoff-001", "onboarding-001", "ikigai-001"];
+  const RRULE_MAP = {
+    "kickoff-001":    "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "onboarding-001": "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "ikigai-001":     "RRULE:FREQ=WEEKLY;BYDAY=TU",
+  };
+
+  if (RECURRING_IDS.includes(id)) {
+    const rrule = RRULE_MAP[id];
+    const uid = id + "@daybalancer.com";
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//DayBalancer//Events//EN",
+      "BEGIN:VEVENT",
+      "UID:" + uid,
+      "DTSTART:" + start,
+      "DTEND:" + end,
+      rrule,
+      "SUMMARY:" + ev.title,
+      "DESCRIPTION:" + details.replace(/\n/g, "\\n"),
+      "LOCATION:" + location,
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = ev.title.replace(/\s+/g, "-").toLowerCase() + ".ics";
+    a.click();
+    return;
+  }
+
+  // Non-recurring - open Google Calendar
   const params = new URLSearchParams({
     text:     ev.title,
     dates:    start + "/" + end,
     details:  details,
     location: location,
   });
-
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
@@ -1917,6 +1948,7 @@ const ROOMS = [
   { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
   { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
   { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox", comingSoon: false },
   { name:"Abundance room",         url:"", comingSoon: true },
   { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
