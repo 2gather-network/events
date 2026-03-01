@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 5.9
+  Version 6.0
 -->
 <html lang="en">
 <head>
@@ -966,7 +966,7 @@ function clearDraft() {
   localStorage.removeItem(DRAFT_KEY);
 }
 
-function openModal() {
+function openModal(skipDraft = false) {
   editingId = null;
   selectedCats = new Set();
   selectedRoom = null;
@@ -997,10 +997,12 @@ function openModal() {
   buildFormChips();
 
   // Restore draft if available
-  const restored = restoreDraft();
-  if (restored) {
-    const notice = document.getElementById("draft-notice");
-    if (notice) { notice.style.display = "block"; setTimeout(() => notice.style.display = "none", 3000); }
+  if (!skipDraft) {
+    const restored = restoreDraft();
+    if (restored) {
+      const notice = document.getElementById("draft-notice");
+      if (notice) { notice.style.display = "block"; setTimeout(() => notice.style.display = "none", 3000); }
+    }
   }
 }
 
@@ -1754,7 +1756,7 @@ function cloneEvent() {
   if (!ev) return;
   closeModal();
   setTimeout(() => {
-    openModal();
+    openModal(true);
     document.getElementById("f-title").value        = ev.title + " (copy)";
     document.getElementById("f-location").value     = ev.location || "";
     document.getElementById("f-desc").value         = ev.description || "";
