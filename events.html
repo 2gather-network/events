@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 5.4
+  Version 5.6
 -->
 <html lang="en">
 <head>
@@ -247,6 +247,9 @@
 
   <div class="filter-row">
     <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
+    <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
+      <option value="">All hosts</option>
+    </select>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -494,6 +497,10 @@ function parseSheetTime(val) {
 }
 
 function sheetToEv(row) {
+  const RECURRING_TITLES = ["monday kickoff", "daybalancer onboarding", "ikigai tuesdays"];
+  const RECURRING_IDS    = ["kickoff-001", "onboarding-001", "ikigai-001"];
+  const titleKey = (row.title || "").toLowerCase().trim();
+  const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.includes(titleKey);
   return {
     id:          String(row.id || ""),
     title:       row.title || "",
@@ -514,6 +521,8 @@ function sheetToEv(row) {
     passcode:    row.passcode || "",
     cooplink:    row.cooplink || "",
     going:       parseInt(row.going) || 0,
+    meetinglink: row.meetinglink || "",
+    recurring:   isRecurring,
   };
 }
 
@@ -589,9 +598,25 @@ async function loadEvents() {
     }
   } finally {
     showLoading(false);
+    populateHostFilter();
     renderEvents();
     checkEventLink();
   }
+}
+
+function populateHostFilter() {
+  const sel = document.getElementById("host-filter");
+  if (!sel) return;
+  const current = sel.value;
+  const hosts = [...new Set(events.map(e => e.host).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All hosts</option>';
+  hosts.forEach(h => {
+    const opt = document.createElement("option");
+    opt.value = h;
+    opt.textContent = h;
+    if (h === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
 
 async function apiAdd(ev)          { return jsonp({ action: "add",    event: evToSheet(ev) }); }
@@ -785,7 +810,9 @@ function renderEvents() {
       // Only filter if a specific state is chosen - country/region alone is too restrictive
       if (state) matchLocation = loc.includes(state.toLowerCase());
     }
-    return matchCat && matchQ && matchTab && matchMode && matchLocation;
+    const activeHost = document.getElementById("host-filter")?.value || "";
+    const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
+    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost;
   });
 
   list.sort((a, b) => {
@@ -1208,11 +1235,16 @@ function addToCalendar(id) {
       "END:VEVENT",
       "END:VCALENDAR"
     ].join("\r\n");
-    const blob = new Blob([ics], { type: "text/calendar" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
     a.download = ev.title.replace(/\s+/g, "-").toLowerCase() + ".ics";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("📅 Calendar file downloaded - open it to add the recurring event.");
     return;
   }
 
