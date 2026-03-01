@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 5.7
+  Version 5.9
 -->
 <html lang="en">
 <head>
@@ -500,7 +500,7 @@ function sheetToEv(row) {
   const RECURRING_TITLES = ["monday kickoff", "daybalancer onboarding", "ikigai tuesdays"];
   const RECURRING_IDS    = ["kickoff-001", "onboarding-001", "ikigai-001"];
   const titleKey = (row.title || "").toLowerCase().trim();
-  const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.includes(titleKey);
+  const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
   return {
     id:          String(row.id || ""),
     title:       row.title || "",
@@ -1215,7 +1215,7 @@ function addToCalendar(id) {
 
   const titleKey = (ev.title || "").toLowerCase().trim();
   const isRecurring = RECURRING_IDS.includes(id) || RECURRING_TITLES.includes(titleKey);
-  const rrule = RRULE_MAP[id] || RRULE_MAP[titleKey];
+  const rrule = RRULE_MAP[id] || Object.entries(RRULE_MAP).find(([k]) => titleKey.includes(k))?.[1];
 
   if (isRecurring && rrule) {
     const params = new URLSearchParams({
@@ -1470,11 +1470,15 @@ async function submitEvent() {
       const idx = events.findIndex(e => e.id === editingId);
       if (idx > -1) {
         events[idx] = { ...events[idx], ...eventData };
-        await apiUpdate(events[idx]);
+        closeModal();
+        renderEvents();
+        showToast("✓ Event updated!");
+        apiUpdate(events[idx]).catch(e => console.warn("Update save failed", e));
+      } else {
+        closeModal();
+        renderEvents();
+        showToast("✓ Event updated!");
       }
-      closeModal();
-      renderEvents();
-      showToast("✓ Event updated!");
     }
     ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   } else {
@@ -1751,12 +1755,20 @@ function cloneEvent() {
   closeModal();
   setTimeout(() => {
     openModal();
-    document.getElementById("f-title").value = ev.title + " (copy)";
-    document.getElementById("f-location").value = ev.location || "";
-    document.getElementById("f-desc").value = ev.description || "";
-    document.getElementById("f-host").value = ev.host || "";
-    selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
-    selectedRoom = ev.room || null;
+    document.getElementById("f-title").value        = ev.title + " (copy)";
+    document.getElementById("f-location").value     = ev.location || "";
+    document.getElementById("f-desc").value         = ev.description || "";
+    document.getElementById("f-host").value         = ev.host || "";
+    document.getElementById("f-hostlink").value     = ev.hostlink || "";
+    document.getElementById("f-cooplink").value     = ev.cooplink || "";
+    document.getElementById("f-contact-email").value = ev.contactEmail || "";
+    document.getElementById("f-contact-phone").value = ev.contactPhone || "";
+    document.getElementById("f-lat").value          = ev.lat || "";
+    document.getElementById("f-lng").value          = ev.lng || "";
+    if (ev.time)    document.getElementById("f-time").value    = ev.time;
+    if (ev.endtime) document.getElementById("f-endtime").value = ev.endtime;
+    selectedCats   = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+    selectedRoom   = ev.room || null;
     selectedFormat = ev.format || null;
     ["virtual","inperson","both"].forEach(f => {
       document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
