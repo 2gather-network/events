@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.7
+  Version 6.8
 -->
 <html lang="en">
 <head>
@@ -240,11 +240,11 @@
     </div>
 
     <div class="field">
-      <label class="field-label">Virtual or in-person? *</label>
+      <label class="field-label">Format *</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button type="button" class="format-chip selected" id="fmt-virtual" onclick="setFormat('virtual')">💻 Virtual</button>
         <button type="button" class="format-chip" id="fmt-inperson" onclick="setFormat('inperson')">📍 In-person</button>
-        <button type="button" class="format-chip" id="fmt-both" onclick="setFormat('both')">✨ Both</button>
+        <button type="button" class="format-chip" id="fmt-both" onclick="setFormat('both')">🔀 Hybrid</button>
       </div>
     </div>
 
@@ -788,12 +788,15 @@ function renderEvents() {
     const recurringBadge = ev.recurring
       ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
       : "";
+    const hybridBadge = ev.format === "both"
+      ? `<span style="font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔀 Hybrid</span>`
+      : "";
     const card = document.createElement("div");
     card.className = "event-card";
     card.dataset.eventId = ev.id;
     card.innerHTML = `
       <div class="event-card-top">
-        <div class="event-title">${esc(ev.title)}${recurringBadge}</div>
+        <div class="event-title">${esc(ev.title)}${recurringBadge}${hybridBadge}</div>
         <div class="event-cats">${catTags}</div>
       </div>
       <div class="event-card-body">
