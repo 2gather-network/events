@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 2.5 (public/read-only)
+  Version 2.6 (public/read-only)
 -->
 <html lang="en">
 <head>
@@ -450,12 +450,15 @@ function renderEvents() {
     const recurringBadge = ev.recurring
       ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
       : "";
+    const hybridBadge = ev.format === "both"
+      ? `<span style="font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔀 Hybrid</span>`
+      : "";
     const card = document.createElement("div");
     card.className = "event-card";
     card.dataset.eventId = ev.id;
     card.innerHTML = `
       <div class="event-card-top">
-        <div class="event-title">${esc(ev.title)}${recurringBadge}</div>
+        <div class="event-title">${esc(ev.title)}${recurringBadge}${hybridBadge}</div>
         <div class="event-cats">${catTags}</div>
       </div>
       <div class="event-card-body">
