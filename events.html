@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.3
+  Version 6.7
 -->
 <html lang="en">
 <head>
@@ -181,12 +181,10 @@
     </div>
   </div>
 
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <div style="display:flex;gap:8px;">
-      <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
-      <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
-    </div>
-    <button class="format-chip" id="mode-all" onclick="setMode('all')" style="margin-left:auto;">🌐 All events</button>
+  <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
+    <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
+    <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
   </div>
 
   <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
@@ -542,26 +540,26 @@ function sheetToEv(row) {
 function jsonp(params) {
   return new Promise((resolve, reject) => {
     const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    const timeout = setTimeout(() => { delete window[cbName]; script.remove(); reject(new Error("JSONP timeout")); }, 20000);
-    window[cbName] = (data) => { clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(data); };
+    let settled = false;
+
+    const timeout = setTimeout(() => {
+      if (!settled) { settled = true; delete window[cbName]; script.remove(); reject(new Error("JSONP timeout")); }
+    }, 20000);
+
+    window[cbName] = (data) => {
+      if (!settled) { settled = true; clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(data); }
+    };
+
     const qs = Object.entries({ ...params, callback: cbName })
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`).join("&");
     const script = document.createElement("script");
-    const fullUrl = GS_URL + "?" + qs;
-    script.src = fullUrl;
-    console.log("[DayBalancer] JSONP request:", fullUrl.split("?")[0], "| params:", params);
-    script.onerror = (e) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      console.error("[DayBalancer] JSONP script.onerror - URL was:", fullUrl.split("?")[0]);
-      console.error("[DayBalancer] This usually means: (1) Apps Script not deployed as Anyone, (2) wrong GS_URL, or (3) browser/extension blocking script.google.com");
-      // Try a plain fetch to see what the server actually returns
-      fetch(GS_URL + "?t=" + Date.now() + "&callback=test")
-        .then(r => r.text())
-        .then(t => console.log("[DayBalancer] Fetch probe response (first 300 chars):", t.slice(0, 300)))
-        .catch(fe => console.warn("[DayBalancer] Fetch probe also failed:", fe.message));
-      reject(new Error("JSONP failed"));
-    };
+    script.src = GS_URL + "?" + qs;
+
+    // Apps Script does a 302 redirect to script.googleusercontent.com.
+    // Chrome fires onerror on the redirect even though the callback succeeds afterward.
+    // We ignore onerror entirely and let the 20s timeout handle true failures.
+    script.onerror = () => {};
+
     document.head.appendChild(script);
   });
 }
@@ -591,6 +589,11 @@ async function loadEvents() {
       events = (data.events || []).filter(r => r.id).map(sheetToEv);
     } catch(e2) {
       console.warn("Events retry also failed - showing recurring events only", e2);
+      const bar = document.getElementById("loading-bar");
+      if (bar) {
+        bar.style.cssText = "display:block;background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:12px 16px;font-size:13px;color:#7B5800;text-align:center;margin-bottom:14px;";
+        bar.innerHTML = "⚠️ Having trouble loading events? Try disabling your browser\'s ad blocker or shields for this page.";
+      }
     }
   } finally {
     showLoading(false);
@@ -712,7 +715,7 @@ function updateRoomPreview() {
 function renderPills() {
   const c = document.getElementById("cat-pills");
   c.innerHTML = "";
-  c.appendChild(makeFilterBtn("All events", activeFilter === "all", () => setFilter("all")));
+  c.appendChild(makeFilterBtn("All categories", activeFilter === "all", () => setFilter("all")));
   CATEGORIES.forEach(cat => c.appendChild(makeFilterBtn(`${cat.emoji} ${cat.label}`, activeFilter === cat.id, () => setFilter(cat.id))));
 }
 function makeFilterBtn(text, isActive, onClick) {
