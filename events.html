@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.8
+  Version 6.15
 -->
 <html lang="en">
 <head>
@@ -541,25 +541,14 @@ function jsonp(params) {
   return new Promise((resolve, reject) => {
     const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
     let settled = false;
-
-    const timeout = setTimeout(() => {
-      if (!settled) { settled = true; delete window[cbName]; script.remove(); reject(new Error("JSONP timeout")); }
-    }, 20000);
-
-    window[cbName] = (data) => {
-      if (!settled) { settled = true; clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(data); }
-    };
-
-    const qs = Object.entries({ ...params, callback: cbName })
+    const done = (fn) => { if (settled) return; settled = true; delete window[cbName]; try { script.remove(); } catch(e) {} fn(); };
+    const timeout = setTimeout(() => done(() => reject(new Error("JSONP timeout"))), 20000);
+    window[cbName] = (data) => { clearTimeout(timeout); done(() => resolve(data)); };
+    const qs = Object.entries(params)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`).join("&");
     const script = document.createElement("script");
-    script.src = GS_URL + "?" + qs;
-
-    // Apps Script does a 302 redirect to script.googleusercontent.com.
-    // Chrome fires onerror on the redirect even though the callback succeeds afterward.
-    // We ignore onerror entirely and let the 20s timeout handle true failures.
+    script.src = GS_URL + "?" + qs + "&callback=" + cbName;
     script.onerror = () => {};
-
     document.head.appendChild(script);
   });
 }
