@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.0
+  Version 6.2
 -->
 <html lang="en">
 <head>
@@ -57,7 +57,6 @@
   .cat-pill:hover { border-color:var(--primary); color:var(--primary); }
   .cat-pill.active { background:#154F74; border-color:#154F74; color:white; }
 
-  /* Form category chips */
   .form-cat-chips { display:flex; gap:8px; flex-wrap:wrap; }
   .form-cat-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; user-select:none; }
   .form-cat-chip:hover { border-color:var(--primary); color:var(--primary); }
@@ -89,37 +88,11 @@
   .modal-actions { display:flex; gap:10px; margin-top:8px; }
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
-  /* ── Bottom sheet on mobile ───────────────── */
   @media(max-width:768px) {
-    .modal-overlay {
-      align-items:flex-end;
-      justify-content:stretch;
-      padding:0;
-    }
-    .modal {
-      border-radius:20px 20px 0 0;
-      max-width:100%;
-      width:100%;
-      max-height:92vh;
-      padding:8px 20px 32px;
-      margin:0;
-      box-shadow:0 -4px 24px rgba(0,0,0,.15);
-      transform:translateY(100%);
-      transition:transform .3s cubic-bezier(.32,.72,0,1);
-    }
-    .modal-overlay.open .modal {
-      transform:translateY(0);
-    }
-    /* Drag handle */
-    .modal::before {
-      content:"";
-      display:block;
-      width:40px;
-      height:4px;
-      background:var(--border);
-      border-radius:2px;
-      margin:8px auto 20px;
-    }
+    .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
+    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:92vh; padding:8px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
+    .modal-overlay.open .modal { transform:translateY(0); }
+    .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
     .modal-title { font-size:20px; }
   }
 
@@ -150,7 +123,6 @@
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
 
-  /* ── Responsive ───────────────────────────── */
   @media(max-width:768px) {
     .header { padding:12px 16px; gap:8px; }
     .header-right { display:flex; gap:8px; flex-wrap:wrap; }
@@ -209,16 +181,14 @@
     </div>
   </div>
 
-  <!-- Virtual / In-person toggle -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div style="display:flex;gap:8px;">
-      <button class="format-chip active" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
+      <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
       <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
     </div>
     <button class="format-chip" id="mode-all" onclick="setMode('all')" style="margin-left:auto;">🌐 All events</button>
   </div>
 
-  <!-- In-person location filter -->
   <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
       <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Filter by location</span>
@@ -281,7 +251,6 @@
     </div>
 
     <div class="room-preview" id="room-preview">
-      <!-- Step 1: choose hosting option -->
       <div id="hosting-choice" style="display:none;margin-bottom:12px;">
         <div class="room-preview-label" style="margin-bottom:8px;">Where are you hosting this virtually?</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -289,12 +258,10 @@
           <button type="button" class="format-chip" id="hopt-own" onclick="setHostingOption('own')">🔗 My own link</button>
         </div>
       </div>
-      <!-- Step 2a: DayBalancer room picker -->
       <div id="db-room-section" style="display:none;">
         <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
         <div class="form-cat-chips" id="room-options"></div>
       </div>
-      <!-- Step 2b: own link -->
       <div id="own-link-section" style="display:none;" class="field">
         <label class="field-label">Your meeting link</label>
         <input class="input" id="f-meetinglink" placeholder="https://zoom.us/j/... or Google Meet link">
@@ -370,7 +337,30 @@
       <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
       <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="cloneEvent()" title="Clone this event">⧉ Clone</button>
+      <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
+        <label for="clone-count" style="white-space:nowrap;">× how many?</label>
+        <select id="clone-count" class="input" style="width:60px;padding:6px 8px;font-size:13px;">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </span>
       <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK CLONE MODAL -->
+<div class="modal-overlay" id="bulk-clone-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Duplicate event</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Set a date for each copy. All other details stay the same.</p>
+    <div id="bulk-clone-dates" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;"></div>
+    <div id="bulk-clone-error" style="display:none;color:#c0392b;font-size:13px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-green" style="flex:1;" onclick="submitBulkClone()">Create copies</button>
+      <button class="btn btn-outline" onclick="closeBulkCloneModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -440,45 +430,86 @@ const CATEGORIES = [
   { id:"wealth",       label:"Wealth/abundance",         emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
 ];
 
+const ROOMS = [
+  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq", hidden: true },
+  { name:"The Commons",            url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
+  { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Abundance room",         url:"", comingSoon: true },
+  { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
+];
+
+const RECURRING_EVENTS = [
+  {
+    title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00",
+    format:"virtual", room:"DayBalancer Onboarding", host:"DayBalancer", hostlink:"",
+    cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
+    categories:["learning"],
+    description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
+    adminOnly:true,
+  },
+  {
+    title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
+    format:"virtual", room:"Ikigai room", host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
+    categories:["learning"],
+    description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
+    adminOnly:true,
+  },
+  {
+    title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00",
+    format:"virtual", room:"Wellness room", host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories:["care","faith","resources","movement","learning"],
+    description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
+    adminOnly:false,
+  },
+  {
+    title:"Feedback Fridays", dayOfWeek:5, time:"12:00", endtime:"13:00",
+    format:"virtual", room:"Co-create room", host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories:["learning","professional","creative"],
+    description:"Come with your small or big idea and receive supportive feedback.",
+    adminOnly:false,
+  },
+  {
+    title:"Monday Kickoff", dayOfWeek:1, time:"09:00", endtime:"10:00",
+    format:"virtual", room:"The Commons", host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories:["learning","professional","social","resources","care"],
+    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
+    adminOnly:false,
+  },
+];
+
 let events = [];
 let activeFilter = "all";
-let activeTab    = "upcoming"; // "upcoming" | "past"
-let activeMode   = "virtual";  // "virtual" | "inperson"
-let selectedCats = new Set(); // for the form
+let activeTab    = "upcoming";
+let activeMode   = "all";
+let selectedCats = new Set();
 
-// ── Google Sheets API via JSONP ───────────────
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
 function evToSheet(ev) {
   return {
-    id:          ev.id,
-    title:       ev.title || "",
-    categories:  Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
-    date:        ev.date || "",
-    startTime:   ev.time || "",
-    endTime:     ev.endtime || "",
-    format:      ev.format || "",
-    location:    ev.location || "",
-    lat:         ev.lat || "",
-    lng:         ev.lng || "",
-    room:        ev.room || "",
-    description: ev.description || "",
-    host:        ev.host || "",
-    hostlink:    ev.hostlink || "",
-    contactEmail: ev.contactEmail || "",
-    contactPhone: ev.contactPhone || "",
-    passcode:    ev.passcode || "",
-    cooplink:    ev.cooplink || "",
-    going:       ev.going || 0,
+    id: ev.id, title: ev.title || "", categories: Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
+    date: ev.date || "", startTime: ev.time || "", endTime: ev.endtime || "", format: ev.format || "",
+    location: ev.location || "", lat: ev.lat || "", lng: ev.lng || "", room: ev.room || "",
+    description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
+    contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
+    passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
   };
 }
 
 function parseSheetDate(val) {
   if (!val) return "";
   const s = String(val);
-  // Already plain date like 2026-02-24
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // ISO timestamp - extract date part
   if (s.includes("T")) return s.split("T")[0];
   return s;
 }
@@ -486,86 +517,47 @@ function parseSheetDate(val) {
 function parseSheetTime(val) {
   if (!val) return "";
   const s = String(val);
-  // Already plain time like 12:00
   if (/^\d{2}:\d{2}$/.test(s)) return s;
-  // ISO timestamp - extract HH:MM from time part
-  if (s.includes("T")) {
-    const t = s.split("T")[1];
-    return t.substring(0, 5);
-  }
+  if (s.includes("T")) { const t = s.split("T")[1]; return t.substring(0, 5); }
   return s;
 }
 
 function sheetToEv(row) {
-  const RECURRING_TITLES = ["monday kickoff", "daybalancer onboarding", "ikigai tuesdays"];
-  const RECURRING_IDS    = ["kickoff-001", "onboarding-001", "ikigai-001"];
+  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays"];
+  const RECURRING_IDS    = ["kickoff-001","onboarding-001","ikigai-001"];
   const titleKey = (row.title || "").toLowerCase().trim();
   const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
   return {
-    id:          String(row.id || ""),
-    title:       row.title || "",
-    categories:  row.categories ? String(row.categories).split(",").filter(Boolean) : [],
-    date:        parseSheetDate(row.date),
-    time:        parseSheetTime(row.startTime),
-    endtime:     parseSheetTime(row.endTime),
-    format:      row.format || "",
-    location:    row.location || "",
-    lat:         row.lat || "",
-    lng:         row.lng || "",
-    room:        row.room || "",
-    description: row.description || "",
-    host:         row.host || "",
-    hostlink:     row.hostlink || "",
-    contactEmail: row.contactEmail || "",
-    contactPhone: row.contactPhone || "",
-    passcode:    row.passcode || "",
-    cooplink:    row.cooplink || "",
-    going:       parseInt(row.going) || 0,
-    meetinglink: row.meetinglink || "",
-    recurring:   isRecurring,
+    id: String(row.id || ""), title: row.title || "",
+    categories: row.categories ? String(row.categories).split(",").filter(Boolean) : [],
+    date: parseSheetDate(row.date), time: parseSheetTime(row.startTime), endtime: parseSheetTime(row.endTime),
+    format: row.format || "", location: row.location || "", lat: row.lat || "", lng: row.lng || "",
+    room: row.room || "", description: row.description || "", host: row.host || "",
+    hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
+    passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
+    meetinglink: row.meetinglink || "", recurring: isRecurring,
   };
 }
 
-// JSONP loader - bypasses CORS entirely
 function jsonp(params) {
   return new Promise((resolve, reject) => {
     const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    const timeout = setTimeout(() => {
-      delete window[cbName];
-      script.remove();
-      reject(new Error("JSONP timeout"));
-    }, 20000);
-
-    window[cbName] = (data) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      resolve(data);
-    };
-
+    const timeout = setTimeout(() => { delete window[cbName]; script.remove(); reject(new Error("JSONP timeout")); }, 20000);
+    window[cbName] = (data) => { clearTimeout(timeout); delete window[cbName]; script.remove(); resolve(data); };
     const qs = Object.entries({ ...params, callback: cbName })
-      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`)
-      .join("&");
-
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`).join("&");
     const script = document.createElement("script");
     script.src = GS_URL + "?" + qs;
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      reject(new Error("JSONP failed"));
-    };
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error("JSONP failed")); };
     document.head.appendChild(script);
   });
 }
 
-// Apply any saved recurring event overrides from localStorage
 (function applyRecurringOverrides() {
   try {
     const saved = JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}");
     Object.entries(saved).forEach(([slug, overrides]) => {
-      const idx = RECURRING_EVENTS.findIndex(t =>
-        t.title.toLowerCase().replace(/\s+/g,"-") === slug
-      );
+      const idx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
       if (idx > -1) RECURRING_EVENTS[idx] = { ...RECURRING_EVENTS[idx], ...overrides };
     });
   } catch(e) {}
@@ -579,7 +571,6 @@ async function loadEvents() {
     const data = await jsonp({ t: Date.now() });
     events = (data.events || []).filter(r => r.id).map(sheetToEv);
   } catch(e) {
-    // Retry once after 4 seconds (handles Google Apps Script cold start)
     console.warn("Events load failed, retrying...", e);
     try {
       await new Promise(r => setTimeout(r, 2000));
@@ -587,14 +578,6 @@ async function loadEvents() {
       events = (data.events || []).filter(r => r.id).map(sheetToEv);
     } catch(e2) {
       console.warn("Events retry also failed - showing recurring events only", e2);
-      // Show a soft warning rather than a console error
-      const grid = document.getElementById("events-grid");
-      if (grid && !events.length) {
-        const warn = document.createElement("div");
-        warn.style.cssText = "font-size:13px;color:var(--muted);text-align:center;padding:10px;";
-        warn.textContent = "Could not reach the server - showing scheduled events only.";
-        grid.prepend(warn);
-      }
     }
   } finally {
     showLoading(false);
@@ -612,25 +595,22 @@ function populateHostFilter() {
   sel.innerHTML = '<option value="">All hosts</option>';
   hosts.forEach(h => {
     const opt = document.createElement("option");
-    opt.value = h;
-    opt.textContent = h;
+    opt.value = h; opt.textContent = h;
     if (h === current) opt.selected = true;
     sel.appendChild(opt);
   });
 }
 
-async function apiAdd(ev)          { return jsonp({ action: "add",    event: evToSheet(ev) }); }
-async function apiUpdate(ev)       { return jsonp({ action: "update", event: evToSheet(ev) }); }
-async function apiDelete(id)       { return jsonp({ action: "delete", id }); }
-async function apiGoing(id, delta) { return jsonp({ action: "going",  id, delta }); }
+async function apiAdd(ev)          { return jsonp({ action:"add",    event:evToSheet(ev) }); }
+async function apiUpdate(ev)       { return jsonp({ action:"update", event:evToSheet(ev) }); }
+async function apiDelete(id)       { return jsonp({ action:"delete", id }); }
+async function apiGoing(id, delta) { return jsonp({ action:"going",  id, delta }); }
 
 function showLoading(on) {
-  let el = document.getElementById("loading-bar");
-  if (!el) return;
-  el.style.display = on ? "block" : "none";
+  const el = document.getElementById("loading-bar");
+  if (el) el.style.display = on ? "block" : "none";
 }
 
-// ── Build form category chips ─────────────────
 function buildFormChips() {
   const container = document.getElementById("f-cat-chips");
   container.innerHTML = "";
@@ -645,33 +625,23 @@ function buildFormChips() {
 }
 
 function toggleFormCat(id, chip) {
-  if (selectedCats.has(id)) {
-    selectedCats.delete(id);
-    chip.classList.remove("selected");
-  } else {
-    selectedCats.add(id);
-    chip.classList.add("selected");
-  }
+  if (selectedCats.has(id)) { selectedCats.delete(id); chip.classList.remove("selected"); }
+  else { selectedCats.add(id); chip.classList.add("selected"); }
   updateRoomPreview();
 }
 
 let selectedRoom = null;
 let selectedFormat = "virtual";
-let editingId = null; // null = new event, string = editing existing
+let editingId = null;
 
 function setFormat(fmt) {
   selectedFormat = fmt;
-  ["virtual","inperson","both"].forEach(f => {
-    document.getElementById("fmt-" + f).classList.toggle("selected", f === fmt);
-  });
-  // Show/hide location
-  const showLoc = fmt === "inperson" || fmt === "both";
-  document.getElementById("location-field").style.display = showLoc ? "block" : "none";
-  // Show/hide room (only for virtual or both, and only if rooms available)
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === fmt));
+  document.getElementById("location-field").style.display = (fmt === "inperson" || fmt === "both") ? "block" : "none";
   updateRoomPreview();
 }
 
-let hostingOption = null; // "db" | "own"
+let hostingOption = null;
 
 function setHostingOption(opt) {
   hostingOption = opt;
@@ -680,47 +650,31 @@ function setHostingOption(opt) {
   document.getElementById("db-room-section").style.display  = opt === "db"  ? "block" : "none";
   document.getElementById("own-link-section").style.display = opt === "own" ? "block" : "none";
   if (opt === "db") renderRoomChips();
-  if (opt === "own") { selectedRoom = null; }
+  if (opt === "own") selectedRoom = null;
 }
 
 function renderRoomChips() {
   const label = document.getElementById("room-preview-label");
   const roomOptions = document.getElementById("room-options");
-
-  const rooms = [...new Set(
-    Array.from(selectedCats)
-      .flatMap(id => {
-        const cat = CATEGORIES.find(c => c.id === id);
-        if (!cat) return [];
-        return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
-      })
-  )].filter(r => {
-    const roomObj = ROOMS.find(ro => ro.name === r);
-    return !roomObj?.hidden;
-  });
-
+  const rooms = [...new Set(Array.from(selectedCats).flatMap(id => {
+    const cat = CATEGORIES.find(c => c.id === id);
+    if (!cat) return [];
+    return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
+  }))].filter(r => { const ro = ROOMS.find(ro => ro.name === r); return !ro?.hidden; });
   if (rooms.length === 0) { document.getElementById("db-room-section").style.display = "none"; return; }
   if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
   if (rooms.length === 1) selectedRoom = rooms[0];
-
   label.textContent = rooms.length === 1 ? "DayBalancer virtual room for this event:" : "Which DayBalancer virtual room is best for this event?";
   roomOptions.innerHTML = "";
   rooms.forEach(room => {
     const chip = document.createElement("button");
     chip.type = "button";
     if (rooms.length === 1) {
-      chip.className = "room-chip selected";
-      chip.style.cursor = "default";
-      chip.textContent = room;
+      chip.className = "room-chip selected"; chip.style.cursor = "default"; chip.textContent = room;
     } else {
       chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
       chip.textContent = room;
-      chip.onclick = () => {
-        selectedRoom = room;
-        roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected"));
-        chip.classList.add("selected");
-        checkAndWarnConflict();
-      };
+      chip.onclick = () => { selectedRoom = room; roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected")); chip.classList.add("selected"); checkAndWarnConflict(); };
     }
     roomOptions.appendChild(chip);
   });
@@ -739,75 +693,51 @@ function updateRoomPreview() {
   }
   preview.style.display = "block";
   document.getElementById("hosting-choice").style.display = "block";
-  // Re-render room chips if DB option already chosen
   if (hostingOption === "db") renderRoomChips();
 }
 
-// ── Filter pills ──────────────────────────────
 function renderPills() {
   const c = document.getElementById("cat-pills");
   c.innerHTML = "";
-  const all = makeFilterBtn("All events", activeFilter === "all", () => setFilter("all"));
-  c.appendChild(all);
-  CATEGORIES.forEach(cat => {
-    const btn = makeFilterBtn(`${cat.emoji} ${cat.label}`, activeFilter === cat.id, () => setFilter(cat.id));
-    c.appendChild(btn);
-  });
+  c.appendChild(makeFilterBtn("All events", activeFilter === "all", () => setFilter("all")));
+  CATEGORIES.forEach(cat => c.appendChild(makeFilterBtn(`${cat.emoji} ${cat.label}`, activeFilter === cat.id, () => setFilter(cat.id))));
 }
 function makeFilterBtn(text, isActive, onClick) {
   const b = document.createElement("button");
   b.className = "cat-pill" + (isActive ? " active" : "");
-  b.textContent = text;
-  b.onclick = onClick;
+  b.textContent = text; b.onclick = onClick;
   return b;
 }
 function setFilter(id) { activeFilter = id; localStorage.setItem("db-filter", id); renderPills(); renderEvents(); }
 
-// ── Render events ─────────────────────────────
 function renderEvents() {
   const grid = document.getElementById("event-grid");
   const q    = document.getElementById("search-input").value.toLowerCase();
   const now  = Date.now();
 
-  // Public recurring events appear on the board; admin-only ones don't
-  const allEvents = activeTab === "upcoming"
-    ? events
-    : events;
+  const publicRec = getPublicRecurring(2);
+  const allEvents = [...events, ...publicRec];
 
   let list = allEvents.filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
-    // Normalize: if a category value matches a label instead of an id, convert it
     cats = cats.map(c => {
-      const byId    = CATEGORIES.find(cat => cat.id    === c);
-      if (byId) return c;
-      const byLabel = CATEGORIES.find(cat => cat.label.toLowerCase() === c.toLowerCase());
-      if (byLabel) return byLabel.id;
-      // Partial match - e.g. "wellness" matches "Mental health/wellness" or "Physical health/wellness"
+      const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
+      const byLabel = CATEGORIES.find(cat => cat.label.toLowerCase() === c.toLowerCase()); if (byLabel) return byLabel.id;
       const partial = CATEGORIES.find(cat => cat.label.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(cat.id.toLowerCase()));
       return partial ? partial.id : c;
     });
     const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
-    const matchQ    = !q ||
-      e.title.toLowerCase().includes(q) ||
-      (e.description||"").toLowerCase().includes(q) ||
-      (e.location||"").toLowerCase().includes(q) ||
-      (e.host||"").toLowerCase().includes(q);
+    const matchQ    = !q || e.title.toLowerCase().includes(q) || (e.description||"").toLowerCase().includes(q) || (e.location||"").toLowerCase().includes(q) || (e.host||"").toLowerCase().includes(q);
     const evMs      = new Date(e.date + "T" + (e.time||"00:00")).getTime();
     const isPast    = evMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
-    // Mode filter - "all" shows everything; missing format events always show
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
-    // If there's a search query, skip mode filter so search finds everything
-    const matchMode  = q ? true : activeMode === "all"
-      ? true
-      : activeMode === "virtual" ? isVirtual : isInPerson;
-    // Location filter (in-person only) - only filter if state is specifically selected
+    const matchMode  = q ? true : activeMode === "all" ? true : activeMode === "virtual" ? isVirtual : isInPerson;
     let matchLocation = true;
     if (activeMode === "inperson") {
       const state = document.getElementById("filter-state")?.value || "";
       const loc   = (e.location || "").toLowerCase();
-      // Only filter if a specific state is chosen - country/region alone is too restrictive
       if (state) matchLocation = loc.includes(state.toLowerCase());
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
@@ -824,7 +754,7 @@ function renderEvents() {
   grid.innerHTML = "";
   if (list.length === 0) {
     const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p>${msg}</p></div>`;
+    grid.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p style="color:var(--muted);">${msg}</p></div>`;
     return;
   }
 
@@ -833,20 +763,18 @@ function renderEvents() {
     cats = cats.map(c => {
       const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
       const byLabel = CATEGORIES.find(cat => cat.label.toLowerCase() === c.toLowerCase()); if (byLabel) return byLabel.id;
-      const partial = CATEGORIES.find(cat => cat.label.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(cat.id.toLowerCase())); return partial ? partial.id : c;
+      const partial = CATEGORIES.find(cat => cat.label.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(cat.id.toLowerCase()));
+      return partial ? partial.id : c;
     });
     const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
-    const gone = localStorage.getItem("db-going-" + ev.id);
-
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const roomObj = ROOMS.find(r => r.name === ev.room);
-
-    const card = document.createElement("div");
-    card.className = "event-card";
-    card.dataset.eventId = ev.id;
     const recurringBadge = ev.recurring
       ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
       : "";
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.dataset.eventId = ev.id;
     card.innerHTML = `
       <div class="event-card-top">
         <div class="event-title">${esc(ev.title)}${recurringBadge}</div>
@@ -855,13 +783,13 @@ function renderEvents() {
       <div class="event-card-body">
         <div class="event-meta">
           <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
-          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : `Virtual`)}</div>` : ""}
+          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
           <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
-          ${ev.cooplink ? "<div class=\"event-meta-item\"><span>🔗</span><a href=\"" + esc(ev.cooplink) + "\" target=\"_blank\" rel=\"noopener\" style=\"color:var(--blue);text-decoration:none;\">Cooperative link</a></div>" : ""}
+          ${ev.cooplink ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Cooperative link</a></div>` : ""}
         </div>
-        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description, 200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--blue);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
@@ -879,49 +807,25 @@ async function markGoing(id) {
   if (!ev) return;
   const already = localStorage.getItem(key);
   const delta = already ? -1 : 1;
-  if (already) {
-    ev.going = Math.max((ev.going || 1) - 1, 0);
-    localStorage.removeItem(key);
-  } else {
-    ev.going = (ev.going || 0) + 1;
-    localStorage.setItem(key, "1");
-  }
-  // Update UI instantly
+  if (already) { ev.going = Math.max((ev.going||1)-1,0); localStorage.removeItem(key); }
+  else { ev.going = (ev.going||0)+1; localStorage.setItem(key,"1"); }
   const nowGone = !!localStorage.getItem(key);
-  const countEl = document.getElementById("going-" + id);
-  const btn = document.getElementById("goin-btn-" + id);
-  if (countEl) countEl.textContent = ev.going;
-  if (btn) {
-    btn.textContent = nowGone ? "✓ Interested" : "🙋 Interested?";
-    btn.className = "btn btn-sm" + (nowGone ? " btn-outline" : "");
-  }
   showToast(nowGone ? "Marked as interested!" : "Removed - no problem!");
-  // Sync to sheet in background
   apiGoing(id, delta);
 }
 
-// ── Modal ─────────────────────────────────────
-// ── Draft auto-save ───────────────────────────
 const DRAFT_KEY = "db-event-draft";
 
 function saveDraft() {
-  if (editingId) return; // don't overwrite draft when editing existing event
+  if (editingId) return;
   const draft = {
-    title:    document.getElementById("f-title")?.value || "",
-    date:     document.getElementById("f-date")?.value || "",
-    time:     document.getElementById("f-time")?.value || "",
-    endtime:  document.getElementById("f-endtime")?.value || "",
-    location: document.getElementById("f-location")?.value || "",
-    desc:     document.getElementById("f-desc")?.value || "",
-    host:         document.getElementById("f-host")?.value || "",
-    hostlink:     document.getElementById("f-hostlink")?.value || "",
-    contactEmail: document.getElementById("f-contact-email")?.value || "",
-    contactPhone: document.getElementById("f-contact-phone")?.value || "",
-    cooplink: document.getElementById("f-cooplink")?.value || "",
-    passcode: document.getElementById("f-passcode")?.value || "",
-    cats:     [...selectedCats],
-    format:   selectedFormat,
-    room:     selectedRoom,
+    title: document.getElementById("f-title")?.value || "", date: document.getElementById("f-date")?.value || "",
+    time: document.getElementById("f-time")?.value || "", endtime: document.getElementById("f-endtime")?.value || "",
+    location: document.getElementById("f-location")?.value || "", desc: document.getElementById("f-desc")?.value || "",
+    host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
+    contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
+    cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 }
@@ -931,7 +835,6 @@ function restoreDraft() {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return false;
     const d = JSON.parse(raw);
-    // Only restore if there's actual content
     if (!d.title && !d.desc && !d.host) return false;
     document.getElementById("f-title").value    = d.title || "";
     document.getElementById("f-date").value     = d.date || "";
@@ -940,38 +843,26 @@ function restoreDraft() {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
-    document.getElementById("f-hostlink").value  = d.hostlink || "";
+    document.getElementById("f-hostlink").value = d.hostlink || "";
     document.getElementById("f-contact-email").value = d.contactEmail || "";
     document.getElementById("f-contact-phone").value = d.contactPhone || "";
-    document.getElementById("f-cooplink").value  = d.cooplink || "";
-    document.getElementById("f-passcode").value  = d.passcode || "";
-    if (d.cats?.length) {
-      selectedCats = new Set(d.cats);
-      buildFormChips();
-    }
+    document.getElementById("f-cooplink").value = d.cooplink || "";
+    document.getElementById("f-passcode").value = d.passcode || "";
+    if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
     if (d.format) {
       selectedFormat = d.format;
-      ["virtual","inperson","both"].forEach(f =>
-        document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format)
-      );
-      const showLoc = d.format === "inperson" || d.format === "both";
-      document.getElementById("location-field").style.display = showLoc ? "block" : "none";
+      ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format));
+      document.getElementById("location-field").style.display = (d.format === "inperson" || d.format === "both") ? "block" : "none";
       updateRoomPreview();
     }
     return true;
   } catch(e) { return false; }
 }
 
-function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-}
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
 
 function openModal(skipDraft = false) {
-  editingId = null;
-  selectedCats = new Set();
-  selectedRoom = null;
-  selectedFormat = null;
-  hostingOption = null;
+  editingId = null; selectedCats = new Set(); selectedRoom = null; selectedFormat = null; hostingOption = null;
   ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.remove("selected"));
   document.getElementById("hopt-db").classList.remove("selected");
   document.getElementById("hopt-own").classList.remove("selected");
@@ -995,8 +886,6 @@ function openModal(skipDraft = false) {
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
-
-  // Restore draft if available
   if (!skipDraft) {
     const restored = restoreDraft();
     if (restored) {
@@ -1015,50 +904,39 @@ function openEdit(id) {
   setTimeout(() => document.getElementById("p-code").focus(), 100);
 }
 
-function closePasscodeModal() {
-  document.getElementById("passcode-modal").classList.remove("open");
-  pendingEditId = null;
-}
+function closePasscodeModal() { document.getElementById("passcode-modal").classList.remove("open"); pendingEditId = null; }
 
 const MASTER_PASSCODE = "6090";
+const MASTER_HOST     = "jessie upp";
+let   isMasterUser    = false;
 
 function verifyPasscode() {
   const entered  = document.getElementById("p-code").value.trim();
   const idToEdit = pendingEditId;
-  // Master passcode bypasses everything
   if (entered === MASTER_PASSCODE) {
-    closePasscodeModal();
-    loadEditForm(idToEdit);
-    return;
+    const found = findEvById(idToEdit);
+    isMasterUser = !!(found && (found.ev.host || "").trim().toLowerCase() === MASTER_HOST);
+    closePasscodeModal(); loadEditForm(idToEdit); return;
   }
   const found = findEvById(idToEdit);
   if (!found) return;
   const ev = found.ev;
-  // Recurring events have no individual passcode - master only
   if (found.isRecurring || !ev.passcode) {
     document.getElementById("passcode-error").style.display = "block";
     document.getElementById("passcode-error").textContent = "Recurring events require the master passcode.";
-    document.getElementById("p-code").value = "";
-    document.getElementById("p-code").focus();
-    return;
+    document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
   }
   if (entered !== ev.passcode) {
     document.getElementById("passcode-error").style.display = "block";
     document.getElementById("passcode-error").textContent = "Incorrect passcode. Please try again.";
-    document.getElementById("p-code").value = "";
-    document.getElementById("p-code").focus();
-    return;
+    document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
   }
-  closePasscodeModal();
-  loadEditForm(idToEdit);
+  closePasscodeModal(); loadEditForm(idToEdit);
 }
 
-
 function findEvById(id) {
-  // Check sheet events first
   const sheetEv = events.find(e => e.id === id);
   if (sheetEv) return { ev: sheetEv, isRecurring: false };
-  // Check generated recurring events
   const allRec = getAllRecurring(4);
   const recEv = allRec.find(e => e.id === id);
   if (recEv) return { ev: recEv, isRecurring: true };
@@ -1071,9 +949,7 @@ function loadEditForm(id) {
   const ev = found.ev;
   editingId = id;
   selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
-  selectedRoom = ev.room || null;
-  selectedFormat = ev.format || null;
-
+  selectedRoom = ev.room || null; selectedFormat = ev.format || null;
   document.getElementById("post-modal").classList.add("open");
   document.getElementById("post-error").style.display = "none";
   document.getElementById("modal-title").textContent = found.isRecurring ? "Edit recurring event" : "Edit event";
@@ -1081,22 +957,18 @@ function loadEditForm(id) {
   document.getElementById("passcode-field").style.display = "none";
   document.getElementById("delete-btn").style.display = "block";
   document.getElementById("clone-btn").style.display  = "block";
-
-  // Show note for recurring events
+  const cloneCountWrap = document.getElementById("clone-count-wrap");
+  if (cloneCountWrap) cloneCountWrap.style.display = isMasterUser ? "inline-flex" : "none";
   let recurNote = document.getElementById("recur-edit-note");
   if (found.isRecurring) {
     if (!recurNote) {
-      recurNote = document.createElement("p");
-      recurNote.id = "recur-edit-note";
-      recurNote.style.cssText = "font-size:13px;color:var(--blue);background:#EEF6FF;border-radius:8px;padding:10px 12px;margin-bottom:12px;";
+      recurNote = document.createElement("p"); recurNote.id = "recur-edit-note";
+      recurNote.style.cssText = "font-size:13px;color:var(--primary);background:#E8F2F9;border-radius:8px;padding:10px 12px;margin-bottom:12px;";
       document.getElementById("post-error").after(recurNote);
     }
     recurNote.textContent = "🔁 You're editing a recurring event. Changes apply to all future occurrences.";
     recurNote.style.display = "block";
-  } else if (recurNote) {
-    recurNote.style.display = "none";
-  }
-
+  } else if (recurNote) { recurNote.style.display = "none"; }
   document.getElementById("f-title").value = ev.title || "";
   document.getElementById("f-date").value  = ev.date || "";
   document.getElementById("f-time").value  = ev.time || "";
@@ -1108,146 +980,70 @@ function loadEditForm(id) {
   document.getElementById("f-contact-email").value = ev.contactEmail || "";
   document.getElementById("f-contact-phone").value = ev.contactPhone || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
-  ["virtual","inperson","both"].forEach(f => {
-    document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
-  });
-  const showLoc = selectedFormat === "inperson" || selectedFormat === "both";
-  document.getElementById("location-field").style.display = showLoc ? "block" : "none";
-
-  buildFormChips();
-  updateRoomPreview();
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
+  document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
+  buildFormChips(); updateRoomPreview();
 }
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); }
-// ── Bottom sheet: swipe down to dismiss on mobile ──
+
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; }
+
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
     const modal = overlay.querySelector(".modal");
     if (!modal) return;
     let startY = 0, startScrollTop = 0, dragging = false;
-
-    modal.addEventListener("touchstart", e => {
-      startY = e.touches[0].clientY;
-      startScrollTop = modal.scrollTop;
-      dragging = false;
-    }, { passive: true });
-
+    modal.addEventListener("touchstart", e => { startY = e.touches[0].clientY; startScrollTop = modal.scrollTop; dragging = false; }, { passive:true });
     modal.addEventListener("touchmove", e => {
       const dy = e.touches[0].clientY - startY;
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile) return;
-      // Only allow swipe-down dismiss when at top of scroll
-      if (dy > 0 && startScrollTop === 0) {
-        dragging = true;
-        modal.style.transform = `translateY(${Math.max(0, dy * 0.6)}px)`;
-        modal.style.transition = "none";
-        e.preventDefault();
-      }
-    }, { passive: false });
-
+      if (window.innerWidth > 768) return;
+      if (dy > 0 && startScrollTop === 0) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
+    }, { passive:false });
     modal.addEventListener("touchend", e => {
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile || !dragging) return;
+      if (window.innerWidth > 768 || !dragging) return;
       const dy = e.changedTouches[0].clientY - startY;
-      modal.style.transition = "";
-      modal.style.transform = "";
-      dragging = false;
+      modal.style.transition = ""; modal.style.transform = ""; dragging = false;
       if (dy > 100) {
-        // Find which close function to call
         const id = overlay.id;
         if (id === "post-modal") closeModal();
         else if (id === "room-modal") closeRoomModal();
-        else if (id === "summary-modal") closeSummary();
+        else if (id === "summary-modal") closeSummaryModal();
         else if (id === "passcode-modal") closePasscodeModal();
       }
-    }, { passive: true });
+    }, { passive:true });
   });
 })();
 
 function toggleDesc(id) {
-  const ev = events.find(e => e.id === id);
-  if (!ev || ev.description.length <= 200) return;
-  const el = document.getElementById("desc-" + id);
-  const more = document.getElementById("desc-more-" + id);
+  const ev = [...events, ...getAllRecurring(2)].find(e => e.id === id);
+  if (!ev || (ev.description||"").length <= 200) return;
+  const el = document.getElementById("desc-"+id);
   if (!el) return;
   const isExpanded = el.dataset.expanded === "true";
   if (isExpanded) {
-    el.innerHTML = esc(trunc(ev.description, 200)) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Read more</span>`;
+    el.innerHTML = esc(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
     el.dataset.expanded = "false";
   } else {
-    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--blue);font-size:13px;"> Show less</span>`;
+    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
     el.dataset.expanded = "true";
   }
 }
 
 function addToCalendar(id) {
-  const ev = events.find(e => e.id === id);
+  const allEv = [...events, ...getAllRecurring(2)];
+  const ev = allEv.find(e => e.id === id);
   if (!ev || !ev.date) return;
-
-  function toCalDT(date, time) {
-    const t = time || "00:00";
-    return date.replace(/-/g, "") + "T" + t.replace(":", "") + "00";
-  }
-
+  function toCalDT(date, time) { const t = time || "00:00"; return date.replace(/-/g,"") + "T" + t.replace(":","") + "00"; }
   const start = toCalDT(ev.date, ev.time);
   const end   = toCalDT(ev.date, ev.endtime || ev.time);
   const roomObj = ROOMS.find(r => r.name === ev.room);
-  const location = ev.format === "virtual"
-    ? (roomObj ? roomObj.url : "Virtual")
-    : (ev.location || "");
-  const details = [
-    ev.description || "",
-    roomObj ? "Room: " + roomObj.url : "",
-    ev.cooplink ? "Cooperative link: " + ev.cooplink : "",
-    "\nHosted by " + ev.host,
-    ev.contactEmail ? "Email: " + ev.contactEmail : "",
-    ev.contactPhone ? "Phone: " + ev.contactPhone : "",
-  ].filter(Boolean).join("\n\n");
-
-  // Recurring events - use ICS download with RRULE
-  const RECURRING_IDS = ["kickoff-001", "onboarding-001", "ikigai-001"];
-  const RECURRING_TITLES = ["monday kickoff", "daybalancer onboarding", "ikigai tuesdays"];
-  const RRULE_MAP = {
-    "kickoff-001":    "RRULE:FREQ=WEEKLY;BYDAY=MO",
-    "onboarding-001": "RRULE:FREQ=WEEKLY;BYDAY=MO",
-    "ikigai-001":     "RRULE:FREQ=WEEKLY;BYDAY=TU",
-    "monday kickoff":          "RRULE:FREQ=WEEKLY;BYDAY=MO",
-    "daybalancer onboarding":  "RRULE:FREQ=WEEKLY;BYDAY=MO",
-    "ikigai tuesdays":         "RRULE:FREQ=WEEKLY;BYDAY=TU",
-  };
-
-  const titleKey = (ev.title || "").toLowerCase().trim();
-  const isRecurring = RECURRING_IDS.includes(id) || RECURRING_TITLES.includes(titleKey);
+  const location = ev.format === "virtual" ? (roomObj ? roomObj.url : "Virtual") : (ev.location || "");
+  const details = [ev.description||"", roomObj ? "Room: "+roomObj.url : "", ev.cooplink ? "Cooperative link: "+ev.cooplink : "", "\nHosted by "+ev.host, ev.contactEmail ? "Email: "+ev.contactEmail : "", ev.contactPhone ? "Phone: "+ev.contactPhone : ""].filter(Boolean).join("\n\n");
+  const RRULE_MAP = { "kickoff-001":"RRULE:FREQ=WEEKLY;BYDAY=MO", "onboarding-001":"RRULE:FREQ=WEEKLY;BYDAY=MO", "ikigai-001":"RRULE:FREQ=WEEKLY;BYDAY=TU", "monday kickoff":"RRULE:FREQ=WEEKLY;BYDAY=MO", "daybalancer onboarding":"RRULE:FREQ=WEEKLY;BYDAY=MO", "ikigai tuesdays":"RRULE:FREQ=WEEKLY;BYDAY=TU" };
+  const titleKey = (ev.title||"").toLowerCase().trim();
   const rrule = RRULE_MAP[id] || Object.entries(RRULE_MAP).find(([k]) => titleKey.includes(k))?.[1];
-
-  if (isRecurring && rrule) {
-    const params = new URLSearchParams({
-      text:     ev.title,
-      dates:    start + "/" + end,
-      details:  details,
-      location: location,
-    });
-    params.append("recur", rrule);
-    window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
-    return;
-  }
-
-  // Non-recurring - open Google Calendar
-  const params = new URLSearchParams({
-    text:     ev.title,
-    dates:    start + "/" + end,
-    details:  details,
-    location: location,
-  });
+  const params = new URLSearchParams({ text:ev.title, dates:start+"/"+end, details, location });
+  if (ev.recurring && rrule) params.append("recur", rrule);
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
-}
-
-function shareEvent(id) {
-  const url = window.location.origin + window.location.pathname + "?event=" + id;
-  navigator.clipboard.writeText(url).then(() => {
-    showToast("🔗 Link copied to clipboard!");
-  }).catch(() => {
-    prompt("Copy this link:", url);
-  });
 }
 
 function checkEventLink() {
@@ -1256,35 +1052,24 @@ function checkEventLink() {
   if (!id) return;
   const card = document.querySelector(`[data-event-id="${id}"]`);
   if (!card) return;
-  card.scrollIntoView({ behavior: "smooth", block: "center" });
-  card.style.outline = "3px solid var(--blue)";
+  card.scrollIntoView({ behavior:"smooth", block:"center" });
+  card.style.outline = "3px solid var(--primary)";
   card.style.boxShadow = "0 0 0 4px rgba(27,104,150,0.15)";
-  setTimeout(() => {
-    card.style.outline = "";
-    card.style.boxShadow = "";
-  }, 3000);
+  setTimeout(() => { card.style.outline = ""; card.style.boxShadow = ""; }, 3000);
 }
 
-function safeOn(id, evt, fn) {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener(evt, fn);
-}
-safeOn("post-modal", "click", e => { if (e.target.id === "post-modal") closeModal(); });
-safeOn("f-date", "change", checkAndWarnConflict);
-safeOn("f-time", "change", checkAndWarnConflict);
-safeOn("f-endtime", "change", checkAndWarnConflict);
-safeOn("p-code", "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
-safeOn("passcode-modal", "click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
-safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal") closeSummaryModal(); });
-safeOn("room-modal", "click", e => { if (e.target.id === "room-modal") closeRoomModal(); });
+function safeOn(id, evt, fn) { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); }
+safeOn("post-modal",    "click", e => { if (e.target.id === "post-modal")    closeModal(); });
+safeOn("f-date",        "change", checkAndWarnConflict);
+safeOn("f-time",        "change", checkAndWarnConflict);
+safeOn("f-endtime",     "change", checkAndWarnConflict);
+safeOn("p-code",        "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
+safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
+safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
-// Auto-save draft on every input change
-["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => {
-  safeOn(id, "input", saveDraft);
-  safeOn(id, "change", saveDraft);
-});
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { safeOn(id,"input",saveDraft); safeOn(id,"change",saveDraft); });
 
-// ── Summary modal ─────────────────────────────
 let summaryEventId = null;
 
 function showSummary(ev) {
@@ -1292,53 +1077,39 @@ function showSummary(ev) {
   const roomObj = ROOMS.find(r => r.name === ev.room);
   const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
   const lines = [
-    `📅 ${ev.title}`,
-    ``,
-    `Date:       ${fmtDateShort(ev.date)}`,
-    `Time:       ${timeLine}`,
+    `📅 ${ev.title}`, ``,
+    `Date:       ${fmtDateShort(ev.date)}`, `Time:       ${timeLine}`,
     ev.format ? `Format:     ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
     ev.location ? `Location:   ${ev.location}` : "",
     ev.room ? `Room:       ${ev.room}` : "",
     roomObj ? `Room link:  ${roomObj.url}` : "",
-    ev.description ? `\n${ev.description}` : "",
-    ``,
+    ev.description ? `\n${ev.description}` : "", ``,
     `─────────────────────────`,
     `Edit passcode:  ${ev.passcode}`,
     `To edit, open the event board, click ✏️ on your event, and enter your private PIN.`,
   ].filter(l => l !== "").join("\n");
-
   document.getElementById("summary-body").textContent = lines;
   document.getElementById("copy-confirm").style.display = "none";
   document.getElementById("summary-modal").classList.add("open");
 }
 
-function addToCalendarFromSummary() {
-  if (summaryEventId) addToCalendar(summaryEventId);
-}
-
-function closeSummaryModal() {
-  document.getElementById("summary-modal").classList.remove("open");
-}
-
+function addToCalendarFromSummary() { if (summaryEventId) addToCalendar(summaryEventId); }
+function closeSummaryModal() { document.getElementById("summary-modal").classList.remove("open"); }
 function copySummary() {
-  const text = document.getElementById("summary-body").textContent;
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(document.getElementById("summary-body").textContent).then(() => {
     document.getElementById("copy-confirm").style.display = "block";
     setTimeout(() => document.getElementById("copy-confirm").style.display = "none", 2500);
   });
 }
 
-
 function fmt12(t) {
   if (!t) return "";
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
+  const [h,m] = t.split(":").map(Number);
+  return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`;
 }
-
 function fmtDateShort(date) {
   if (!date) return "";
-  return new Date(date + "T12:00").toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+  return new Date(date+"T12:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
 }
 
 async function submitEvent() {
@@ -1367,178 +1138,83 @@ async function submitEvent() {
   if (!endtime) missing.push("end time");
   if (!host) missing.push("host name");
   if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
-
-  if (missing.length > 0) {
-    errEl.textContent = "Please add: " + missing.join(", ") + ".";
-    errEl.style.display = "block";
-    return;
-  }
-  if (time && endtime && endtime <= time) {
-    errEl.textContent = "End time must be after start time.";
-    errEl.style.display = "block";
-    return;
-  }
-  if (checkAllFields()) {
-    errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed.";
-    errEl.style.display = "block";
-    return;
-  }
-  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) {
-    errEl.textContent = "Please choose where you're hosting this - a DayBalancer room or your own link.";
-    errEl.style.display = "block";
-    return;
-  }
-  if (hostingOption === "db" && !selectedRoom) {
-    errEl.textContent = "Please select which virtual room is best for this event.";
-    errEl.style.display = "block";
-    return;
-  }
+  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; return; }
+  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; return; }
+  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a DayBalancer room or your own link."; errEl.style.display = "block"; return; }
+  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
   if (selectedRoom && date) {
     const conflict = checkConflict(selectedRoom, date, time, editingId);
-    if (conflict) {
-      errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`;
-      errEl.style.display = "block";
-      return;
-    }
+    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; return; }
   }
   errEl.style.display = "none";
 
-  // ── Abuse prevention ──────────────────────────
-  // 1) Rate limit: max 4 new posts per device per 24h (edits don't count)
   if (!editingId) {
     const RL_KEY = "db-post-log";
     const now24  = Date.now();
     let log = [];
     try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
-    log = log.filter(t => now24 - t < 24 * 60 * 60 * 1000); // keep last 24h
-    if (log.length >= 4) {
-      errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow.";
-      errEl.style.display = "block";
-      return;
-    }
+    log = log.filter(t => now24 - t < 24*60*60*1000);
+    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; return; }
+    const dupExists = events.some(e => e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date);
+    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; return; }
   }
-  // 2) Duplicate title+date warning (same title, same day, not an edit)
-  if (!editingId) {
-    const dupExists = events.some(e =>
-      e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date
-    );
-    if (dupExists) {
-      errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`;
-      errEl.style.display = "block";
-      return;
-    }
-  }
-  // ─────────────────────────────────────────────
 
   const catIds = Array.from(selectedCats);
   const eventData = {
-    title, categories: catIds, date, time, endtime,
-    format: selectedFormat,
-    location: (selectedFormat === "inperson" || selectedFormat === "both") ? location : null,
-    lat:      (selectedFormat === "inperson" || selectedFormat === "both") ? lat : "",
-    lng:      (selectedFormat === "inperson" || selectedFormat === "both") ? lng : "",
-    description: desc, host, hostlink, contactEmail, contactPhone, cooplink,
-    room: (hostingOption === "db" && (selectedFormat === "virtual" || selectedFormat === "both")) ? selectedRoom : null,
-    meetinglink: (hostingOption === "own") ? (document.getElementById("f-meetinglink")?.value.trim() || "") : "",
+    title, categories:catIds, date, time, endtime, format:selectedFormat,
+    location:(selectedFormat==="inperson"||selectedFormat==="both") ? location : null,
+    lat:(selectedFormat==="inperson"||selectedFormat==="both") ? lat : "",
+    lng:(selectedFormat==="inperson"||selectedFormat==="both") ? lng : "",
+    description:desc, host, hostlink, contactEmail, contactPhone, cooplink,
+    room:(hostingOption==="db"&&(selectedFormat==="virtual"||selectedFormat==="both")) ? selectedRoom : null,
+    meetinglink:(hostingOption==="own") ? (document.getElementById("f-meetinglink")?.value.trim()||"") : "",
   };
 
   if (editingId) {
     const isRec = editingId.startsWith("recurring-");
     if (isRec) {
-      // Find which template this belongs to by matching the slug in the id
-      const slug = editingId.replace(/^recurring-/, "").replace(/-\d{4}-\d{2}-\d{2}$/, "");
-      const tIdx = RECURRING_EVENTS.findIndex(t =>
-        t.title.toLowerCase().replace(/\s+/g,"-") === slug
-      );
+      const slug = editingId.replace(/^recurring-/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"");
+      const tIdx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
       if (tIdx > -1) {
-        // Update the live template
-        RECURRING_EVENTS[tIdx] = {
-          ...RECURRING_EVENTS[tIdx],
-          title, categories: catIds, time, endtime,
-          description: desc, host, hostlink, cooplink,
-          format: selectedFormat,
-          room: (selectedFormat === "virtual" || selectedFormat === "both") ? selectedRoom : RECURRING_EVENTS[tIdx].room,
-        };
-        // Persist to localStorage so edits survive page reload
+        RECURRING_EVENTS[tIdx] = { ...RECURRING_EVENTS[tIdx], title, categories:catIds, time, endtime, description:desc, host, hostlink, cooplink, format:selectedFormat, room:(selectedFormat==="virtual"||selectedFormat==="both")?selectedRoom:RECURRING_EVENTS[tIdx].room };
         const saved = {};
-        try { Object.assign(saved, JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}")); } catch {}
+        try { Object.assign(saved, JSON.parse(localStorage.getItem("db-recurring-overrides")||"{}")); } catch {}
         saved[slug] = RECURRING_EVENTS[tIdx];
         localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
       }
-      closeModal();
-      renderEvents();
-      showToast("🔁 Recurring event updated for all future occurrences!");
+      closeModal(); renderEvents(); showToast("🔁 Recurring event updated for all future occurrences!");
     } else {
       const idx = events.findIndex(e => e.id === editingId);
-      if (idx > -1) {
-        events[idx] = { ...events[idx], ...eventData };
-        closeModal();
-        renderEvents();
-        showToast("✓ Event updated!");
-        apiUpdate(events[idx]).catch(e => console.warn("Update save failed", e));
-      } else {
-        closeModal();
-        renderEvents();
-        showToast("✓ Event updated!");
-      }
+      if (idx > -1) { events[idx] = { ...events[idx], ...eventData }; closeModal(); renderEvents(); showToast("✓ Event updated!"); apiUpdate(events[idx]).catch(e => console.warn("Update save failed",e)); }
+      else { closeModal(); renderEvents(); showToast("✓ Event updated!"); }
     }
-    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   } else {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    const newEv = { id: newId, ...eventData, passcode, going: 0 };
-
-    // Log this post for rate limiting
+    const newEv = { id:newId, ...eventData, passcode, going:0 };
     const RL_KEY = "db-post-log";
-    let log = [];
-    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
-    log.push(Date.now());
-    localStorage.setItem(RL_KEY, JSON.stringify(log));
-
-    // Cooldown: disable submit button for 10s to prevent rapid fire
+    let log = []; try { log = JSON.parse(localStorage.getItem(RL_KEY)||"[]"); } catch {}
+    log.push(Date.now()); localStorage.setItem(RL_KEY, JSON.stringify(log));
     const submitBtn = document.getElementById("submit-btn");
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Posted ✓";
-      setTimeout(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Post event";
-      }, 10000);
-    }
-
-    // Show results instantly - no waiting for API
-    events.unshift(newEv);
-    clearDraft();
-    closeModal();
-    ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-    renderEvents();
-    showSummary(newEv);
-
-    // Save to server in background
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Posted ✓"; setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = "Post event"; }, 10000); }
+    events.unshift(newEv); clearDraft(); closeModal(); renderEvents(); showSummary(newEv);
     apiAdd(newEv).catch(() => {});
   }
 }
 
-// ── Helpers ───────────────────────────────────
-function getTimezone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone
-      .split("/").pop().replace(/_/g, " ");
-  } catch { return ""; }
-}
 function fmtDate(date, time, endtime) {
   if (!date) return "Date TBD";
   const d  = new Date(date + "T" + (time||"00:00"));
-  const ds = d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+  const ds = d.toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"});
   if (!time) return ds;
-  const tz = d.toLocaleTimeString("en-US", { timeZoneName:"short" }).split(" ").pop();
-  const ts = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  const tz = d.toLocaleTimeString("en-US", {timeZoneName:"short"}).split(" ").pop();
+  const ts = d.toLocaleTimeString("en-US", {hour:"numeric",minute:"2-digit"});
   if (!endtime) return ds + " · " + ts + " " + tz;
-  const de = new Date(date + "T" + endtime);
-  const te = de.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+  const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   return ds + " · " + ts + " - " + te + " " + tz;
 }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-function trunc(s, n) { return s.length > n ? s.slice(0,n) + "…" : s; }
+function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
@@ -1552,13 +1228,9 @@ async function deleteEvent() {
   if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
   events = events.filter(e => e.id !== editingId);
   await apiDelete(editingId);
-  closeModal();
-  renderEvents();
-  showToast("Event deleted.");
+  closeModal(); renderEvents(); showToast("Event deleted.");
 }
 
-
-// ── Tab toggle ────────────────────────────────
 function setTab(tab) {
   activeTab = tab;
   document.getElementById("tab-upcoming").classList.toggle("active", tab === "upcoming");
@@ -1575,12 +1247,7 @@ function setMode(mode) {
   document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
   if (mode === "inperson") {
     const regionEl = document.getElementById("filter-region");
-    if (!regionEl.value) {
-      regionEl.value = "North America";
-      onRegionChange();
-      document.getElementById("filter-country").value = "United States";
-      onCountryChange();
-    }
+    if (!regionEl.value) { regionEl.value = "North America"; onRegionChange(); document.getElementById("filter-country").value = "United States"; onCountryChange(); }
   }
   localStorage.setItem("db-mode", mode);
   renderEvents();
@@ -1588,53 +1255,29 @@ function setMode(mode) {
 
 function useMyLocationForForm() {
   const btn = document.getElementById("form-geo-btn");
-  btn.textContent = "📍 Detecting...";
-  btn.disabled = true;
-  if (!navigator.geolocation) {
-    btn.textContent = "📍 Not supported";
-    btn.disabled = false;
-    return;
-  }
+  btn.textContent = "📍 Detecting..."; btn.disabled = true;
+  if (!navigator.geolocation) { btn.textContent = "📍 Not supported"; btn.disabled = false; return; }
   navigator.geolocation.getCurrentPosition(
     pos => {
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
-        .then(r => r.json())
-        .then(data => {
-          const addr  = data.address || {};
-          const parts = [
-            addr.city || addr.town || addr.village || "",
-            addr.state || "",
-            addr.country || ""
-          ].filter(Boolean);
-          const location = parts.join(", ");
-          document.getElementById("f-location").value = location;
+        .then(r => r.json()).then(data => {
+          const addr = data.address || {};
+          const parts = [addr.city||addr.town||addr.village||"", addr.state||"", addr.country||""].filter(Boolean);
+          document.getElementById("f-location").value = parts.join(", ");
           document.getElementById("f-lat").value = pos.coords.latitude;
           document.getElementById("f-lng").value = pos.coords.longitude;
-          btn.textContent = `📍 ${parts[0] || "Location set"}`;
-          btn.disabled = false;
-        })
-        .catch(() => {
-          btn.textContent = "📍 Try again";
-          btn.disabled = false;
-          alert("Location detected but couldn't look up your city. Please type it manually.");
-        });
+          btn.textContent = `📍 ${parts[0]||"Location set"}`; btn.disabled = false;
+        }).catch(() => { btn.textContent = "📍 Try again"; btn.disabled = false; alert("Location detected but couldn't look up your city. Please type it manually."); });
     },
     err => {
       btn.disabled = false;
-      if (err.code === 1) {
-        btn.textContent = "📍 Permission denied";
-        alert("Location access was blocked. Please allow location in your browser settings, or type your address.");
-      } else {
-        btn.textContent = "📍 Use my location";
-        alert("Could not detect your location. Please type it manually.");
-      }
-    },
-    { timeout: 10000 }
+      if (err.code === 1) { btn.textContent = "📍 Permission denied"; alert("Location access was blocked. Please allow location in your browser settings, or type your address."); }
+      else { btn.textContent = "📍 Use my location"; alert("Could not detect your location. Please type it manually."); }
+    }, { timeout:10000 }
   );
 }
 
-
-const NORTH_AMERICA_COUNTRIES = ["United States", "Canada", "Mexico"];
+const NORTH_AMERICA_COUNTRIES = ["United States","Canada","Mexico"];
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Washington D.C."];
 
 function onRegionChange() {
@@ -1644,12 +1287,8 @@ function onRegionChange() {
   countEl.innerHTML = '<option value="">All countries</option>';
   stateEl.innerHTML = '<option value="">All states</option>';
   stateEl.style.display = "none";
-  if (region === "North America") {
-    NORTH_AMERICA_COUNTRIES.forEach(c => countEl.innerHTML += `<option>${c}</option>`);
-    countEl.style.display = "block";
-  } else {
-    countEl.style.display = "none";
-  }
+  if (region === "North America") { NORTH_AMERICA_COUNTRIES.forEach(c => countEl.innerHTML += `<option>${c}</option>`); countEl.style.display = "block"; }
+  else countEl.style.display = "none";
   renderEvents();
 }
 
@@ -1657,12 +1296,8 @@ function onCountryChange() {
   const country = document.getElementById("filter-country").value;
   const stateEl = document.getElementById("filter-state");
   stateEl.innerHTML = '<option value="">All states</option>';
-  if (country === "United States") {
-    US_STATES.forEach(s => stateEl.innerHTML += `<option>${s}</option>`);
-    stateEl.style.display = "block";
-  } else {
-    stateEl.style.display = "none";
-  }
+  if (country === "United States") { US_STATES.forEach(s => stateEl.innerHTML += `<option>${s}</option>`); stateEl.style.display = "block"; }
+  else stateEl.style.display = "none";
   renderEvents();
 }
 
@@ -1677,243 +1312,176 @@ function clearLocationFilter() {
 
 function useMyLocation() {
   const btn = document.getElementById("geo-btn");
-  btn.textContent = "📍 Detecting...";
-  btn.disabled = true;
-  if (!navigator.geolocation) {
-    btn.textContent = "📍 Not supported";
-    btn.disabled = false;
-    return;
-  }
+  btn.textContent = "📍 Detecting..."; btn.disabled = true;
+  if (!navigator.geolocation) { btn.textContent = "📍 Not supported"; btn.disabled = false; return; }
   navigator.geolocation.getCurrentPosition(
     pos => {
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
-        .then(r => r.json())
-        .then(data => {
-          const addr    = data.address || {};
-          const city    = addr.city || addr.town || addr.village || "";
-          const state   = addr.state || "";
-          const country = addr.country || "";
-          // Set region
+        .then(r => r.json()).then(data => {
+          const addr = data.address || {};
+          const city = addr.city||addr.town||addr.village||""; const state = addr.state||""; const country = addr.country||"";
           const regionEl = document.getElementById("filter-region");
-          if (["United States","Canada","Mexico"].some(c => country.includes(c) || c.includes(country))) {
-            regionEl.value = "North America";
-          } else if (["Brazil","Argentina","Colombia","Chile","Peru"].some(c => country.includes(c))) {
-            regionEl.value = "South America";
-          } else if (["United Kingdom","France","Germany","Spain","Italy","Netherlands"].some(c => country.includes(c))) {
-            regionEl.value = "Europe";
-          } else if (["China","Japan","India","South Korea","Indonesia"].some(c => country.includes(c))) {
-            regionEl.value = "Asia";
-          } else if (["Nigeria","Kenya","South Africa","Ethiopia","Ghana"].some(c => country.includes(c))) {
-            regionEl.value = "Africa";
-          } else if (["Australia","New Zealand","Papua New Guinea"].some(c => country.includes(c))) {
-            regionEl.value = "Oceania";
-          }
+          if (["United States","Canada","Mexico"].some(c => country.includes(c)||c.includes(country))) regionEl.value = "North America";
+          else if (["Brazil","Argentina","Colombia","Chile","Peru"].some(c => country.includes(c))) regionEl.value = "South America";
+          else if (["United Kingdom","France","Germany","Spain","Italy","Netherlands"].some(c => country.includes(c))) regionEl.value = "Europe";
+          else if (["China","Japan","India","South Korea","Indonesia"].some(c => country.includes(c))) regionEl.value = "Asia";
+          else if (["Nigeria","Kenya","South Africa","Ethiopia","Ghana"].some(c => country.includes(c))) regionEl.value = "Africa";
+          else if (["Australia","New Zealand","Papua New Guinea"].some(c => country.includes(c))) regionEl.value = "Oceania";
           onRegionChange();
-          // Set country
           const countEl = document.getElementById("filter-country");
-          if (country.includes("United States") || country.includes("USA")) {
-            countEl.value = "United States";
-            onCountryChange();
-            if (state) {
-              const stateEl = document.getElementById("filter-state");
-              const match = US_STATES.find(s => s.toLowerCase() === state.toLowerCase());
-              if (match) stateEl.value = match;
-            }
-          } else if (country.includes("Canada")) {
-            countEl.value = "Canada";
-          } else if (country.includes("Mexico")) {
-            countEl.value = "Mexico";
-          }
+          if (country.includes("United States")||country.includes("USA")) {
+            countEl.value = "United States"; onCountryChange();
+            if (state) { const match = US_STATES.find(s => s.toLowerCase()===state.toLowerCase()); if (match) document.getElementById("filter-state").value = match; }
+          } else if (country.includes("Canada")) countEl.value = "Canada";
+          else if (country.includes("Mexico")) countEl.value = "Mexico";
           renderEvents();
-          // Show city feedback
-          const label = [city, state].filter(Boolean).join(", ") || country || "Location set";
-          btn.textContent = `📍 ${label}`;
-          btn.disabled = false;
-        })
-        .catch(() => {
-          btn.textContent = "📍 Try again";
-          btn.disabled = false;
-          alert("Location detected but couldn't look up your city. Please select manually.");
-        });
+          btn.textContent = `📍 ${[city,state].filter(Boolean).join(", ")||country||"Location set"}`; btn.disabled = false;
+        }).catch(() => { btn.textContent = "📍 Try again"; btn.disabled = false; alert("Location detected but couldn't look up your city. Please select manually."); });
     },
     err => {
       btn.disabled = false;
-      if (err.code === 1) {
-        btn.textContent = "📍 Permission denied";
-        alert("Location access was blocked. Please allow location in your browser settings, or select manually.");
-      } else {
-        btn.textContent = "📍 Use my location";
-        alert("Could not detect your location. Please select manually.");
-      }
-    },
-    { timeout: 10000 }
+      if (err.code === 1) { btn.textContent = "📍 Permission denied"; alert("Location access was blocked. Please allow location in your browser settings, or select manually."); }
+      else { btn.textContent = "📍 Use my location"; alert("Could not detect your location. Please select manually."); }
+    }, { timeout:10000 }
   );
 }
 
-// ── Clone event ───────────────────────────────
 function cloneEvent() {
   const ev = events.find(e => e.id === editingId);
   if (!ev) return;
+  const count = isMasterUser ? parseInt(document.getElementById("clone-count")?.value || "1") : 1;
+  if (count > 1) {
+    // Bulk clone: show date picker modal
+    closeModal();
+    openBulkCloneModal(ev, count);
+    return;
+  }
+  // Single clone: original behaviour
   closeModal();
   setTimeout(() => {
     openModal(true);
-    document.getElementById("f-title").value        = ev.title + " (copy)";
-    document.getElementById("f-location").value     = ev.location || "";
-    document.getElementById("f-desc").value         = ev.description || "";
-    document.getElementById("f-host").value         = ev.host || "";
-    document.getElementById("f-hostlink").value     = ev.hostlink || "";
-    document.getElementById("f-cooplink").value     = ev.cooplink || "";
+    document.getElementById("f-title").value = ev.title + " (copy)";
+    document.getElementById("f-location").value = ev.location || "";
+    document.getElementById("f-desc").value = ev.description || "";
+    document.getElementById("f-host").value = ev.host || "";
+    document.getElementById("f-hostlink").value = ev.hostlink || "";
+    document.getElementById("f-cooplink").value = ev.cooplink || "";
     document.getElementById("f-contact-email").value = ev.contactEmail || "";
     document.getElementById("f-contact-phone").value = ev.contactPhone || "";
-    document.getElementById("f-lat").value          = ev.lat || "";
-    document.getElementById("f-lng").value          = ev.lng || "";
-    if (ev.time)    document.getElementById("f-time").value    = ev.time;
+    document.getElementById("f-lat").value = ev.lat || "";
+    document.getElementById("f-lng").value = ev.lng || "";
+    if (ev.time) document.getElementById("f-time").value = ev.time;
     if (ev.endtime) document.getElementById("f-endtime").value = ev.endtime;
-    selectedCats   = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
-    selectedRoom   = ev.room || null;
-    selectedFormat = ev.format || null;
-    ["virtual","inperson","both"].forEach(f => {
-      document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat);
-    });
-    const showLoc = selectedFormat === "inperson" || selectedFormat === "both";
-    document.getElementById("location-field").style.display = showLoc ? "block" : "none";
-    buildFormChips();
-    updateRoomPreview();
+    selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+    selectedRoom = ev.room || null; selectedFormat = ev.format || null;
+    ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
+    document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
+    buildFormChips(); updateRoomPreview();
     showToast("Event cloned - set a new date and private PIN!");
   }, 100);
 }
 
-// ── Bad words filter ──────────────────────────
-const BAD_WORDS = ["fuck","shit","bitch","asshole","cunt","dick","cock","pussy","bastard","ass","crap","piss","prick","slut","whore","nigger","faggot","retard"];
+let bulkCloneSource = null;
 
+function openBulkCloneModal(ev, count) {
+  bulkCloneSource = ev;
+  const container = document.getElementById("bulk-clone-dates");
+  container.innerHTML = "";
+  document.getElementById("bulk-clone-error").style.display = "none";
+  // Pre-fill dates: start from 1 week after source event, weekly increments
+  const baseDate = ev.date ? new Date(ev.date + "T12:00:00") : new Date();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + 7 * (i + 1));
+    const iso = d.toISOString().split("T")[0];
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:10px;";
+    row.innerHTML = `
+      <span style="font-size:13px;color:var(--muted);min-width:52px;">Copy ${i+1}</span>
+      <input class="input" type="date" id="bulk-date-${i}" value="${iso}" min="${new Date().toISOString().split('T')[0]}" style="flex:1;">
+    `;
+    container.appendChild(row);
+  }
+  document.getElementById("bulk-clone-modal").classList.add("open");
+}
+
+function closeBulkCloneModal() {
+  document.getElementById("bulk-clone-modal").classList.remove("open");
+  bulkCloneSource = null;
+}
+
+async function submitBulkClone() {
+  if (!bulkCloneSource) return;
+  const ev = bulkCloneSource;
+  const errEl = document.getElementById("bulk-clone-error");
+  errEl.style.display = "none";
+  const inputs = document.querySelectorAll("[id^='bulk-date-']");
+  const dates = [];
+  for (const inp of inputs) {
+    if (!inp.value) { errEl.textContent = "Please set a date for each copy."; errEl.style.display = "block"; return; }
+    dates.push(inp.value);
+  }
+  // Check for duplicate dates among the copies
+  if (new Set(dates).size !== dates.length) { errEl.textContent = "Each copy needs a unique date."; errEl.style.display = "block"; return; }
+
+  const btn = document.querySelector("#bulk-clone-modal .btn-green");
+  btn.disabled = true; btn.textContent = "Creating...";
+
+  let created = 0;
+  for (const date of dates) {
+    const newEv = {
+      ...ev,
+      id: "ev-" + Date.now() + "-" + Math.random().toString(36).slice(2,7),
+      title: ev.title + " (copy)",
+      date,
+      passcode: ev.passcode || "0000",
+      going: 0
+    };
+    delete newEv.adminOnly;
+    events.push(newEv);
+    try { await apiSave(newEv); created++; } catch(e) { console.warn("Clone save failed", e); }
+  }
+
+  btn.disabled = false; btn.textContent = "Create copies";
+  closeBulkCloneModal();
+  renderEvents();
+  showToast(`${created} cop${created === 1 ? "y" : "ies"} created!`);
+}
+
+const BAD_WORDS = ["fuck","shit","bitch","asshole","cunt","dick","cock","pussy","bastard","ass","crap","piss","prick","slut","whore","nigger","faggot","retard"];
 function containsBadWords(text) {
   if (!text) return false;
   const lower = text.toLowerCase();
-  return BAD_WORDS.some(w => {
-    const re = new RegExp("\\b" + w + "\\b");
-    return re.test(lower);
-  });
+  return BAD_WORDS.some(w => new RegExp("\\b"+w+"\\b").test(lower));
 }
-
 function checkAllFields() {
-  return ["f-title","f-desc","f-host","f-location"].some(id => {
-    const el = document.getElementById(id);
-    return el && containsBadWords(el.value);
-  });
+  return ["f-title","f-desc","f-host","f-location"].some(id => { const el = document.getElementById(id); return el && containsBadWords(el.value); });
 }
 
 const ROOM_BUFFER_MINS = 90;
-
-// ── Recurring onboarding events ───────────────
-// Every Monday, shown 2 weeks ahead, never stored in the sheet
-// ── Recurring events ──────────────────────────
-// dayOfWeek: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-const RECURRING_EVENTS = [
-  {
-    title:      "DayBalancer Onboarding",
-    dayOfWeek:  1, // Monday
-    time:       "12:00",
-    endtime:    "13:00",
-    format:     "virtual",
-    room:       "DayBalancer Onboarding",
-    host:       "DayBalancer",
-    hostlink:   "",
-    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
-    categories: ["learning"],
-    description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    adminOnly:  true,
-  },
-  {
-    title:      "Ikigai Tuesdays",
-    dayOfWeek:  2, // Tuesday
-    time:       "12:00",
-    endtime:    "13:00",
-    format:     "virtual",
-    room:       "Ikigai room",
-    host:       "Jessie Upp",
-    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    cooplink:   "https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
-    categories: ["learning"],
-    description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
-    adminOnly:  true,
-  },
-  {
-    title:      "Wellness Wednesdays",
-    dayOfWeek:  3, // Wednesday
-    time:       "12:00",
-    endtime:    "13:00",
-    format:     "virtual",
-    room:       "Wellness room",
-    host:       "Jessie Upp",
-    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories: ["care","faith","resources","movement","learning"],
-    description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
-    adminOnly:  false,
-  },
-  {
-    title:      "Feedback Fridays",
-    dayOfWeek:  5, // Friday
-    time:       "12:00",
-    endtime:    "13:00",
-    format:     "virtual",
-    room:       "Co-create room",
-    host:       "Jessie Upp",
-    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories: ["learning","professional","creative"],
-    description:"Come with your small or big idea and receive supportive feedback.",
-    adminOnly:  false,
-  },
-  {
-    title:      "Monday Kickoff",
-    dayOfWeek:  1, // Monday
-    time:       "09:00",
-    endtime:    "10:00",
-    format:     "virtual",
-    room:       "The Commons",
-    host:       "Jessie Upp",
-    hostlink:   "https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories: ["learning","professional","social","resources","care"],
-    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
-    adminOnly:  false,
-  },
-];
 
 function getNextOccurrences(template, count) {
   const results = [];
   const now = new Date();
   const d   = new Date();
   d.setHours(0,0,0,0);
-  const today = d.getDay();
-  let daysUntil = (template.dayOfWeek - today + 7) % 7;
-
-  // If today is the day but the event end time has already passed, move to next week
+  let daysUntil = (template.dayOfWeek - d.getDay() + 7) % 7;
   if (daysUntil === 0) {
-    const [endH, endM] = (template.endtime || template.time).split(":").map(Number);
-    const endToday = new Date();
-    endToday.setHours(endH, endM, 0, 0);
+    const [endH,endM] = (template.endtime||template.time).split(":").map(Number);
+    const endToday = new Date(); endToday.setHours(endH,endM,0,0);
     if (now > endToday) daysUntil = 7;
   }
-
   d.setDate(d.getDate() + daysUntil);
   for (let i = 0; i < count; i++) {
     const dateStr = d.toISOString().split("T")[0];
     const slug    = template.title.toLowerCase().replace(/\s+/g,"-");
-    results.push({
-      ...template,
-      id:        `recurring-${slug}-${dateStr}`,
-      date:      dateStr,
-      passcode:  "",
-      going:     0,
-      recurring: true,
-    });
+    results.push({ ...template, id:`recurring-${slug}-${dateStr}`, date:dateStr, passcode:"", going:0, recurring:true });
     d.setDate(d.getDate() + 7);
   }
   return results;
 }
 
-function getAllRecurring(count = 2) {
-  return RECURRING_EVENTS.flatMap(t => getNextOccurrences(t, count));
-}
+function getAllRecurring(count = 2) { return RECURRING_EVENTS.flatMap(t => getNextOccurrences(t, count)); }
 
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
@@ -1921,162 +1489,91 @@ function getPublicRecurring(count = 2) {
   return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
 }
 
-// Keep for room schedule (all recurring including admin-only)
-function getNextMondays(count) {
-  return getAllRecurring(count);
-}
-
-function getEventMs(ev) {
-  if (!ev.date) return null;
-  return new Date(ev.date + "T" + (ev.time || "09:00")).getTime();
-}
+function getEventMs(ev) { if (!ev.date) return null; return new Date(ev.date+"T"+(ev.time||"09:00")).getTime(); }
 
 function checkConflict(room, date, time, excludeId) {
-  if (!room || !date || !time) return null;
-  const newMs = new Date(date + "T" + time).getTime();
+  if (!room||!date||!time) return null;
+  const newMs = new Date(date+"T"+time).getTime();
   if (isNaN(newMs)) return null;
   const buffer = ROOM_BUFFER_MINS * 60 * 1000;
   return events.find(ev => {
-    if (ev.id === excludeId) return false;
-    if (ev.room !== room) return false;
-    if (!ev.date || !ev.time) return false;
-    // Must be same date
-    if (ev.date !== date) return false;
-    const evMs = new Date(ev.date + "T" + ev.time).getTime();
+    if (ev.id === excludeId || ev.room !== room || !ev.date || !ev.time || ev.date !== date) return false;
+    const evMs = new Date(ev.date+"T"+ev.time).getTime();
     if (isNaN(evMs)) return false;
     return Math.abs(newMs - evMs) < buffer;
   }) || null;
 }
 
-// Watch for room/date/time changes to show live conflict warning
 function checkAndWarnConflict() {
   const warningEl = document.getElementById("conflict-warning");
   const submitBtn = document.getElementById("submit-btn");
   if (!warningEl) return;
   if (!selectedRoom || !document.getElementById("f-date").value || !document.getElementById("f-time").value) {
-    warningEl.style.display = "none";
-    submitBtn.disabled = false;
-    submitBtn.style.opacity = "";
-    return;
+    warningEl.style.display = "none"; submitBtn.disabled = false; submitBtn.style.opacity = ""; return;
   }
-  const date = document.getElementById("f-date").value;
-  const time = document.getElementById("f-time").value;
-  const conflict = checkConflict(selectedRoom, date, time, editingId);
+  const conflict = checkConflict(selectedRoom, document.getElementById("f-date").value, document.getElementById("f-time").value, editingId);
   if (conflict) {
     warningEl.textContent = `⚠️ "${selectedRoom}" may already be booked around this time for "${conflict.title}". You can still post, but consider a different time or room.`;
-    warningEl.style.display = "block";
-    // Warning only - don't block submission
-    submitBtn.disabled = false;
-    submitBtn.style.opacity = "";
-  } else {
-    warningEl.style.display = "none";
-    submitBtn.disabled = false;
-    submitBtn.style.opacity = "";
-  }
+    warningEl.style.display = "block"; submitBtn.disabled = false; submitBtn.style.opacity = "";
+  } else { warningEl.style.display = "none"; submitBtn.disabled = false; submitBtn.style.opacity = ""; }
 }
-
-// ── Room schedule modal ───────────────────────
-const ROOMS = [
-  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/onboarding",         hidden: true },
-  { name:"The Commons",            url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
-  { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
-  { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
-  { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
-  { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
-  { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox", comingSoon: false },
-  { name:"Abundance room",         url:"", comingSoon: true },
-  { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
-];
 
 function openRoomSchedule() {
   const body = document.getElementById("room-schedule-body");
   const now  = Date.now();
   body.innerHTML = "";
-
-  // Visible rooms for the schedule (include hidden onboarding, exclude nothing)
-  const visibleRooms = ROOMS;
-
-  // ── Jump menu at top ──
   const nav = document.createElement("div");
   nav.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;";
-  visibleRooms.forEach(({ name, hidden, comingSoon }) => {
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
+  ROOMS.forEach(({ name }) => {
+    const slug = name.toLowerCase().replace(/\s+/g,"-");
     const pill = document.createElement("a");
-    pill.href = "#room-" + slug;
+    pill.href = "#room-"+slug;
     pill.style.cssText = "font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;border:1.5px solid var(--border);color:var(--primary);background:var(--white);white-space:nowrap;";
     pill.textContent = "🏠 " + name;
     nav.appendChild(pill);
   });
   body.appendChild(nav);
-
   const allRecurring = getAllRecurring(2);
-  // Combine sheet events + recurring, then dedup by room+date+time - sheet events win
-  const seen = new Set(
-    events.map(e => `${e.room}|${e.date}|${e.time}`)
-  );
-  const uniqueRecurring = allRecurring.filter(rec =>
-    !seen.has(`${rec.room}|${rec.date}|${rec.time}`)
-  );
-  const allEventsForSchedule = [...events, ...uniqueRecurring];
-  // ── Room sections ──
-  visibleRooms.forEach(({ name, url, hidden, comingSoon }) => {
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
-    const upcoming = allEventsForSchedule
-      .filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000)
-      .sort((a,b) => getEventMs(a) - getEventMs(b))
-      .slice(0, 5);
-
+  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
+  const allEventsForSchedule = [...events, ...allRecurring.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`))];
+  ROOMS.forEach(({ name, url, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g,"-");
+    const upcoming = allEventsForSchedule.filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000).sort((a,b) => getEventMs(a)-getEventMs(b)).slice(0,5);
     const section = document.createElement("div");
-    section.id = "room-" + slug;
-    section.className = "room-section";
-    section.style.cssText = "margin-bottom:28px;scroll-margin-top:20px;";
-
-    // Room header - all rooms use 🏠
+    section.id = "room-"+slug; section.style.cssText = "margin-bottom:28px;scroll-margin-top:20px;";
     const visitBtn = comingSoon
       ? `<span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--light);padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);">Link coming soon</span>`
       : `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:5px 12px;border-radius:6px;white-space:nowrap;">Visit room →</a>`;
-
-    section.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);">
-        <span style="font-size:15px;font-weight:800;color:var(--dark);">🏠 ${name}</span>
-        ${visitBtn}
-      </div>`;
-
+    section.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);"><span style="font-size:15px;font-weight:800;color:var(--dark);">🏠 ${name}</span>${visitBtn}</div>`;
     if (upcoming.length === 0) {
       section.innerHTML += `<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0 4px;">Nothing scheduled yet - wide open!</div>`;
     } else {
       upcoming.forEach(ev => {
         const row = document.createElement("div");
         row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
-        const isRec = ev.recurring;
-        row.innerHTML = `
-          <span style="font-size:13px;font-weight:${isRec ? "600" : "400"};color:${isRec ? "var(--muted)" : "var(--dark)"};">${isRec ? "🚫 Blocked" : esc(ev.title)}</span>
-          <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date, ev.time, ev.endtime))}</span>`;
+        row.innerHTML = `<span style="font-size:13px;font-weight:${ev.recurring?"600":"400"};color:${ev.recurring?"var(--muted)":"var(--dark)"};">${ev.recurring?"🚫 Blocked":esc(ev.title)}</span><span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span>`;
         section.appendChild(row);
       });
     }
     body.appendChild(section);
   });
-
   document.getElementById("room-modal").classList.add("open");
 }
 
-function closeRoomModal() {
-  document.getElementById("room-modal").classList.remove("open");
-}
+function closeRoomModal() { document.getElementById("room-modal").classList.remove("open"); }
 
-// Embed mode - strip header and top padding when ?embed=1
-// Restore saved filter/mode preferences
-const savedFilter = localStorage.getItem("db-filter");
-const savedMode   = localStorage.getItem("db-mode");
-if (savedFilter) activeFilter = savedFilter;
-if (savedMode)   activeMode   = savedMode;
-
+// ── Init ──────────────────────────────────────
 if (new URLSearchParams(window.location.search).get("embed") === "1") {
   document.body.classList.add("embed-mode");
 }
+
+const savedFilter = localStorage.getItem("db-filter");
+const savedMode   = localStorage.getItem("db-mode");
+if (savedFilter) activeFilter = savedFilter;
+
 renderPills();
+// FIX: call setMode() to restore button visual state, not just the variable
+setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 </script>
 </body>
