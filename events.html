@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.15
+  Version 6.16
 -->
 <html lang="en">
 <head>
@@ -302,25 +302,68 @@
     <div class="field">
       <label class="field-label">Who's hosting? *</label>
       <input class="input" id="f-host" placeholder="Full name">
-      <div style="margin-top:8px;">
-        <label class="field-label">Host DayBalancer page link <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
-        <input class="input" id="f-hostlink" type="url" placeholder="https://app.daybalancer.com/...">
+
+
+    </div>
+
+    <div class="field">
+      <label class="field-label">What would you like to share with attendees? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-hostlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          My DayBalancer profile page
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-cooplink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Group or cooperative link
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-paymentlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Payment or registration link
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Contact info (email / phone)
+        </label>
       </div>
-      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:140px;">
-          <label class="field-label">Contact email <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+    </div>
+
+    <div class="field" id="field-hostlink" style="display:none;">
+      <label class="field-label">Your DayBalancer profile link</label>
+      <input class="input" id="f-hostlink" type="url" placeholder="https://app.daybalancer.com/...">
+    </div>
+
+    <div class="field" id="field-cooplink" style="display:none;">
+      <label class="field-label">Group link</label>
+      <input class="input" id="f-cooplink" type="url" placeholder="https://...">
+    </div>
+
+    <div class="field" id="field-paymentlink" style="display:none;">
+      <label class="field-label">Payment or registration link <span id="payment-required-label" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);"></span></label>
+      <input class="input" id="f-paymentlink" type="url" placeholder="https://...">
+    </div>
+
+    <div id="field-contact" style="display:none;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;" class="field">
+          <label class="field-label">Contact email</label>
           <input class="input" id="f-contact-email" type="email" placeholder="hello@example.com">
         </div>
-        <div style="flex:1;min-width:140px;">
-          <label class="field-label">Contact phone <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <div style="flex:1;min-width:140px;" class="field">
+          <label class="field-label">Contact phone</label>
           <input class="input" id="f-contact-phone" type="tel" placeholder="e.g. 206-555-0100">
         </div>
       </div>
     </div>
 
     <div class="field">
-      <label class="field-label">Is there an associated coop link? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
-      <input class="input" id="f-cooplink" type="url" placeholder="https://...">
+      <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
+        <button type="button" class="format-chip" id="exch-free" onclick="setExchange('free')">🎁 Free / no ask</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="setExchange('feedback')">💬 Feedback / testimonial</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="setExchange('money')">💰 Money</button>
+        <button type="button" class="format-chip" id="exch-time" onclick="setExchange('time')">⏱ Equal time trade</button>
+      </div>
     </div>
 
     <div class="field" id="passcode-field">
@@ -501,6 +544,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "",
   };
 }
 
@@ -534,6 +578,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "",
   };
 }
 
@@ -794,8 +839,12 @@ function renderEvents() {
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
-          ${ev.cooplink ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Cooperative link</a></div>` : ""}
+          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink && ev.showLinks && ev.showLinks.includes("hostlink") ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
+          ${ev.cooplink && ev.showLinks && ev.showLinks.includes("cooplink") ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Group link</a></div>` : ""}
+          ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
+          ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
+          ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
+          ${ev.exchangeType ? `<div class="event-meta-item"><span>${ev.exchangeType==="money"?"💰":ev.exchangeType==="feedback"?"💬":ev.exchangeType==="time"?"⏱":"🎁"}</span>${ev.exchangeType==="money"?"Payment required":ev.exchangeType==="feedback"?"Feedback welcome":ev.exchangeType==="time"?"Equal time trade":"Free"}</div>` : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
@@ -833,6 +882,8 @@ function saveDraft() {
     host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
     contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: selectedExchangeType || "",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
   localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -856,6 +907,15 @@ function restoreDraft() {
     document.getElementById("f-contact-phone").value = d.contactPhone || "";
     document.getElementById("f-cooplink").value = d.cooplink || "";
     document.getElementById("f-passcode").value = d.passcode || "";
+    document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    // Restore checkboxes
+    const sl = (d.showLinks || "").split(",");
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+      const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
+    });
+    toggleLinkFields();
+    // Restore exchange type
+    setExchange(d.exchangeType || "");
     if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
     if (d.format) {
       selectedFormat = d.format;
@@ -890,7 +950,10 @@ function openModal(skipDraft = false) {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+  toggleLinkFields();
+  setExchange("");
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -993,7 +1056,31 @@ function loadEditForm(id) {
   buildFormChips(); updateRoomPreview();
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; }
+let selectedExchangeType = "";
+
+function setExchange(type) {
+  selectedExchangeType = type;
+  ["free","feedback","money","time"].forEach(t => {
+    const btn = document.getElementById("exch-"+t);
+    if (btn) btn.classList.toggle("selected", t === type);
+  });
+  // Payment link required indicator
+  const label = document.getElementById("payment-required-label");
+  if (label) label.textContent = type === "money" ? "- required" : "- optional";
+  // Auto-check payment link checkbox if money selected
+  const cb = document.getElementById("show-paymentlink");
+  if (cb && type === "money") { cb.checked = true; toggleLinkFields(); }
+}
+
+function toggleLinkFields() {
+  ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+    const field = document.getElementById("field-"+k);
+    const cb = document.getElementById("show-"+k);
+    if (field && cb) field.style.display = cb.checked ? "block" : "none";
+  });
+}
+
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeType = ""; }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1138,6 +1225,7 @@ async function submitEvent() {
   const errEl    = document.getElementById("post-error");
 
   const missing = [];
+  if (selectedExchangeType === "money" && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when asking for money)");
   if (!title) missing.push("event title");
   if (selectedCats.size === 0) missing.push("at least one category");
   if (!selectedFormat) missing.push("virtual or in-person");
