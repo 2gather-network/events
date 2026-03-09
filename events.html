@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.23
+  Version 6.24
 -->
 <html lang="en">
 <head>
@@ -784,8 +784,8 @@ function renderEvents() {
     });
     const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
     const matchQ    = !q || e.title.toLowerCase().includes(q) || (e.description||"").toLowerCase().includes(q) || (e.location||"").toLowerCase().includes(q) || (e.host||"").toLowerCase().includes(q);
-    const evMs      = new Date(e.date + "T" + (e.time||"00:00")).getTime();
-    const isPast    = evMs < now;
+    const evEndMs   = e.endtime ? new Date(e.date + "T" + e.endtime).getTime() : new Date(e.date + "T" + (e.time||"00:00")).getTime() + 60*60*1000;
+    const isPast    = evEndMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
