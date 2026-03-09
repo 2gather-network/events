@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.17
+  Version 6.18
 -->
 <html lang="en">
 <head>
@@ -1058,6 +1058,16 @@ function loadEditForm(id) {
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
+  // Restore checkboxes
+  const sl = (ev.showLinks || "").split(",").filter(Boolean);
+  ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+    const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
+  });
+  toggleLinkFields();
+  // Restore payment link
+  const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
+  // Restore exchange type
+  setExchange(ev.exchangeType || "");
   buildFormChips(); updateRoomPreview();
 }
 
