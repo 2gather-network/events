@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.18
+  Version 6.19
 -->
 <html lang="en">
 <head>
@@ -359,11 +359,15 @@
     <div class="field">
       <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free / no ask</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free</button>
         <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / testimonial</button>
         <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
         <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏱ Equal time trade</button>
         <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">👥 Pass this along</button>
+        <button type="button" class="format-chip" id="exch-other" onclick="toggleExchange('other')">✏️ Other</button>
+      </div>
+      <div id="field-exch-other" style="display:none;margin-top:8px;">
+        <input class="input" id="f-exch-other" type="text" placeholder="Describe what you're asking for..." maxlength="120">
       </div>
     </div>
 
@@ -545,7 +549,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "",
   };
 }
 
@@ -579,7 +583,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "",
   };
 }
 
@@ -846,7 +850,7 @@ function renderEvents() {
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
           ${ev.exchangeType ? (() => {
-            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along"};
+            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
             return `<div class="event-meta-item"><span>🤝</span>${labels}</div>`;
           })() : ""}
@@ -887,7 +891,7 @@ function saveDraft() {
     host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
     contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
-    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: [...selectedExchangeTypes].join(",") || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: [...selectedExchangeTypes].join(",") || "", otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -921,6 +925,7 @@ function restoreDraft() {
     toggleLinkFields();
     // Restore exchange type
     setExchange(d.exchangeType || "");
+    const otherDraftEl = document.getElementById("f-exch-other"); if (otherDraftEl) otherDraftEl.value = d.otherExchange || "";
     if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
     if (d.format) {
       selectedFormat = d.format;
@@ -956,9 +961,9 @@ function openModal(skipDraft = false) {
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
-  ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+  ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
-  selectedExchangeTypes = new Set(); ["free","feedback","money","time","share"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExchangeTypes = new Set(); ["free","feedback","money","time","share","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1068,6 +1073,7 @@ function loadEditForm(id) {
   const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
   // Restore exchange type
   setExchange(ev.exchangeType || "");
+  const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
   buildFormChips(); updateRoomPreview();
 }
 
@@ -1079,10 +1085,12 @@ function toggleExchange(type) {
   } else {
     selectedExchangeTypes.add(type);
   }
-  ["free","feedback","money","time","share"].forEach(t => {
+  ["free","feedback","money","time","share","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
+  const otherField = document.getElementById("field-exch-other");
+  if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
   // Payment link required indicator
   const label = document.getElementById("payment-required-label");
   if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
@@ -1094,10 +1102,12 @@ function toggleExchange(type) {
 // Legacy single-value restore on edit
 function setExchange(val) {
   selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
-  ["free","feedback","money","time","share"].forEach(t => {
+  ["free","feedback","money","time","share","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
+  const otherField = document.getElementById("field-exch-other");
+  if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
   const label = document.getElementById("payment-required-label");
   if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
 }
