@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.19
+  Version 6.20
 -->
 <html lang="en">
 <head>
@@ -1075,6 +1075,15 @@ function loadEditForm(id) {
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
   buildFormChips(); updateRoomPreview();
+  // Restore hosting option after updateRoomPreview so the section is visible
+  if (ev.meetinglink) {
+    hostingOption = "own";
+    setHostingOption("own");
+    const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink;
+  } else if (ev.room) {
+    hostingOption = "db";
+    setHostingOption("db");
+  }
 }
 
 let selectedExchangeTypes = new Set();
