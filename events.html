@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.22
+  Version 6.23
 -->
 <html lang="en">
 <head>
@@ -310,20 +310,20 @@
       <label class="field-label">What would you like to share with attendees? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Contact info (email / phone)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-hostlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
           My DayBalancer profile page
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-cooplink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
-          Group or cooperative link
+          Group / cooperative link
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-paymentlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
           Payment or registration link
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
-          <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
-          Contact info (email / phone)
         </label>
       </div>
     </div>
@@ -360,7 +360,8 @@
       <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
         <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free</button>
-        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / testimonial</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback</button>
+        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">⭐ Testimonial</button>
         <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
         <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏱ Equal time trade</button>
         <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">👥 Pass this along</button>
@@ -382,7 +383,7 @@
     <div class="modal-actions">
       <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="cloneEvent()" title="Clone this event">⧉ Clone</button>
+      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="onCloneBtnClick()" title="Clone this event">⧉ Clone</button>
       <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
         <label for="clone-count" style="white-space:nowrap;">× how many?</label>
         <select id="clone-count" class="input" style="width:60px;padding:6px 8px;font-size:13px;">
@@ -656,8 +657,8 @@ function populateHostFilter() {
   });
 }
 
-async function apiAdd(ev)          { const d = evToSheet(ev); console.log("apiAdd sending:", JSON.stringify(d)); return jsonp({ action:"add",    event:d }); }
-async function apiUpdate(ev)       { const d = evToSheet(ev); console.log("apiUpdate sending:", JSON.stringify(d)); return jsonp({ action:"update", event:d }); }
+async function apiAdd(ev)          { return jsonp({ action:"add",    event:evToSheet(ev) }); }
+async function apiUpdate(ev)       { return jsonp({ action:"update", event:evToSheet(ev) }); }
 async function apiDelete(id)       { return jsonp({ action:"delete", id }); }
 async function apiGoing(id, delta) { return jsonp({ action:"going",  id, delta }); }
 
@@ -850,7 +851,7 @@ function renderEvents() {
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
           ${ev.exchangeType ? (() => {
-            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
+            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
             return `<div class="event-meta-item"><span>🤝</span>${labels}</div>`;
           })() : ""}
@@ -963,7 +964,7 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
-  selectedExchangeTypes = new Set(); ["free","feedback","money","time","share","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1039,7 +1040,7 @@ function loadEditForm(id) {
   document.getElementById("delete-btn").style.display = "block";
   document.getElementById("clone-btn").style.display  = "block";
   const cloneCountWrap = document.getElementById("clone-count-wrap");
-  if (cloneCountWrap) cloneCountWrap.style.display = isMasterUser ? "inline-flex" : "none";
+  if (cloneCountWrap) cloneCountWrap.style.display = "none";
   let recurNote = document.getElementById("recur-edit-note");
   if (found.isRecurring) {
     if (!recurNote) {
@@ -1094,7 +1095,7 @@ function toggleExchange(type) {
   } else {
     selectedExchangeTypes.add(type);
   }
-  ["free","feedback","money","time","share","other"].forEach(t => {
+  ["free","feedback","testimonial","money","time","share","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
@@ -1111,7 +1112,7 @@ function toggleExchange(type) {
 // Legacy single-value restore on edit
 function setExchange(val) {
   selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
-  ["free","feedback","money","time","share","other"].forEach(t => {
+  ["free","feedback","testimonial","money","time","share","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
@@ -1493,6 +1494,18 @@ function useMyLocation() {
       else { btn.textContent = "📍 Use my location"; alert("Could not detect your location. Please select manually."); }
     }, { timeout:10000 }
   );
+}
+
+function onCloneBtnClick() {
+  if (isMasterUser) {
+    const wrap = document.getElementById("clone-count-wrap");
+    if (wrap) {
+      const isVisible = wrap.style.display === "inline-flex";
+      wrap.style.display = isVisible ? "none" : "inline-flex";
+      if (!isVisible) return;
+    }
+  }
+  cloneEvent();
 }
 
 function cloneEvent() {
