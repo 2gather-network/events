@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.20
+  Version 6.21
 -->
 <html lang="en">
 <head>
@@ -1314,6 +1314,10 @@ async function submitEvent() {
     description:desc, host, hostlink, contactEmail, contactPhone, cooplink,
     room:(hostingOption==="db"&&(selectedFormat==="virtual"||selectedFormat==="both")) ? selectedRoom : null,
     meetinglink:(hostingOption==="own") ? (document.getElementById("f-meetinglink")?.value.trim()||"") : "",
+    paymentlink: document.getElementById("f-paymentlink")?.value.trim() || "",
+    exchangeType: [...selectedExchangeTypes].join(",") || "",
+    otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
   };
 
   if (editingId) {
