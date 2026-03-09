@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.16
+  Version 6.17
 -->
 <html lang="en">
 <head>
@@ -359,10 +359,11 @@
     <div class="field">
       <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-free" onclick="setExchange('free')">🎁 Free / no ask</button>
-        <button type="button" class="format-chip" id="exch-feedback" onclick="setExchange('feedback')">💬 Feedback / testimonial</button>
-        <button type="button" class="format-chip" id="exch-money" onclick="setExchange('money')">💰 Money</button>
-        <button type="button" class="format-chip" id="exch-time" onclick="setExchange('time')">⏱ Equal time trade</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free / no ask</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / testimonial</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
+        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏱ Equal time trade</button>
+        <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">👥 Pass this along</button>
       </div>
     </div>
 
@@ -844,7 +845,11 @@ function renderEvents() {
           ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? `<div class="event-meta-item"><span>${ev.exchangeType==="money"?"💰":ev.exchangeType==="feedback"?"💬":ev.exchangeType==="time"?"⏱":"🎁"}</span>${ev.exchangeType==="money"?"Payment required":ev.exchangeType==="feedback"?"Feedback welcome":ev.exchangeType==="time"?"Equal time trade":"Free"}</div>` : ""}
+          ${ev.exchangeType ? (() => {
+            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along"};
+            const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
+            return `<div class="event-meta-item"><span>🤝</span>${labels}</div>`;
+          })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
@@ -882,7 +887,7 @@ function saveDraft() {
     host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
     contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
-    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: selectedExchangeType || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: [...selectedExchangeTypes].join(",") || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -953,7 +958,7 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
   toggleLinkFields();
-  setExchange("");
+  selectedExchangeTypes = new Set(); ["free","feedback","money","time","share"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1056,20 +1061,35 @@ function loadEditForm(id) {
   buildFormChips(); updateRoomPreview();
 }
 
-let selectedExchangeType = "";
+let selectedExchangeTypes = new Set();
 
-function setExchange(type) {
-  selectedExchangeType = type;
-  ["free","feedback","money","time"].forEach(t => {
+function toggleExchange(type) {
+  if (selectedExchangeTypes.has(type)) {
+    selectedExchangeTypes.delete(type);
+  } else {
+    selectedExchangeTypes.add(type);
+  }
+  ["free","feedback","money","time","share"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
-    if (btn) btn.classList.toggle("selected", t === type);
+    if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
   // Payment link required indicator
   const label = document.getElementById("payment-required-label");
-  if (label) label.textContent = type === "money" ? "- required" : "- optional";
+  if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
   // Auto-check payment link checkbox if money selected
   const cb = document.getElementById("show-paymentlink");
-  if (cb && type === "money") { cb.checked = true; toggleLinkFields(); }
+  if (cb && selectedExchangeTypes.has("money")) { cb.checked = true; toggleLinkFields(); }
+}
+
+// Legacy single-value restore on edit
+function setExchange(val) {
+  selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
+  ["free","feedback","money","time","share"].forEach(t => {
+    const btn = document.getElementById("exch-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
+  });
+  const label = document.getElementById("payment-required-label");
+  if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
 }
 
 function toggleLinkFields() {
@@ -1080,7 +1100,7 @@ function toggleLinkFields() {
   });
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeType = ""; }
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1225,7 +1245,7 @@ async function submitEvent() {
   const errEl    = document.getElementById("post-error");
 
   const missing = [];
-  if (selectedExchangeType === "money" && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when asking for money)");
+  if (selectedExchangeTypes.has("money") && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when asking for money)");
   if (!title) missing.push("event title");
   if (selectedCats.size === 0) missing.push("at least one category");
   if (!selectedFormat) missing.push("virtual or in-person");
