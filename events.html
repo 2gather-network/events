@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.21
+  Version 6.22
 -->
 <html lang="en">
 <head>
@@ -656,8 +656,8 @@ function populateHostFilter() {
   });
 }
 
-async function apiAdd(ev)          { return jsonp({ action:"add",    event:evToSheet(ev) }); }
-async function apiUpdate(ev)       { return jsonp({ action:"update", event:evToSheet(ev) }); }
+async function apiAdd(ev)          { const d = evToSheet(ev); console.log("apiAdd sending:", JSON.stringify(d)); return jsonp({ action:"add",    event:d }); }
+async function apiUpdate(ev)       { const d = evToSheet(ev); console.log("apiUpdate sending:", JSON.stringify(d)); return jsonp({ action:"update", event:d }); }
 async function apiDelete(id)       { return jsonp({ action:"delete", id }); }
 async function apiGoing(id, delta) { return jsonp({ action:"going",  id, delta }); }
 
