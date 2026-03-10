@@ -2,7 +2,7 @@
 <!--
   Community events - Beta · DayBalancer
   https://daybalancer.com
-  Version 2.12 (public/read-only)
+  Version 2.14 (public/read-only)
 -->
 <html lang="en">
 <head>
@@ -36,7 +36,7 @@
   .input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
   .input:focus { border-color:var(--primary); }
 
-  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:4000px; }
   .embed-mode .page-body { padding-top:8px; }
   .embed-mode .header { display:none; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
@@ -397,8 +397,8 @@ function renderEvents() {
     });
     const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
     const matchQ    = !q || e.title.toLowerCase().includes(q) || (e.description||"").toLowerCase().includes(q) || (e.location||"").toLowerCase().includes(q) || (e.host||"").toLowerCase().includes(q);
-    const evMs      = new Date(e.date + "T" + (e.time||"00:00")).getTime();
-    const isPast    = evMs < now;
+    const evEndMs   = e.endtime ? new Date(e.date + "T" + e.endtime).getTime() : new Date(e.date + "T" + (e.time||"00:00")).getTime() + 60*60*1000;
+    const isPast    = evEndMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
@@ -458,8 +458,12 @@ function renderEvents() {
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
-          ${ev.cooplink ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Cooperative link</a></div>` : ""}
+          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink && ev.showLinks && ev.showLinks.includes("hostlink") ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
+          ${ev.cooplink && ev.showLinks && ev.showLinks.includes("cooplink") ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Group link</a></div>` : ""}
+          ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
+          ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
+          ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
+          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;">${labels}</div>`; })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
