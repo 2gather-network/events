@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.33
+  Version 6.37
 -->
 <html lang="en">
 <head>
@@ -314,7 +314,7 @@
     </div>
 
     <div class="field">
-      <label class="field-label">What would you like to share with attendees? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
+      <label class="field-label">What would you like to share with participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
@@ -336,7 +336,7 @@
     </div>
 
     <div class="field" id="field-hostlink" style="display:none;">
-      <label class="field-label">Your DayBalancer profile link</label>
+      <label class="field-label">Your DayBalancer page link</label>
       <input class="input" id="f-hostlink" type="url" placeholder="https://app.daybalancer.com/...">
     </div>
 
@@ -364,9 +364,9 @@
     </div>
 
     <div class="field">
-      <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <label class="field-label">What kind of contribution(s) are you seeking as a host? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 No ask</button>
         <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / support</button>
         <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">⭐ Testimonial</button>
         <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
@@ -875,10 +875,10 @@ function renderEvents() {
           ${ev.exchangeType ? (() => {
             const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;">${labels}</div>`;
+            return `<div class="event-meta-item" style="padding-left:0;">Contributions welcomed: ${labels}</div>`;
           })() : ""}
         </div>
-        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
@@ -1187,10 +1187,10 @@ function toggleDesc(id) {
   if (!el) return;
   const isExpanded = el.dataset.expanded === "true";
   if (isExpanded) {
-    el.innerHTML = esc(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
+    el.innerHTML = escNl(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
     el.dataset.expanded = "false";
   } else {
-    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
+    el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
     el.dataset.expanded = "true";
   }
 }
@@ -1385,6 +1385,7 @@ function fmtDate(date, time, endtime) {
   const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   return ds + " · " + ts + " - " + te + " " + tz;
 }
+function escNl(s) { return esc(s).replace(/\n/g, "<br>"); }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
 function showToast(msg) {
@@ -1579,7 +1580,17 @@ function cloneEvent() {
     ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
     document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
     buildFormChips(); updateRoomPreview();
-    setTab("upcoming");
+    // Restore hosting option
+    if (ev.meetinglink) { hostingOption = "own"; setHostingOption("own"); const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink; }
+    else if (ev.room) { hostingOption = "db"; setHostingOption("db"); }
+    // Restore showLinks, paymentlink, exchangeType
+    const sl = (ev.showLinks || "").split(",").filter(Boolean);
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
+    toggleLinkFields();
+    const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
+    setExchange(ev.exchangeType || "");
+    const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+    setDateFilter("upcoming");
     showToast("Event cloned - set a new date and private PIN!");
   }, 100);
 }
