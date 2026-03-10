@@ -2,7 +2,7 @@
 <!--
   Community events - Beta · DayBalancer
   https://daybalancer.com
-  Version 2.15 (public/read-only)
+  Version 2.17 (public/read-only)
 -->
 <html lang="en">
 <head>
@@ -480,9 +480,9 @@ function renderEvents() {
           ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;">${labels}</div>`; })() : ""}
+          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;">Contributions welcomed: ${labels}</div>`; })() : ""}
         </div>
-        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
@@ -501,10 +501,10 @@ function toggleDesc(id) {
   if (!el) return;
   const isExpanded = el.dataset.expanded === "true";
   if (isExpanded) {
-    el.innerHTML = esc(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
+    el.innerHTML = escNl(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
     el.dataset.expanded = "false";
   } else {
-    el.innerHTML = esc(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
+    el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
     el.dataset.expanded = "true";
   }
 }
@@ -676,6 +676,7 @@ function fmtDate(date, time, endtime) {
   const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   return ds + " · " + ts + " - " + te + " " + tz;
 }
+function escNl(s) { return esc(s).replace(/\n/g, "<br>"); }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
 function showToast(msg) {
