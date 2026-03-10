@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.24
+  Version 6.26
 -->
 <html lang="en">
 <head>
@@ -41,7 +41,7 @@
   .field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
   .field { margin-bottom:18px; }
 
-  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:4000px; }
   .embed-mode .page-body { padding-top:8px; }
   .embed-mode .header { display:none; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
@@ -360,7 +360,7 @@
       <label class="field-label">What kind of exchange are you asking for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
         <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 Free</button>
-        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / support</button>
         <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">⭐ Testimonial</button>
         <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
         <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏱ Equal time trade</button>
@@ -853,7 +853,7 @@ function renderEvents() {
           ${ev.exchangeType ? (() => {
             const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item"><span>🤝</span>${labels}</div>`;
+            return `<div class="event-meta-item" style="padding-left:0;">${labels}</div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;" onclick="toggleDesc('${ev.id}')">${esc(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1130,7 +1130,7 @@ function toggleLinkFields() {
   });
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); }
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1499,11 +1499,14 @@ function useMyLocation() {
 function onCloneBtnClick() {
   if (isMasterUser) {
     const wrap = document.getElementById("clone-count-wrap");
-    if (wrap) {
-      const isVisible = wrap.style.display === "inline-flex";
-      wrap.style.display = isVisible ? "none" : "inline-flex";
-      if (!isVisible) return;
+    const btn  = document.getElementById("clone-btn");
+    if (wrap && wrap.style.display !== "inline-flex") {
+      wrap.style.display = "inline-flex";
+      if (btn) btn.textContent = "▶ Go";
+      return;
     }
+    if (btn) btn.textContent = "⧉ Clone";
+    if (wrap) wrap.style.display = "none";
   }
   cloneEvent();
 }
@@ -1539,6 +1542,7 @@ function cloneEvent() {
     ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
     document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
     buildFormChips(); updateRoomPreview();
+    setTab("upcoming");
     showToast("Event cloned - set a new date and private PIN!");
   }, 100);
 }
@@ -1606,7 +1610,7 @@ async function submitBulkClone() {
 
   btn.disabled = false; btn.textContent = "Create copies";
   closeBulkCloneModal();
-  renderEvents();
+  setTab("upcoming");
   showToast(`${created} cop${created === 1 ? "y" : "ies"} created!`);
 }
 
