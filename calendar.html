@@ -2,7 +2,7 @@
 <!--
   Community events - Beta · DayBalancer
   https://daybalancer.com
-  Version 2.14 (public/read-only)
+  Version 2.15 (public/read-only)
 -->
 <html lang="en">
 <head>
@@ -36,7 +36,7 @@
   .input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
   .input:focus { border-color:var(--primary); }
 
-  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:4000px; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:8000px; }
   .embed-mode .page-body { padding-top:8px; }
   .embed-mode .header { display:none; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
@@ -127,9 +127,16 @@
       <div class="page-title" id="page-title">What's happening</div>
       <div class="page-sub">Events posted by DayBalancer members</div>
     </div>
-    <div style="display:flex;gap:8px;">
-      <button class="format-chip active" id="tab-upcoming" onclick="setTab('upcoming')">Upcoming</button>
-      <button class="format-chip" id="tab-past" onclick="setTab('past')">Past events</button>
+    <div style="position:relative;display:inline-block;">
+      <select id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:8px 40px 8px 16px;font-size:14px;font-weight:700;border-radius:20px;border:2px solid var(--primary);background-color:var(--primary);color:#fff;cursor:pointer;font-family:inherit;appearance:none;-webkit-appearance:none;">
+        <option value="upcoming">All upcoming events</option>
+        <option value="week">Upcoming this week</option>
+        <option value="month">Upcoming this month</option>
+        <option value="past-week">Events past week</option>
+        <option value="past-month">Events past month</option>
+        <option value="past-quarter">Events past quarter</option>
+      </select>
+      <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:11px;">▼</span>
     </div>
   </div>
 
@@ -254,6 +261,7 @@ const RECURRING_EVENTS = [
 let events = [];
 let activeFilter = "all";
 let activeTab    = "upcoming";
+let activeDateFilter = "upcoming";
 let activeMode   = "all";
 
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
@@ -398,8 +406,17 @@ function renderEvents() {
     const matchCat  = activeFilter === "all" || cats.includes(activeFilter);
     const matchQ    = !q || e.title.toLowerCase().includes(q) || (e.description||"").toLowerCase().includes(q) || (e.location||"").toLowerCase().includes(q) || (e.host||"").toLowerCase().includes(q);
     const evEndMs   = e.endtime ? new Date(e.date + "T" + e.endtime).getTime() : new Date(e.date + "T" + (e.time||"00:00")).getTime() + 60*60*1000;
+    const evStartMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
     const isPast    = evEndMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
+    const MS_WEEK = 7*24*60*60*1000, MS_MONTH = 30*24*60*60*1000, MS_QUARTER = 91*24*60*60*1000;
+    let matchDate = true;
+    if (activeDateFilter === "week")           matchDate = evStartMs >= now && evStartMs <= now + MS_WEEK;
+    else if (activeDateFilter === "month")     matchDate = evStartMs >= now && evStartMs <= now + MS_MONTH;
+    else if (activeDateFilter === "past-week") matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
+    else if (activeDateFilter === "past-month") matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
+    else if (activeDateFilter === "past-quarter") matchDate = evEndMs >= now - MS_QUARTER && evEndMs < now;
+    if (isPast && evEndMs < now - MS_QUARTER) matchDate = false;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
     const matchMode  = q ? true : activeMode === "all" ? true : activeMode === "virtual" ? isVirtual : isInPerson;
@@ -411,7 +428,7 @@ function renderEvents() {
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost;
+    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate;
   });
 
   list.sort((a, b) => {
@@ -522,10 +539,15 @@ function checkEventLink() {
 }
 
 function setTab(tab) {
-  activeTab = tab;
-  document.getElementById("tab-upcoming").classList.toggle("active", tab === "upcoming");
-  document.getElementById("tab-past").classList.toggle("active", tab === "past");
-  document.getElementById("page-title").textContent = tab === "past" ? "Past events" : "What's happening";
+  setDateFilter(tab === "past" ? "past-week" : "upcoming");
+}
+
+function setDateFilter(f) {
+  activeDateFilter = f;
+  activeTab = f.startsWith("past") ? "past" : "upcoming";
+  const sel = document.getElementById("date-filter-select");
+  if (sel) sel.value = f;
+  document.getElementById("page-title").textContent = activeTab === "past" ? "Past events" : "What's happening";
   renderEvents();
 }
 
@@ -538,6 +560,8 @@ function setMode(mode) {
   if (mode === "inperson") {
     const regionEl = document.getElementById("filter-region");
     if (!regionEl.value) { regionEl.value = "North America"; onRegionChange(); document.getElementById("filter-country").value = "United States"; onCountryChange(); }
+    const stateEl = document.getElementById("filter-state");
+    if (stateEl && !stateEl.value) { stateEl.value = "Washington"; renderEvents(); }
   }
   localStorage.setItem("db-mode", mode);
   renderEvents();
