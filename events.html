@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.55
+  Version 6.56
 -->
 <html lang="en">
 <head>
@@ -1477,7 +1477,7 @@ async function submitEvent() {
       const slug = editingId.replace(/^recurring-/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"");
       const tIdx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
       if (tIdx > -1) {
-        RECURRING_EVENTS[tIdx] = { ...RECURRING_EVENTS[tIdx], title, categories:catIds, time, endtime, description:desc, host, hostlink, cooplink, format:selectedFormat, room:(selectedFormat==="virtual"||selectedFormat==="both")?selectedRoom:RECURRING_EVENTS[tIdx].room };
+        RECURRING_EVENTS[tIdx] = { ...RECURRING_EVENTS[tIdx], ...eventData, title, categories:catIds, time, endtime, description:desc, host, hostlink, cooplink, format:selectedFormat, room:(selectedFormat==="virtual"||selectedFormat==="both")?selectedRoom:RECURRING_EVENTS[tIdx].room };
         const saved = {};
         try { Object.assign(saved, JSON.parse(localStorage.getItem("db-recurring-overrides")||"{}")); } catch {}
         saved[slug] = RECURRING_EVENTS[tIdx];
@@ -1920,6 +1920,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.55 -->
+<!-- v6.56 -->
 </body>
 </html>
