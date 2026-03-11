@@ -127,14 +127,6 @@
       <div class="page-title" id="page-title">What's happening</div>
       <div class="page-sub">Events posted by DayBalancer members</div>
     </div>
-    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;margin-left:auto;">
-        <option value="upcoming">All upcoming events</option>
-        <option value="week">Upcoming this week</option>
-        <option value="month">Upcoming this month</option>
-        <option value="past-week">Events past week</option>
-        <option value="past-month">Events past month</option>
-        <option value="past-quarter">Events past quarter</option>
-    </select>
   </div>
 
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
@@ -171,6 +163,14 @@
 
   <div class="filter-row">
     <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
+    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;flex:0 0 auto;">
+        <option value="upcoming">All upcoming events</option>
+        <option value="week">Upcoming this week</option>
+        <option value="month">Upcoming this month</option>
+        <option value="past-week">Events past week</option>
+        <option value="past-month">Events past month</option>
+        <option value="past-quarter">Events past quarter</option>
+    </select>
     <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
       <option value="">All hosts</option>
     </select>
@@ -715,6 +715,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.20 -->
+<!-- v2.21 -->
 </body>
 </html>
