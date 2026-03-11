@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.42
+  Version 6.43
 -->
 <html lang="en">
 <head>
@@ -15,7 +15,7 @@
   :root {
     --primary: #1B6896; --primary-dark: #154F74; --primary-light: #E8F2F9;
     --green: #4CAF7D; --light: #F5F7FA; --border: #DCE3EA;
-    --dark: #2C3A47; --muted: #6B7C8D; --white: #FFFFFF;
+    --dark: #2C3A47; --muted: #4A5A6B; --white: #FFFFFF;
   }
   body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); }
 
@@ -504,7 +504,7 @@ const ROOMS = [
   { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
   { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
   { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
   { name:"Abundance room",         url:"", comingSoon: true },
@@ -900,7 +900,7 @@ function renderEvents() {
           ${ev.exchangeType ? (() => {
             const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;"><strong>Contributions welcomed:</strong> ${labels}</div>`;
+            return `<div class="event-meta-item" style="padding-left:0;"><span style="color:var(--dark);margin-right:2px;">Contributions welcomed:</span> ${labels}</div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1848,6 +1848,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.42 -->
+<!-- v6.43 -->
 </body>
 </html>
