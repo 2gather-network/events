@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.40
+  Version 6.42
 -->
 <html lang="en">
 <head>
@@ -222,7 +222,7 @@
     <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
       <option value="">All hosts</option>
     </select>
-    <button onclick="resetFilters()" class="btn btn-outline btn-sm" style="white-space:nowrap;flex:0 0 auto;">Reset filters</button>
+    <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--primary-dark);color:#fff;border:none;">Reset filters</button>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -898,9 +898,9 @@ function renderEvents() {
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
           ${ev.exchangeType ? (() => {
-            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
+            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;">Contributions welcomed: ${labels}</div>`;
+            return `<div class="event-meta-item" style="padding-left:0;"><strong>Contributions welcomed:</strong> ${labels}</div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1124,8 +1124,8 @@ function loadEditForm(id) {
   // Restore exchange type
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
-  // Restore recurring
-  recurFreq = ev.recurFreq || null;
+  // Restore recurring - fall back to "weekly" if recurring flag is true but freq not yet saved
+  recurFreq = ev.recurFreq || (ev.recurring && !ev.id.startsWith("recurring-") ? "weekly" : null);
   const recurCb = document.getElementById("f-recurring");
   if (recurCb) { recurCb.checked = !!recurFreq; }
   const freqWrap = document.getElementById("recurring-freq-wrap");
@@ -1848,6 +1848,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.41 -->
+<!-- v6.42 -->
 </body>
 </html>
