@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.37
+  Version 6.40
 -->
 <html lang="en">
 <head>
@@ -384,6 +384,22 @@
       <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;" autocomplete="off">
     </div>
 
+    <div class="field" id="recurring-field" style="display:none;">
+      <label class="field-label">Recurring event <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="f-recurring" onchange="toggleRecurring()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Make this a recurring event
+        </label>
+      </div>
+      <div id="recurring-freq-wrap" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="format-chip" id="freq-weekly" onclick="setRecurFreq('weekly')">🔁 Weekly</button>
+          <button type="button" class="format-chip" id="freq-monthly" onclick="setRecurFreq('monthly')">📅 Monthly</button>
+        </div>
+      </div>
+    </div>
+
     <p class="error-msg" id="post-error"></p>
     <div class="conflict-warning" id="conflict-warning"></div>
 
@@ -558,7 +574,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "",
   };
 }
 
@@ -592,7 +608,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "",
   };
 }
 
@@ -848,7 +864,7 @@ function renderEvents() {
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const roomObj = ROOMS.find(r => r.name === ev.room);
     const recurringBadge = ev.recurring
-      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
+      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
       : "";
     const hybridBadge = ev.format === "both"
       ? `<span style="font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔀 Hybrid</span>`
@@ -983,6 +999,7 @@ function openModal(skipDraft = false) {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
+  document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
@@ -1063,6 +1080,7 @@ function loadEditForm(id) {
   document.getElementById("clone-btn").style.display  = "block";
   const cloneCountWrap = document.getElementById("clone-count-wrap");
   if (cloneCountWrap) cloneCountWrap.style.display = "none";
+  document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
   let recurNote = document.getElementById("recur-edit-note");
   if (found.isRecurring) {
     if (!recurNote) {
@@ -1097,6 +1115,13 @@ function loadEditForm(id) {
   // Restore exchange type
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+  // Restore recurring
+  recurFreq = ev.recurFreq || null;
+  const recurCb = document.getElementById("f-recurring");
+  if (recurCb) { recurCb.checked = !!recurFreq; }
+  const freqWrap = document.getElementById("recurring-freq-wrap");
+  if (freqWrap) freqWrap.style.display = recurFreq ? "flex" : "none";
+  if (recurFreq) setRecurFreq(recurFreq);
   buildFormChips(); updateRoomPreview();
   // Restore hosting option after updateRoomPreview so the section is visible
   if (ev.meetinglink) {
@@ -1110,6 +1135,19 @@ function loadEditForm(id) {
 }
 
 let selectedExchangeTypes = new Set();
+let recurFreq = null;
+
+function toggleRecurring() {
+  const checked = document.getElementById("f-recurring").checked;
+  const wrap = document.getElementById("recurring-freq-wrap");
+  if (wrap) wrap.style.display = checked ? "flex" : "none";
+  if (!checked) { recurFreq = null; ["weekly","monthly"].forEach(f => document.getElementById("freq-"+f)?.classList.remove("selected")); }
+}
+
+function setRecurFreq(f) {
+  recurFreq = f;
+  ["weekly","monthly"].forEach(k => document.getElementById("freq-"+k)?.classList.toggle("selected", k === f));
+}
 
 function toggleExchange(type) {
   if (selectedExchangeTypes.has(type)) {
@@ -1152,7 +1190,7 @@ function toggleLinkFields() {
   });
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1209,7 +1247,15 @@ function addToCalendar(id) {
   const titleKey = (ev.title||"").toLowerCase().trim();
   const rrule = RRULE_MAP[id] || Object.entries(RRULE_MAP).find(([k]) => titleKey.includes(k))?.[1];
   const params = new URLSearchParams({ text:ev.title, dates:start+"/"+end, details, location });
-  if (ev.recurring && rrule) params.append("recur", rrule);
+  // Sheet-based recurring: use recurFreq field
+  if (ev.recurFreq === "weekly") {
+    const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
+    params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
+  } else if (ev.recurFreq === "monthly") {
+    params.append("recur", "RRULE:FREQ=MONTHLY");
+  } else if (ev.recurring && rrule) {
+    params.append("recur", rrule);
+  }
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
@@ -1245,10 +1291,10 @@ function showSummary(ev) {
   const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
   const lines = [
     `📅 ${ev.title}`, ``,
-    `Date:       ${fmtDateShort(ev.date)}`, `Time:       ${timeLine}`,
-    ev.format ? `Format:     ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
-    ev.location ? `Location:   ${ev.location}` : "",
-    ev.room ? `Room:       ${ev.room}` : "",
+    `Date: ${fmtDateShort(ev.date)}`, `Time: ${timeLine}`,
+    ev.format ? `Format: ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
+    ev.location ? `Location: ${ev.location}` : "",
+    ev.room ? `Room: ${ev.room}` : "",
     roomObj ? `Room link:  ${roomObj.url}` : "",
     ev.description ? `\n${ev.description}` : "", ``,
     `─────────────────────────`,
@@ -1341,6 +1387,8 @@ async function submitEvent() {
     exchangeType: [...selectedExchangeTypes].join(",") || "",
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
+    recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
+    recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
   };
 
   if (editingId) {
