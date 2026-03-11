@@ -222,6 +222,7 @@
     <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
       <option value="">All hosts</option>
     </select>
+    <button onclick="resetFilters()" class="btn btn-outline btn-sm" style="white-space:nowrap;flex:0 0 auto;">Reset filters</button>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -785,6 +786,17 @@ function makeFilterBtn(text, isActive, onClick) {
   b.textContent = text; b.onclick = onClick;
   return b;
 }
+function resetFilters() {
+  document.getElementById("search-input").value = "";
+  document.getElementById("host-filter").value = "";
+  setFilter("all");
+  setDateFilter("upcoming");
+  setMode("all");
+  // restore Washington default for in-person
+  const stateEl = document.getElementById("filter-state");
+  if (stateEl) stateEl.value = "Washington";
+}
+
 function setFilter(id) { activeFilter = id; localStorage.setItem("db-filter", id); renderPills(); renderEvents(); }
 
 function renderEvents() {
@@ -1836,6 +1848,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.40 -->
+<!-- v6.41 -->
 </body>
 </html>
