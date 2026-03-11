@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.51
+  Version 6.55
 -->
 <html lang="en">
 <head>
@@ -364,13 +364,12 @@
     <div class="field">
       <label class="field-label">What would you welcome from participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">💬 Feedback</button>
-        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">🌟 Share your experience</button>
-        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">🔁 Time exchange</button>
-        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">☕ Coffee or gift</button>
+        <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">💬 Give feedback</button>
+        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">🔁 Trade time</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">☕ Coffee</button>
         <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">💸 Tip</button>
         <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">💰 Paid</button>
-        <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
         <button type="button" class="format-chip" id="exch-other" onclick="toggleExchange('other')">✏️ Other</button>
       </div>
       <div id="field-exch-other" style="display:none;margin-top:8px;">
@@ -486,7 +485,7 @@
 const CATEGORIES = [
   { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-Create room",     extraRooms:["Coworking room"] },
   { id:"movement",     label:"Physical health",          emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
-  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
+  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-Create room",     extraRooms:["Ikigai room","Coworking room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
   { id:"professional", label:"Work and skills",          emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
   { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-Create room",     extraRooms:["Coworking room"] },
@@ -505,7 +504,6 @@ const ROOMS = [
   { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
   { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
   { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
   { name:"Abundance room",         url:"", comingSoon: true },
@@ -540,7 +538,7 @@ const RECURRING_EVENTS = [
   },
   {
     title:"Feedback Fridays", dayOfWeek:5, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"Co-create room", host:"Jessie Upp",
+    format:"virtual", room:"Co-Create room", host:"Jessie Upp",
     hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
     description:"Come with your small or big idea and receive supportive feedback.",
@@ -899,7 +897,7 @@ function renderEvents() {
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
           ${ev.exchangeType ? (() => {
-            const typeMap = {free:"💬 Feedback",feedback:"🌟 Share your experience",testimonial:"🔁 Time exchange",money:"☕ Coffee or gift",time:"💸 Tip",share:"💰 Paid",noask:"🔗 Spread the word",other:"✏️ " + (ev.otherExchange || "Other")};
+            const typeMap = {noask:"🔗 Spread the word",free:"💬 Give feedback",testimonial:"🔁 Trade time",money:"☕ Coffee",time:"💸 Tip",share:"💰 Paid",feedback:"🌟 Share your experience",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
             const firstName = (ev.host || "").trim().split(/\s+/)[0] || "Host";
             return `<div class="event-meta-item" style="padding-left:0;display:block;"><span style="color:var(--dark);">What ${esc(firstName)} welcomes: </span>${labels}</div>`;
@@ -1232,7 +1230,7 @@ function toggleExchange(type) {
   } else {
     selectedExchangeTypes.add(type);
   }
-  ["free","feedback","testimonial","money","time","share","other"].forEach(t => {
+  ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
@@ -1249,7 +1247,7 @@ function toggleExchange(type) {
 // Legacy single-value restore on edit
 function setExchange(val) {
   selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
-  ["free","feedback","testimonial","money","time","share","other"].forEach(t => {
+  ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => {
     const btn = document.getElementById("exch-"+t);
     if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
   });
@@ -1922,6 +1920,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.51 -->
+<!-- v6.55 -->
 </body>
 </html>
