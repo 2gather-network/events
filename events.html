@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.46
+  Version 6.47
 -->
 <html lang="en">
 <head>
@@ -900,7 +900,7 @@ function renderEvents() {
           ${ev.exchangeType ? (() => {
             const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;flex-wrap:wrap;align-items:baseline;"><span style="color:var(--dark);margin-right:4px;white-space:nowrap;">Contributions welcomed:</span><span>${labels}</span></div>`;
+            return `<div class="event-meta-item" style="padding-left:0;display:block;"><span style="color:var(--dark);">Contributions welcomed: </span>${labels}</div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1848,6 +1848,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.46 -->
+<!-- v6.47 -->
 </body>
 </html>
