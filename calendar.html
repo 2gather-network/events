@@ -2,7 +2,7 @@
 <!--
   Community events - Beta · DayBalancer
   https://daybalancer.com
-  Version 2.17 (public/read-only)
+  Version 2.19 (public/read-only)
 -->
 <html lang="en">
 <head>
@@ -127,17 +127,14 @@
       <div class="page-title" id="page-title">What's happening</div>
       <div class="page-sub">Events posted by DayBalancer members</div>
     </div>
-    <div style="position:relative;display:inline-block;">
-      <select id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:8px 40px 8px 16px;font-size:14px;font-weight:700;border-radius:20px;border:2px solid var(--primary);background-color:var(--primary);color:#fff;cursor:pointer;font-family:inherit;appearance:none;-webkit-appearance:none;">
+    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;margin-left:auto;">
         <option value="upcoming">All upcoming events</option>
         <option value="week">Upcoming this week</option>
         <option value="month">Upcoming this month</option>
         <option value="past-week">Events past week</option>
         <option value="past-month">Events past month</option>
         <option value="past-quarter">Events past quarter</option>
-      </select>
-      <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:11px;">▼</span>
-    </div>
+    </select>
   </div>
 
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
@@ -177,6 +174,7 @@
     <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
       <option value="">All hosts</option>
     </select>
+    <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--primary-dark);color:#fff;border:none;">Reset filters</button>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -295,7 +293,7 @@ function sheetToEv(row) {
     room: row.room||"", description: row.description||"", host: row.host||"",
     hostlink: row.hostlink||"", contactEmail: row.contactEmail||"", contactPhone: row.contactPhone||"",
     passcode: row.passcode||"", cooplink: row.cooplink||"", going: parseInt(row.going)||0,
-    meetinglink: row.meetinglink||"", recurring: isRecurring,
+    meetinglink: row.meetinglink||"", recurring: isRecurring || !!(row.recurFreq), recurFreq: row.recurFreq||"",
   };
 }
 
@@ -385,6 +383,16 @@ function makeFilterBtn(text, isActive, onClick) {
   b.textContent = text; b.onclick = onClick;
   return b;
 }
+function resetFilters() {
+  document.getElementById("search-input").value = "";
+  document.getElementById("host-filter").value = "";
+  setFilter("all");
+  setDateFilter("upcoming");
+  setMode("all");
+  const stateEl = document.getElementById("filter-state");
+  if (stateEl) stateEl.value = "Washington";
+}
+
 function setFilter(id) { activeFilter = id; localStorage.setItem("db-filter", id); renderPills(); renderEvents(); }
 
 function renderEvents() {
@@ -456,7 +464,7 @@ function renderEvents() {
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const roomObj = ROOMS.find(r => r.name === ev.room);
     const recurringBadge = ev.recurring
-      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 Weekly</span>`
+      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
       : "";
     const hybridBadge = ev.format === "both"
       ? `<span style="font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔀 Hybrid</span>`
@@ -480,7 +488,7 @@ function renderEvents() {
           ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback welcome",testimonial:"⭐ Testimonial welcome",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;">Contributions welcomed: ${labels}</div>`; })() : ""}
+          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;"><strong>Contributions welcomed:</strong> ${labels}</div>`; })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
@@ -523,7 +531,14 @@ function addToCalendar(id) {
   const titleKey = (ev.title||"").toLowerCase().trim();
   const rrule = RRULE_MAP[id] || Object.entries(RRULE_MAP).find(([k]) => titleKey.includes(k))?.[1];
   const params = new URLSearchParams({ text:ev.title, dates:start+"/"+end, details, location });
-  if (ev.recurring && rrule) params.append("recur", rrule);
+  if (ev.recurFreq === "weekly") {
+    const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
+    params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
+  } else if (ev.recurFreq === "monthly") {
+    params.append("recur", "RRULE:FREQ=MONTHLY");
+  } else if (ev.recurring && rrule) {
+    params.append("recur", rrule);
+  }
   window.open("https://calendar.google.com/calendar/r/eventedit?"+params.toString(), "_blank");
 }
 
@@ -698,6 +713,8 @@ renderPills();
 // FIX: call setMode() to restore button visual state, not just the variable
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
+
 </script>
+<!-- v2.20 -->
 </body>
 </html>
