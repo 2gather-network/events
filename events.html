@@ -175,17 +175,14 @@
       <div class="page-title" id="page-title">What's happening</div>
       <div class="page-sub">Events posted by DayBalancer members</div>
     </div>
-    <div style="position:relative;display:inline-block;">
-      <select id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:8px 40px 8px 16px;font-size:14px;font-weight:700;border-radius:20px;border:2px solid var(--primary);background-color:var(--primary);color:#fff;cursor:pointer;font-family:inherit;appearance:none;-webkit-appearance:none;">
+    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;margin-left:auto;">
         <option value="upcoming">All upcoming events</option>
         <option value="week">Upcoming this week</option>
         <option value="month">Upcoming this month</option>
         <option value="past-week">Events past week</option>
         <option value="past-month">Events past month</option>
         <option value="past-quarter">Events past quarter</option>
-      </select>
-      <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:#fff;font-size:11px;">▼</span>
-    </div>
+    </select>
   </div>
 
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
@@ -1837,6 +1834,8 @@ renderPills();
 // FIX: call setMode() to restore button visual state, not just the variable
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
+
 </script>
+<!-- v6.40 -->
 </body>
 </html>
