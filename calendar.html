@@ -185,18 +185,18 @@
 <script>
 const CATEGORIES = [
   { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-Create room",     extraRooms:["Coworking room"] },
-  { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"movement",     label:"Physical health",          emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
-  { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
+  { id:"professional", label:"Work and skills",          emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
   { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-Create room",     extraRooms:["Coworking room"] },
-  { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"faith",        label:"Inner life",               emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"care",         label:"Brain and emotional health", emoji:"💛", room:"Wellness room",     extraRooms:["Coworking room"] },
   { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
+  { id:"family",       label:"Family and caregiving",    emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
   { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"wealth",       label:"Wealth/abundance",         emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
+  { id:"wealth",       label:"Wealth and exchange",      emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
 ];
 
 const ROOMS = [
@@ -488,7 +488,7 @@ function renderEvents() {
           ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;"><strong>Contributions welcomed:</strong> ${labels}</div>`; })() : ""}
+          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;flex-wrap:wrap;align-items:baseline;"><span style="color:var(--dark);margin-right:4px;white-space:nowrap;">Contributions welcomed:</span><span>${labels}</span></div>`; })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
       </div>
@@ -715,6 +715,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.21 -->
+<!-- v2.23 -->
 </body>
 </html>
