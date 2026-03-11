@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.50
+  Version 6.51
 -->
 <html lang="en">
 <head>
@@ -932,6 +932,68 @@ async function markGoing(id) {
 
 const DRAFT_KEY = "db-event-draft";
 
+const EDIT_DRAFT_KEY = "db-edit-draft";
+
+function saveEditDraft() {
+  if (!editingId) return;
+  const draft = {
+    id: editingId,
+    title: document.getElementById("f-title")?.value || "",
+    date: document.getElementById("f-date")?.value || "",
+    time: document.getElementById("f-time")?.value || "",
+    endtime: document.getElementById("f-endtime")?.value || "",
+    location: document.getElementById("f-location")?.value || "",
+    desc: document.getElementById("f-desc")?.value || "",
+    host: document.getElementById("f-host")?.value || "",
+    hostlink: document.getElementById("f-hostlink")?.value || "",
+    contactEmail: document.getElementById("f-contact-email")?.value || "",
+    contactPhone: document.getElementById("f-contact-phone")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "",
+    exchangeType: [...selectedExchangeTypes].join(",") || "",
+    otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
+    cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
+  };
+  localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify(draft));
+}
+
+function clearEditDraft() { localStorage.removeItem(EDIT_DRAFT_KEY); }
+
+function restoreEditDraft(id) {
+  try {
+    const raw = localStorage.getItem(EDIT_DRAFT_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.id !== id) return false;
+    document.getElementById("f-title").value    = d.title || "";
+    document.getElementById("f-date").value     = d.date || "";
+    document.getElementById("f-time").value     = d.time || "12:00";
+    document.getElementById("f-endtime").value  = d.endtime || "13:00";
+    document.getElementById("f-location").value = d.location || "";
+    document.getElementById("f-desc").value     = d.desc || "";
+    document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-hostlink").value = d.hostlink || "";
+    document.getElementById("f-contact-email").value = d.contactEmail || "";
+    document.getElementById("f-contact-phone").value = d.contactPhone || "";
+    document.getElementById("f-cooplink").value = d.cooplink || "";
+    document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    const sl = (d.showLinks || "").split(",");
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
+    toggleLinkFields();
+    setExchange(d.exchangeType || "");
+    const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = d.otherExchange || "";
+    if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
+    if (d.format) {
+      selectedFormat = d.format;
+      ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format));
+      document.getElementById("location-field").style.display = (d.format === "inperson" || d.format === "both") ? "block" : "none";
+      updateRoomPreview();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
 function saveDraft() {
   if (editingId) return;
   const draft = {
@@ -1134,6 +1196,10 @@ function loadEditForm(id) {
   if (freqWrap) freqWrap.style.display = recurFreq ? "flex" : "none";
   if (recurFreq) setRecurFreq(recurFreq);
   buildFormChips(); updateRoomPreview();
+  // Check for unsaved edit draft
+  if (restoreEditDraft(id)) {
+    showToast("✏️ Restored your unsaved edits - review before saving.");
+  }
   // Restore hosting option after updateRoomPreview so the section is visible
   if (ev.meetinglink) {
     hostingOption = "own";
@@ -1201,7 +1267,7 @@ function toggleLinkFields() {
   });
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; clearEditDraft(); const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1220,7 +1286,12 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
       modal.style.transition = ""; modal.style.transform = ""; dragging = false;
       if (dy > 100) {
         const id = overlay.id;
-        if (id === "post-modal") closeModal();
+        if (id === "post-modal") {
+          if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
+            if (!confirm("You have unsaved edits. Close anyway?")) { return; }
+          }
+          closeModal();
+        }
         else if (id === "room-modal") closeRoomModal();
         else if (id === "summary-modal") closeSummaryModal();
         else if (id === "passcode-modal") closePasscodeModal();
@@ -1292,7 +1363,7 @@ safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") cl
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
-["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { safeOn(id,"input",saveDraft); safeOn(id,"change",saveDraft); });
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { safeOn(id,"input",() => { saveDraft(); saveEditDraft(); }); safeOn(id,"change",() => { saveDraft(); saveEditDraft(); }); });
 
 let summaryEventId = null;
 
@@ -1428,7 +1499,7 @@ async function submitEvent() {
     log.push(Date.now()); localStorage.setItem(RL_KEY, JSON.stringify(log));
     const submitBtn = document.getElementById("submit-btn");
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Posted ✓"; setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = "Post event"; }, 10000); }
-    events.unshift(newEv); clearDraft(); closeModal(); renderEvents(); showSummary(newEv);
+    events.unshift(newEv); clearDraft(); clearEditDraft(); closeModal(); renderEvents(); showSummary(newEv);
     apiAdd(newEv).catch(() => {});
   }
 }
@@ -1851,6 +1922,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.50 -->
+<!-- v6.51 -->
 </body>
 </html>
