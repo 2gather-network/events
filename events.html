@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.44
+  Version 6.46
 -->
 <html lang="en">
 <head>
@@ -37,7 +37,7 @@
 
   .input,.textarea { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
   .input:focus,.textarea:focus { border-color:var(--primary); }
-  .textarea { resize:vertical; min-height:90px; }
+  .textarea { resize:vertical; min-height:180px; }
   .field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
   .field { margin-bottom:18px; }
 
@@ -900,7 +900,7 @@ function renderEvents() {
           ${ev.exchangeType ? (() => {
             const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;"><span style="color:var(--dark);margin-right:2px;">Contributions welcomed:</span> ${labels}</div>`;
+            return `<div class="event-meta-item" style="padding-left:0;flex-wrap:wrap;align-items:baseline;"><span style="color:var(--dark);margin-right:4px;white-space:nowrap;">Contributions welcomed:</span><span>${labels}</span></div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1848,6 +1848,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.44 -->
+<!-- v6.46 -->
 </body>
 </html>
