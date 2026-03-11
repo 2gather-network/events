@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.47
+  Version 6.50
 -->
 <html lang="en">
 <head>
@@ -362,14 +362,15 @@
     </div>
 
     <div class="field">
-      <label class="field-label">What kind of contribution(s) are you seeking as a host? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <label class="field-label">What would you welcome from participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">🎁 No ask</button>
-        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback / support</button>
-        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">⭐ Testimonial</button>
-        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💰 Money</button>
-        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏱ Equal time trade</button>
-        <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">👥 Pass this along</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">💬 Feedback</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">🌟 Share your experience</button>
+        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">🔁 Time exchange</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">☕ Coffee or gift</button>
+        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">💸 Tip</button>
+        <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">💰 Paid</button>
+        <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
         <button type="button" class="format-chip" id="exch-other" onclick="toggleExchange('other')">✏️ Other</button>
       </div>
       <div id="field-exch-other" style="display:none;margin-top:8px;">
@@ -484,18 +485,18 @@
 <script>
 const CATEGORIES = [
   { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-Create room",     extraRooms:["Coworking room"] },
-  { id:"movement",     label:"Physical health/wellness", emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"movement",     label:"Physical health",          emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
-  { id:"professional", label:"Professional",             emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
+  { id:"professional", label:"Work and skills",          emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
   { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-Create room",     extraRooms:["Coworking room"] },
-  { id:"faith",        label:"Faith/spirituality",       emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"faith",        label:"Inner life",               emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"care",         label:"Mental health/wellness",   emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
+  { id:"care",         label:"Brain and emotional health", emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"family",       label:"Family/parent",            emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
+  { id:"family",       label:"Family and caregiving",    emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
   { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"wealth",       label:"Wealth/abundance",         emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
+  { id:"wealth",       label:"Wealth and exchange",      emoji:"🌳", room:"Abundance room",      extraRooms:["Coworking room"] },
 ];
 
 const ROOMS = [
@@ -898,9 +899,10 @@ function renderEvents() {
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
           ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
           ${ev.exchangeType ? (() => {
-            const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",other:"✏️ " + (ev.otherExchange || "Other")};
+            const typeMap = {free:"💬 Feedback",feedback:"🌟 Share your experience",testimonial:"🔁 Time exchange",money:"☕ Coffee or gift",time:"💸 Tip",share:"💰 Paid",noask:"🔗 Spread the word",other:"✏️ " + (ev.otherExchange || "Other")};
             const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            return `<div class="event-meta-item" style="padding-left:0;display:block;"><span style="color:var(--dark);">Contributions welcomed: </span>${labels}</div>`;
+            const firstName = (ev.host || "").trim().split(/\s+/)[0] || "Host";
+            return `<div class="event-meta-item" style="padding-left:0;display:block;"><span style="color:var(--dark);">What ${esc(firstName)} welcomes: </span>${labels}</div>`;
           })() : ""}
         </div>
         ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
@@ -1012,7 +1014,7 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
-  selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1453,8 +1455,9 @@ function showToast(msg) {
 
 async function deleteEvent() {
   if (!editingId) return;
-  const ev = events.find(e => e.id === editingId);
-  if (!ev) return;
+  const found = findEvById(editingId);
+  if (!found) return;
+  const ev = found.ev;
   if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
   events = events.filter(e => e.id !== editingId);
   await apiDelete(editingId);
@@ -1848,6 +1851,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.47 -->
+<!-- v6.50 -->
 </body>
 </html>
