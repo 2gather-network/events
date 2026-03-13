@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.56
+  Version 6.59
 -->
 <html lang="en">
 <head>
@@ -840,7 +840,10 @@ function renderEvents() {
     if (activeMode === "inperson") {
       const state = document.getElementById("filter-state")?.value || "";
       const loc   = (e.location || "").toLowerCase();
-      if (state) matchLocation = loc.includes(state.toLowerCase());
+      if (state) {
+        const stateAbbr = (US_STATES_ABBR && US_STATES_ABBR[state]) || "";
+        matchLocation = loc.includes(state.toLowerCase()) || (stateAbbr && loc.includes(", " + stateAbbr.toLowerCase())) || (stateAbbr && loc.includes(" " + stateAbbr.toLowerCase() + " ")) || (stateAbbr && new RegExp("\\b" + stateAbbr + "\\b","i").test(e.location||""));
+      }
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
@@ -1254,7 +1257,7 @@ function setExchange(val) {
   const otherField = document.getElementById("field-exch-other");
   if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
   const label = document.getElementById("payment-required-label");
-  if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
+  if (label) label.textContent = selectedExchangeTypes.has("share") ? "- required" : "- optional";
 }
 
 function toggleLinkFields() {
@@ -1271,18 +1274,23 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
     const modal = overlay.querySelector(".modal");
     if (!modal) return;
-    let startY = 0, startScrollTop = 0, dragging = false;
-    modal.addEventListener("touchstart", e => { startY = e.touches[0].clientY; startScrollTop = modal.scrollTop; dragging = false; }, { passive:true });
+    let startY = 0, startX = 0, startScrollTop = 0, dragging = false;
+    modal.addEventListener("touchstart", e => { startY = e.touches[0].clientY; startX = e.touches[0].clientX; startScrollTop = modal.scrollTop; dragging = false; }, { passive:true });
     modal.addEventListener("touchmove", e => {
       const dy = e.touches[0].clientY - startY;
+      const dx = e.touches[0].clientX - startX;
       if (window.innerWidth > 768) return;
+      // Ignore if horizontal movement exceeds vertical (left/right swipe)
+      if (Math.abs(dx) > Math.abs(dy)) return;
       if (dy > 0 && startScrollTop === 0) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
     }, { passive:false });
     modal.addEventListener("touchend", e => {
-      if (window.innerWidth > 768 || !dragging) return;
+      if (window.innerWidth > 768 || !dragging) { modal.style.transition = ""; modal.style.transform = ""; dragging = false; return; }
       const dy = e.changedTouches[0].clientY - startY;
+      const dx = e.changedTouches[0].clientX - startX;
       modal.style.transition = ""; modal.style.transform = ""; dragging = false;
-      if (dy > 100) {
+      // Only close on clear downward swipe, not horizontal
+      if (dy > 100 && Math.abs(dy) > Math.abs(dx)) {
         const id = overlay.id;
         if (id === "post-modal") {
           if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
@@ -1423,7 +1431,7 @@ async function submitEvent() {
   const errEl    = document.getElementById("post-error");
 
   const missing = [];
-  if (selectedExchangeTypes.has("money") && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when asking for money)");
+  if (selectedExchangeTypes.has("share") && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when Paid is selected)");
   if (!title) missing.push("event title");
   if (selectedCats.size === 0) missing.push("at least one category");
   if (!selectedFormat) missing.push("virtual or in-person");
@@ -1596,6 +1604,7 @@ function useMyLocationForForm() {
 
 const NORTH_AMERICA_COUNTRIES = ["United States","Canada","Mexico"];
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Washington D.C."];
+const US_STATES_ABBR = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","Washington D.C.":"DC"};
 
 function onRegionChange() {
   const region  = document.getElementById("filter-region").value;
@@ -1920,6 +1929,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.56 -->
+<!-- v6.59 -->
 </body>
 </html>
