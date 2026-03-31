@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.62
+  Version 6.63
 -->
 <html lang="en">
 <head>
@@ -550,7 +550,27 @@ const RECURRING_EVENTS = [
     hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","social","resources","care"],
     description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
-    adminOnly:false,
+    adminOnly:false, recurFreq:"weekly",
+  },
+  {
+    title:"Onboarding Mondays", dayOfWeek:1, time:"12:00", endtime:"12:30",
+    format:"virtual", room:"The Commons", host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories:["learning"],
+    description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
+    adminOnly:false, recurFreq:"weekly",
+  },
+  {
+    title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
+    format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043",
+    host:"Jessie Upp",
+    hostlink:"https://app.daybalancer.com/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
+    categories:["learning","wealth","resources","social"],
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
+    exchangeType:"free,feedback,noask,money",
+    showLinks:"hostlink,paymentlink,contact",
+    adminOnly:false, recurFreq:"weekly",
   },
 ];
 
@@ -1838,7 +1858,8 @@ function getAllRecurring(count = 2) { return RECURRING_EVENTS.flatMap(t => getNe
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
   const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
-  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
+  const seenTitleDate = new Set(events.map(e => `${(e.title||"").toLowerCase()}|${e.date}`));
+  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`) && !seenTitleDate.has(`${(rec.title||"").toLowerCase()}|${rec.date}`));
 }
 
 function getEventMs(ev) { if (!ev.date) return null; return new Date(ev.date+"T"+(ev.time||"09:00")).getTime(); }
@@ -1929,6 +1950,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.62 -->
+<!-- v6.63 -->
 </body>
 </html>
