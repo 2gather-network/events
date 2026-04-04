@@ -2,7 +2,7 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.68
+  Version 6.69
 -->
 <html lang="en">
 <head>
@@ -915,7 +915,7 @@ function renderEvents() {
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink && ev.showLinks && ev.showLinks.includes("hostlink") ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
+          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
           ${ev.cooplink && ev.showLinks && ev.showLinks.includes("cooplink") ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Group link</a></div>` : ""}
           ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
           ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
@@ -1951,6 +1951,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.68 -->
+<!-- v6.69 -->
 </body>
 </html>
