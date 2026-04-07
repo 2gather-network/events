@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.26
+  Version 3.27
 -->
 <head>
   <meta charset="UTF-8">
@@ -204,16 +204,6 @@
   <!-- SETUP -->
   <div class="view" id="view-setup">
     <div class="card">
-      <div style="font-size:18px;font-weight:800;margin-bottom:20px;">Create a vote</div>
-
-      <div class="field">
-        <label class="field-label">Title</label>
-        <input class="input input-lg" id="s-title" placeholder="Team sync, bonfire, lunch...">
-        <div class="err" id="err-title">Please add a title.</div>
-      </div>
-
-      <hr class="divider">
-
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <button class="btn btn-outline" id="method-specific-btn" onclick="setMethod('specific')" style="flex:1;min-width:130px;padding:14px 10px;flex-direction:column;gap:4px;height:auto;">
           <div style="font-size:20px;">📌</div>
@@ -355,6 +345,14 @@
         <button class="btn btn-primary btn-full" onclick="findMySlots()" id="find-overlaps-btn" style="margin-bottom:8px;">🔍 Find my open times</button>
       </div>
 
+      <div id="title-field" style="display:none;margin-top:4px;">
+        <hr class="divider">
+        <div class="field" style="margin-bottom:0;">
+          <label class="field-label">What are you scheduling?</label>
+          <input class="input input-lg" id="s-title" placeholder="Team sync, bonfire, lunch...">
+          <div class="err" id="err-title">Please add a title.</div>
+        </div>
+      </div>
       <hr class="divider" id="launch-divider" style="display:none;">
       <button class="btn btn-primary btn-full" id="launch-btn" onclick="launch()" style="padding:14px;display:none;">Create vote and get shared code →</button>
       <div style="margin-top:10px;">
@@ -492,6 +490,7 @@ function resetToHome() {
   document.getElementById("persons-list").innerHTML="";
   document.getElementById("cal-results-preview").style.display="none";
   document.getElementById("find-overlaps-btn").style.display="none";
+  document.getElementById("title-field").style.display="none";
   document.getElementById("launch-divider").style.display="none";
   document.getElementById("launch-btn").style.display="none";
   showView("home");
@@ -513,6 +512,7 @@ function setMethod(method) {
   document.getElementById("panel-calendar").style.display=method==="calendar"?"block":"none";
   if (method==="specific"&&soptCount===0) addSpecific();
   if (method==="calendar") initOrganizerCalendar();
+  document.getElementById("title-field").style.display="none";
   document.getElementById("launch-divider").style.display="none";
   document.getElementById("launch-btn").style.display="none";
 }
@@ -528,6 +528,7 @@ function addSpecific() {
   row.innerHTML=`<input type="date" class="input" id="${id}d" style="flex:1.2;"><input type="time" class="input" id="${id}t" style="flex:1;" value="18:00"><button class="remove-btn" onclick="removeSpecific('${id}')">×</button>`;
   wrap.appendChild(row);
   if(soptCount>=7) document.getElementById("add-sopt-btn").style.display="none";
+  document.getElementById("title-field").style.display="block";
   document.getElementById("launch-divider").style.display="block";
   document.getElementById("launch-btn").style.display="block";
 }
@@ -568,6 +569,7 @@ function generateOpts() {
   let picked=pickedDates.map(dk=>byDate[dk][0]);
   genOpts=picked.map(c=>({id:uid(),label:fmtLabel(c.date,c.hour),voters:[],ts:new Date(c.date).setHours(c.hour,0,0,0)}));
   renderGenPreview();
+  document.getElementById("title-field").style.display="block";
   document.getElementById("launch-divider").style.display="block";
   document.getElementById("launch-btn").style.display="block";
 }
@@ -762,7 +764,7 @@ function removeCal(i) { calOpts.splice(i,1); renderCalResults(); }
 // ── Launch ─────────────────────────────────────────────
 async function launch() {
   const title=document.getElementById("s-title").value.trim();
-  if(!title){document.getElementById("err-title").style.display="block";const tf=document.getElementById("s-title");tf.focus();tf.scrollIntoView({behavior:"smooth",block:"center"});return;}
+  if(!title){document.getElementById("err-title").style.display="block";document.getElementById("s-title").focus();return;}
   document.getElementById("err-title").style.display="none";
 
   const specifics=activeMethod==="specific"?getSpecifics():[];
@@ -990,6 +992,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.26 -->
+<!-- v3.27 -->
 </body>
 </html>
