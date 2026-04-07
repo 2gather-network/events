@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.28
+  Version 3.30
 -->
 <head>
   <meta charset="UTF-8">
@@ -367,6 +367,11 @@
       <label class="field-label">Your name</label>
       <input class="input input-lg" id="v-name" placeholder="What do people call you?" autocomplete="given-name" oninput="onNameInput()">
       <div class="err" id="err-vname">Please enter your name to vote.</div>
+      <div id="share-code-card" style="display:none;margin-top:14px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.6);margin-bottom:6px;">Share this code so others can vote</div>
+        <div id="share-code-display" style="font-size:28px;font-weight:800;color:white;letter-spacing:.05em;margin-bottom:10px;"></div>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="copyCode()">📋 Copy invite link</button>
+      </div>
     </div>
     <div class="winner-banner" id="winner-banner" style="display:none;">
       <div class="w-label">🎉 It's happening!</div>
@@ -837,6 +842,7 @@ function renderVote() {
   const saved=myName||localStorage.getItem("wtm-name-"+code)||"";
   if(saved){document.getElementById("v-name").value=saved;myName=saved;myPicks=new Set(session.options.filter(o=>o.voters.some(v=>v.name.toLowerCase()===saved.toLowerCase())).map(o=>o.id));}
   renderCards();renderWho();updateBtn();
+  document.getElementById("share-code-display").textContent=(code||"").toUpperCase();
   const joinerCalSection=document.getElementById("joiner-cal-section");
   if(joinerCalSection) joinerCalSection.style.display=(!isOrg&&!session.winner)?"block":"none";
   const os=document.getElementById("org-section");
@@ -920,7 +926,14 @@ function renderOrgList() {
 }
 
 function togglePick(id) { if(session.winner)return; myPicks.has(id)?myPicks.delete(id):myPicks.add(id); renderCards();updateBtn(); }
-function onNameInput() { updateBtn(); }
+function onNameInput() {
+  updateBtn();
+  if(isOrg) {
+    const name=document.getElementById("v-name").value.trim();
+    const card=document.getElementById("share-code-card");
+    if(card) card.style.display=name?"block":"none";
+  }
+}
 function updateBtn() { const name=document.getElementById("v-name")?.value.trim(); const btn=document.getElementById("vote-btn"); const ok=name&&myPicks.size>0&&!session.winner; btn.disabled=!ok; btn.className="btn btn-full "+(ok?"btn-green":"btn-disabled"); }
 
 async function submitVote() {
@@ -993,6 +1006,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.28 -->
+<!-- v3.30 -->
 </body>
 </html>
