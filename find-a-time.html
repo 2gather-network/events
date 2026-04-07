@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.24
+  Version 3.25
 -->
 <head>
   <meta charset="UTF-8">
@@ -768,7 +768,7 @@ async function launch() {
   const specifics=activeMethod==="specific"?getSpecifics():[];
   const generated=activeMethod==="generate"?genOpts:[];
   const calendar=activeMethod==="calendar"?calOpts:[];
-  const all=[...specifics,...generated,...calendar].slice(0,7);
+  const all=[...specifics,...generated,...calendar].slice(0,14);
 
   if(!all.length){
     const errMap={specific:"err-options",generate:"err-options-gen",calendar:"err-options-cal"};
@@ -785,12 +785,16 @@ async function launch() {
   const newCode=makeCode();
   const newSession={title,durNum,durUnit,options:all,winner:null,organizerPin:orgPin,suggestions:[],voters:[],createdAt:Date.now(),timezone:detectedTimezone||""};
 
-  try{await apiSave(newCode,newSession);}catch(e){console.warn("Server save failed",e);}
+  // Navigate immediately - save in background
+  const btn=document.getElementById("launch-btn");
+  btn.textContent="Creating...";btn.disabled=true;
   session=newSession;code=newCode;isOrg=true;
   localStorage.setItem("org-"+newCode,orgPin);
   localStorage.setItem("wtm-last-code",newCode);
   localStorage.setItem("wtm-last-title",title);
   showHeader(newCode);showView("vote");renderVote();
+  btn.textContent="Create vote and get shared code →";btn.disabled=false;
+  apiSave(newCode,newSession).catch(e=>console.warn("Server save failed",e));
 }
 
 // ── Join ───────────────────────────────────────────────
@@ -986,6 +990,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.24 -->
+<!-- v3.25 -->
 </body>
 </html>
