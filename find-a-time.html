@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.25
+  Version 3.26
 -->
 <head>
   <meta charset="UTF-8">
@@ -762,7 +762,7 @@ function removeCal(i) { calOpts.splice(i,1); renderCalResults(); }
 // ── Launch ─────────────────────────────────────────────
 async function launch() {
   const title=document.getElementById("s-title").value.trim();
-  if(!title){document.getElementById("err-title").style.display="block";return;}
+  if(!title){document.getElementById("err-title").style.display="block";const tf=document.getElementById("s-title");tf.focus();tf.scrollIntoView({behavior:"smooth",block:"center"});return;}
   document.getElementById("err-title").style.display="none";
 
   const specifics=activeMethod==="specific"?getSpecifics():[];
@@ -990,6 +990,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.25 -->
+<!-- v3.26 -->
 </body>
 </html>
