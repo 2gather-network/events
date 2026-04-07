@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.27
+  Version 3.28
 -->
 <head>
   <meta charset="UTF-8">
@@ -742,6 +742,7 @@ async function findMySlots() {
       const tzMatch = allSlots.find(s=>s.timezone);
       setDetectedTimezone(tzMatch ? tzMatch.timezone : "");
       renderCalResults();
+      document.getElementById("title-field").style.display="block";
       document.getElementById("launch-divider").style.display="block";
       document.getElementById("launch-btn").style.display="block";
     }
@@ -992,6 +993,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.27 -->
+<!-- v3.28 -->
 </body>
 </html>
