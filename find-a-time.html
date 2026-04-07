@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.17
+  Version 3.19
 -->
 <head>
   <meta charset="UTF-8">
@@ -305,8 +305,40 @@
         <div class="err" id="err-cal-persons" style="margin-bottom:10px;">Upload at least one calendar screenshot.</div>
 
         <div id="cal-results-preview" style="display:none;margin-top:14px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div class="sec-title" style="margin-bottom:0;">Your open slots <span class="opt-label">(remove any that don't work)</span></div>
+          <div style="margin-bottom:10px;">
+            <div class="sec-title" style="margin-bottom:6px;">Your open slots (<span id="tz-display">timezone unknown</span>) <span class="opt-label">- remove any that don't work</span></div>
+            <div id="tz-picker" style="display:none;margin-top:6px;">
+              <label class="field-label" style="margin-bottom:4px;">Your timezone</label>
+              <select class="input" id="tz-select" onchange="applyTimezone()" style="font-size:13px;padding:8px 10px;">
+                <option value="">Select your timezone...</option>
+                <option value="GMT-12">GMT-12 (Baker Island)</option>
+                <option value="GMT-11">GMT-11 (Samoa)</option>
+                <option value="GMT-10">GMT-10 / HST (Hawaii)</option>
+                <option value="GMT-9">GMT-9 / AKDT (Alaska)</option>
+                <option value="GMT-8">GMT-8 / PST (Los Angeles)</option>
+                <option value="GMT-7">GMT-7 / PDT (Los Angeles summer)</option>
+                <option value="GMT-6">GMT-6 / MDT (Denver)</option>
+                <option value="GMT-5">GMT-5 / CDT (Chicago)</option>
+                <option value="GMT-4">GMT-4 / EDT (New York summer)</option>
+                <option value="GMT-3">GMT-3 (Buenos Aires)</option>
+                <option value="GMT-2">GMT-2</option>
+                <option value="GMT-1">GMT-1 (Azores)</option>
+                <option value="GMT+0">GMT+0 / UTC (London)</option>
+                <option value="GMT+1">GMT+1 / CET (Paris)</option>
+                <option value="GMT+2">GMT+2 / EET (Athens)</option>
+                <option value="GMT+3">GMT+3 (Moscow)</option>
+                <option value="GMT+4">GMT+4 (Dubai)</option>
+                <option value="GMT+5">GMT+5 (Karachi)</option>
+                <option value="GMT+5:30">GMT+5:30 (India)</option>
+                <option value="GMT+6">GMT+6 (Dhaka)</option>
+                <option value="GMT+7">GMT+7 (Bangkok)</option>
+                <option value="GMT+8">GMT+8 (Singapore)</option>
+                <option value="GMT+9">GMT+9 / JST (Tokyo)</option>
+                <option value="GMT+10">GMT+10 / AEST (Sydney)</option>
+                <option value="GMT+11">GMT+11 (Solomon Islands)</option>
+                <option value="GMT+12">GMT+12 (Auckland)</option>
+              </select>
+            </div>
           </div>
           <div id="cal-results-list"></div>
         </div>
@@ -555,7 +587,32 @@ function renderOrgWeeks() {
 
 function removePerson(i) { persons.splice(i,1); renderOrgWeeks(); }
 function removeWeek(i,wi) { persons[i].weeks.splice(wi,1); renderOrgWeeks(); }
-function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,0); }
+let detectedTimezone = "";
+
+function applyTimezone() {
+  const sel = document.getElementById("tz-select");
+  detectedTimezone = sel.value;
+  document.getElementById("tz-display").textContent = detectedTimezone || "timezone unknown";
+  // Update all slot labels to include timezone
+  calOpts = calOpts.map(o => ({
+    ...o,
+    label: o.label.replace(/ (GMT[+-]\d+[\:?\d]*|[A-Z]{2,4}T)$/, "") + (detectedTimezone ? " " + detectedTimezone : "")
+  }));
+  renderCalResults();
+}
+
+function setDetectedTimezone(tz) {
+  detectedTimezone = tz;
+  const display = document.getElementById("tz-display");
+  const picker = document.getElementById("tz-picker");
+  if (tz) {
+    if (display) display.textContent = tz;
+    if (picker) picker.style.display = "none";
+  } else {
+    if (display) display.textContent = "select your timezone below";
+    if (picker) picker.style.display = "block";
+  }
+}
 function orgFileChosen(e) { const f=e.target.files[0]; if(f){processFile(f,0);e.target.value="";} }
 
 // Paste support - Cmd+V anywhere on the page
@@ -599,7 +656,7 @@ async function readCalendarWithAI(imageB64, personName) {
         role:"user",
         content:[
           {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
-          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. I need you to find all the GAPS between events - these are the open/free time slots where there are NO colored event blocks visible. Look carefully at the white/empty space between events in each column (each column = one day). Even if the calendar looks busy, there are gaps. Focus on the hours 7am-7pm. Return ONLY a JSON array, no other text, no markdown, no explanation. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer, e.g. 14), "label" (e.g. "Mon, Apr 7 · 2:00 pm"). Find at least 5-10 gaps if possible. Limit to 10. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"label":"Mon, Apr 7 · 2:00 pm"}]`}
+          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. Return ONLY a JSON array, no other text, no markdown. Each object: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 pm PDT"}]`}
         ]
       }]
     })
@@ -642,7 +699,10 @@ async function findMySlots() {
     if(!allSlots.length) {
       alert("No open slots found - try a clearer screenshot with more white space visible.");
     } else {
-      calOpts=allSlots.slice(0,10).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
+      calOpts=allSlots.slice(0,20).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
+      // Detect timezone from first slot that has one
+      const tzMatch = allSlots.find(s=>s.timezone);
+      setDetectedTimezone(tzMatch ? tzMatch.timezone : "");
       renderCalResults();
       document.getElementById("launch-divider").style.display="block";
       document.getElementById("launch-btn").style.display="block";
@@ -690,7 +750,7 @@ async function launch() {
   const durUnit=document.getElementById(durUnitId)?.value||"hr";
   const orgPin=uid().slice(0,6);
   const newCode=makeCode();
-  const newSession={title,durNum,durUnit,options:all,winner:null,organizerPin:orgPin,suggestions:[],voters:[],createdAt:Date.now()};
+  const newSession={title,durNum,durUnit,options:all,winner:null,organizerPin:orgPin,suggestions:[],voters:[],createdAt:Date.now(),timezone:detectedTimezone||""};
 
   try{await apiSave(newCode,newSession);}catch(e){console.warn("Server save failed",e);}
   session=newSession;code=newCode;isOrg=true;
@@ -728,7 +788,7 @@ function copyCode() {
 function renderVote() {
   if(!session)return;
   document.getElementById("v-title").textContent=session.title;
-  document.getElementById("v-meta").textContent=`${durStr(session)} · ${session.options.length} options to vote on`;
+  document.getElementById("v-meta").textContent=`${durStr(session)} · ${session.options.length} options${session.timezone?" · Times in "+session.timezone:""}`;
   const wb=document.getElementById("winner-banner");
   if(session.winner){
     const w=session.options.find(o=>o.id===session.winner);
@@ -880,6 +940,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.17 -->
+<!-- v3.19 -->
 </body>
 </html>
