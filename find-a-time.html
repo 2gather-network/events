@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.21
+  Version 3.24
 -->
 <head>
   <meta charset="UTF-8">
@@ -501,7 +501,6 @@ function solo(el,rowId) { document.querySelectorAll(`#${rowId} .tog`).forEach(t=
 function multi(el) { el.classList.toggle("on"); }
 function getVals(rowId) { return [...document.querySelectorAll(`#${rowId} .tog.on`)].map(t=>t.dataset.v); }
 
-let activeMethod2 = null;
 function setMethod(method) {
   activeMethod=method;
   ["specific","generate","calendar"].forEach(m=>{
@@ -579,12 +578,10 @@ function renderGenPreview() {
 function removeGen(i) { genOpts.splice(i,1); renderGenPreview(); }
 
 // ── Calendar AI reader ─────────────────────────────────
-function addPerson() {}
 function initOrganizerCalendar() {
   if(persons.length===0) persons.push({name:"Me", weeks:[]});
   renderOrgWeeks();
 }
-function renderPersons() { renderOrgWeeks(); }
 function renderOrgWeeks() {
   const p=persons[0]; if(!p) return;
   const wl=document.getElementById("org-weeks-list"); 
@@ -603,7 +600,6 @@ function renderOrgWeeks() {
   if(lbl) lbl.textContent=p.weeks.length?"+ Add another week":"Tap to upload your calendar screenshot";
 }
 
-function removePerson(i) { persons.splice(i,1); renderOrgWeeks(); }
 function removeWeek(i,wi) { persons[i].weeks.splice(wi,1); renderOrgWeeks(); }
 let detectedTimezone = "";
 
@@ -644,8 +640,6 @@ document.addEventListener("paste", e => {
   }
 });
 function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,0); }
-function dropFile(e,i) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,i); }
-function fileChosen(e,i) { const f=e.target.files[0]; if(f)processFile(f,i); }
 
 function processFile(file,i) {
   const reader=new FileReader();
@@ -657,7 +651,7 @@ function processFile(file,i) {
   reader.readAsDataURL(file);
 }
 
-async function readCalendarWithAI(imageB64, personName) {
+async function readCalendarWithAI(imageB64) {
   const base64=imageB64.split(",")[1];
   const mediaType=imageB64.split(";")[0].split(":")[1]||"image/png";
   const today=new Date();
@@ -668,7 +662,7 @@ async function readCalendarWithAI(imageB64, personName) {
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       model:"claude-haiku-4-5-20251001",
-      max_tokens:1200,
+      max_tokens:4000,
       messages:[{
         role:"user",
         content:[
@@ -680,15 +674,28 @@ async function readCalendarWithAI(imageB64, personName) {
   });
   if(!response.ok) throw new Error("API error "+response.status);
   const data=await response.json();
-  console.log("Worker response:", JSON.stringify(data).slice(0,300));
   if(data.error) throw new Error(data.error.message||"API error");
   const text=data.content?.find(c=>c.type==="text")?.text||"";
-  console.log("AI raw response:", text);
   if(!text) throw new Error("Empty response from AI");
   const clean=text.replace(/```json|```/g,"").trim();
-  const match=clean.match(/\[[\s\S]*\]/);
+  const match=clean.match(/\[[\s\S]*/);
   if(!match) throw new Error("No slots found: "+text.slice(0,200));
-  const slots = JSON.parse(match[0]);
+  let slots;
+  try {
+    // Try to parse as complete JSON array
+    const arr = match[0].match(/\[[\s\S]*\]/);
+    slots = JSON.parse(arr ? arr[0] : match[0]);
+  } catch(e) {
+    // JSON truncated - extract each complete {...} object manually
+    const raw = match[0];
+    slots = [];
+    let depth=0, start=-1;
+    for(let i=0;i<raw.length;i++){
+      if(raw[i]==='{'){if(depth===0)start=i;depth++;}
+      else if(raw[i]==='}'){depth--;if(depth===0&&start>=0){try{slots.push(JSON.parse(raw.slice(start,i+1)));}catch{}start=-1;}}
+    }
+    if(!slots.length) throw new Error("No slots found: "+text.slice(0,200));
+  }
   // Rebuild labels client-side so they're consistent even if AI label drifts
   return slots.map(s => ({ ...s, label: fmtSlotLabel(s) }));
 }
@@ -705,7 +712,7 @@ async function findMySlots() {
     for(let wi=0;wi<p.weeks.length;wi++){
       if(!p.weeks[wi].slots.length&&p.weeks[wi].imageB64){
         try {
-          const slots=await readCalendarWithAI(p.weeks[wi].imageB64,"organizer");
+          const slots=await readCalendarWithAI(p.weeks[wi].imageB64);
           p.weeks[wi].slots=slots;
           p.weeks[wi].status=`✓ ${slots.length} slot${slots.length===1?"":"s"}`;
         } catch(err) {
@@ -719,7 +726,17 @@ async function findMySlots() {
     if(!allSlots.length) {
       alert("No open slots found - try a clearer screenshot with more white space visible.");
     } else {
-      calOpts=allSlots.slice(0,20).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now(),startHour:s.startHour,endHour:s.endHour}));
+      // Group by day, sort each day by gap duration desc, keep top 2 per day
+      const byDay={};
+      allSlots.forEach(s=>{
+        const key=s.day+"|"+s.date;
+        if(!byDay[key]) byDay[key]=[];
+        byDay[key].push(s);
+      });
+      const trimmed=Object.values(byDay).flatMap(daySlots=>
+        daySlots.sort((a,b)=>((b.endHour||0)-(b.startHour||0))-((a.endHour||0)-(a.startHour||0))).slice(0,2)
+      );
+      calOpts=trimmed.map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now(),startHour:s.startHour,endHour:s.endHour}));
       const tzMatch = allSlots.find(s=>s.timezone);
       setDetectedTimezone(tzMatch ? tzMatch.timezone : "");
       renderCalResults();
@@ -735,10 +752,7 @@ function renderCalResults() {
   const container=document.getElementById("cal-results-list");
   container.innerHTML=calOpts.map((o,i)=>`
     <div class="gen-row" id="cr${i}">
-      <div>
-        <div class="g-label">${esc(o.label)}</div>
-        ${o.people&&o.people.length>1?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Works for: ${o.people.map(esc).join(", ")}</div>`:""}
-      </div>
+      <div class="g-label">${esc(o.label)}</div>
       <button class="btn btn-outline btn-sm" onclick="removeCal(${i})">Remove</button>
     </div>`).join("");
   document.getElementById("cal-results-preview").style.display=calOpts.length?"block":"none";
@@ -832,7 +846,7 @@ async function joinerProcessFile(file) {
   const reader=new FileReader();
   reader.onload=async e=>{
     try {
-      const slots=await readCalendarWithAI(e.target.result,"joiner");
+      const slots=await readCalendarWithAI(e.target.result);
       let matched=0;
       session.options.forEach(opt=>{
         // Match by day + date, and check that the slot's time range overlaps the option's start hour
@@ -972,6 +986,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.21 -->
+<!-- v3.24 -->
 </body>
 </html>
