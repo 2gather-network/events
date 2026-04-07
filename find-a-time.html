@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.15
+  Version 3.16
 -->
 <head>
   <meta charset="UTF-8">
@@ -292,7 +292,7 @@
 
       <!-- Calendar upload panel -->
       <div id="panel-calendar" style="display:none;">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Upload a screenshot of your Google Calendar week view. AI reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Paste a screenshot anywhere on this page (Cmd+V) or upload a screenshot of your calendar week view. It reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
 
         <div id="persons-list"></div>
 
@@ -623,30 +623,32 @@ async function findMySlots() {
   const btn=document.getElementById("find-overlaps-btn");
   btn.textContent="🔍 Reading your calendar...";btn.disabled=true;
 
-  // Read any weeks that haven't been processed yet
-  for(let wi=0;wi<p.weeks.length;wi++){
-    if(!p.weeks[wi].slots.length&&p.weeks[wi].imageB64){
-      const statusEl=document.getElementById("status-0-"+wi);
-      if(statusEl) statusEl.textContent="Reading...";
-      try {
-        const slots=await readCalendarWithAI(p.weeks[wi].imageB64,"organizer");
-        p.weeks[wi].slots=slots;
-        p.weeks[wi].status=`✓ ${slots.length} slot${slots.length===1?"":"s"}`;
-      } catch(err) {
-        console.error("Calendar AI error:", err);
-        p.weeks[wi].status="⚠️ "+err.message;
+  try {
+    for(let wi=0;wi<p.weeks.length;wi++){
+      if(!p.weeks[wi].slots.length&&p.weeks[wi].imageB64){
+        try {
+          const slots=await readCalendarWithAI(p.weeks[wi].imageB64,"organizer");
+          p.weeks[wi].slots=slots;
+          p.weeks[wi].status=`✓ ${slots.length} slot${slots.length===1?"":"s"}`;
+        } catch(err) {
+          console.error("Calendar AI error:", err);
+          p.weeks[wi].status="⚠️ "+err.message;
+        }
         renderOrgWeeks();
       }
     }
+    const allSlots=p.weeks.flatMap(w=>w.slots);
+    if(!allSlots.length) {
+      alert("No open slots found - try a clearer screenshot with more white space visible.");
+    } else {
+      calOpts=allSlots.slice(0,10).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
+      renderCalResults();
+      document.getElementById("launch-divider").style.display="block";
+      document.getElementById("launch-btn").style.display="block";
+    }
+  } finally {
+    btn.textContent="🔍 Find my open times";btn.disabled=false;
   }
-
-  // Flatten all slots
-  const allSlots=p.weeks.flatMap(w=>w.slots);
-  calOpts=allSlots.slice(0,10).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
-  renderCalResults();
-  btn.textContent="🔍 Find my open times";btn.disabled=false;
-  document.getElementById("launch-divider").style.display=calOpts.length?"block":"none";
-  document.getElementById("launch-btn").style.display=calOpts.length?"block":"none";
 }
 
 function renderCalResults() {
@@ -877,6 +879,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.15 -->
+<!-- v3.16 -->
 </body>
 </html>
