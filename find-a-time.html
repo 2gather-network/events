@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.20
+  Version 3.21
 -->
 <head>
   <meta charset="UTF-8">
@@ -439,6 +439,26 @@ function makeCode() {
 }
 function fmtHour(h) { const a=h>=12?"pm":"am",hr=h>12?h-12:(h===0?12:h); return `${hr}:00 ${a}`; }
 function fmtLabel(dateObj,hour) { return `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()} · ${fmtHour(hour)}`; }
+
+// Build a "start - end" label from a slot object returned by the AI
+function fmtSlotLabel(slot) {
+  const { day, date, startHour, endHour, timezone } = slot;
+  const tz = timezone ? " " + timezone : "";
+  if (endHour != null && endHour !== startHour) {
+    const startA = startHour >= 12 ? "pm" : "am";
+    const endA   = endHour   >= 12 ? "pm" : "am";
+    const startHr = startHour > 12 ? startHour - 12 : (startHour === 0 ? 12 : startHour);
+    const endHr   = endHour   > 12 ? endHour   - 12 : (endHour   === 0 ? 12 : endHour);
+    // Omit first am/pm if both periods match, e.g. "2 - 3 pm"
+    const startStr = startA === endA ? `${startHr}:00` : `${startHr}:00 ${startA}`;
+    return `${day}, ${date} · ${startStr} - ${endHr}:00 ${endA}${tz}`;
+  }
+  // Fallback: just start hour
+  const a = startHour >= 12 ? "pm" : "am";
+  const hr = startHour > 12 ? startHour - 12 : (startHour === 0 ? 12 : startHour);
+  return `${day}, ${date} · ${hr}:00 ${a}${tz}`;
+}
+
 function durStr(s) {
   if (!s.durNum||s.durNum==="-"||s.durNum==="") return "";
   const n=s.durNum,u=s.durUnit;
@@ -567,7 +587,6 @@ function initOrganizerCalendar() {
 function renderPersons() { renderOrgWeeks(); }
 function renderOrgWeeks() {
   const p=persons[0]; if(!p) return;
-  // Update weeks list
   const wl=document.getElementById("org-weeks-list"); 
   if(wl) wl.innerHTML=p.weeks.map((w,wi)=>`
     <div style="margin-bottom:8px;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
@@ -580,7 +599,6 @@ function renderOrgWeeks() {
       </div>
       <img src="${w.imageB64}" style="width:100%;max-height:140px;object-fit:cover;display:block;">
     </div>`).join("");
-  // Update drop zone label
   const lbl=document.getElementById("org-drop-label");
   if(lbl) lbl.textContent=p.weeks.length?"+ Add another week":"Tap to upload your calendar screenshot";
 }
@@ -593,7 +611,6 @@ function applyTimezone() {
   const sel = document.getElementById("tz-select");
   detectedTimezone = sel.value;
   document.getElementById("tz-display").textContent = detectedTimezone || "timezone unknown";
-  // Update all slot labels to include timezone
   calOpts = calOpts.map(o => ({
     ...o,
     label: o.label.replace(/ (GMT[+-]\d+[\:?\d]*|[A-Z]{2,4}T)$/, "") + (detectedTimezone ? " " + detectedTimezone : "")
@@ -615,7 +632,6 @@ function setDetectedTimezone(tz) {
 }
 function orgFileChosen(e) { const f=e.target.files[0]; if(f){processFile(f,0);e.target.value="";} }
 
-// Paste support - Cmd+V anywhere on the page
 document.addEventListener("paste", e => {
   if(activeMethod !== "calendar") return;
   const items = e.clipboardData?.items;
@@ -627,6 +643,7 @@ document.addEventListener("paste", e => {
     }
   }
 });
+function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,0); }
 function dropFile(e,i) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,i); }
 function fileChosen(e,i) { const f=e.target.files[0]; if(f)processFile(f,i); }
 
@@ -651,12 +668,12 @@ async function readCalendarWithAI(imageB64, personName) {
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       model:"claude-haiku-4-5-20251001",
-      max_tokens:1000,
+      max_tokens:1200,
       messages:[{
         role:"user",
         content:[
           {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
-          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. Return ONLY a JSON array, no other text, no markdown. Each object: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 pm PDT"}]`}
+          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. For each open slot, determine both the start time AND end time of the gap (when the next event begins, or 8pm if nothing follows). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "endHour" (24h integer - when the gap ends), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 - 4:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"endHour":16,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 - 4:00 pm PDT"}]`}
         ]
       }]
     })
@@ -671,7 +688,9 @@ async function readCalendarWithAI(imageB64, personName) {
   const clean=text.replace(/```json|```/g,"").trim();
   const match=clean.match(/\[[\s\S]*\]/);
   if(!match) throw new Error("No slots found: "+text.slice(0,200));
-  return JSON.parse(match[0]);
+  const slots = JSON.parse(match[0]);
+  // Rebuild labels client-side so they're consistent even if AI label drifts
+  return slots.map(s => ({ ...s, label: fmtSlotLabel(s) }));
 }
 
 async function findMySlots() {
@@ -700,8 +719,7 @@ async function findMySlots() {
     if(!allSlots.length) {
       alert("No open slots found - try a clearer screenshot with more white space visible.");
     } else {
-      calOpts=allSlots.slice(0,20).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
-      // Detect timezone from first slot that has one
+      calOpts=allSlots.slice(0,20).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now(),startHour:s.startHour,endHour:s.endHour}));
       const tzMatch = allSlots.find(s=>s.timezone);
       setDetectedTimezone(tzMatch ? tzMatch.timezone : "");
       renderCalResults();
@@ -798,7 +816,6 @@ function renderVote() {
   const saved=myName||localStorage.getItem("wtm-name-"+code)||"";
   if(saved){document.getElementById("v-name").value=saved;myName=saved;myPicks=new Set(session.options.filter(o=>o.voters.some(v=>v.name.toLowerCase()===saved.toLowerCase())).map(o=>o.id));}
   renderCards();renderWho();updateBtn();
-  // Show calendar upload for joiners (not organizer)
   const joinerCalSection=document.getElementById("joiner-cal-section");
   if(joinerCalSection) joinerCalSection.style.display=(!isOrg&&!session.winner)?"block":"none";
   const os=document.getElementById("org-section");
@@ -818,7 +835,21 @@ async function joinerProcessFile(file) {
       const slots=await readCalendarWithAI(e.target.result,"joiner");
       let matched=0;
       session.options.forEach(opt=>{
-        const match=slots.find(s=>opt.label.toLowerCase().includes(s.day.toLowerCase())&&opt.label.toLowerCase().includes(s.date.toLowerCase()));
+        // Match by day + date, and check that the slot's time range overlaps the option's start hour
+        const match=slots.find(s=>{
+          const dayMatch = opt.label.toLowerCase().includes(s.day.toLowerCase()) &&
+                           opt.label.toLowerCase().includes(s.date.toLowerCase());
+          if (!dayMatch) return false;
+          // Extract the option's hour from its label (e.g. "2:00 pm" → 14)
+          const optHourMatch = opt.label.match(/·\s*(\d+)(?::(\d+))?\s*(am|pm)/i);
+          if (!optHourMatch) return true; // can't parse, accept day match
+          let optH = parseInt(optHourMatch[1]);
+          const optPeriod = optHourMatch[3].toLowerCase();
+          if (optPeriod === "pm" && optH !== 12) optH += 12;
+          if (optPeriod === "am" && optH === 12) optH = 0;
+          // Slot covers the option's start time
+          return optH >= s.startHour && (s.endHour == null || optH < s.endHour);
+        });
         if(match){myPicks.add(opt.id);matched++;}
       });
       statusEl.innerHTML=matched?`✓ Found ${matched} matching time${matched===1?"":"s"} - review and save`:`✓ Calendar read - no exact matches. Select times manually below.`;
@@ -941,6 +972,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.20 -->
+<!-- v3.21 -->
 </body>
 </html>
