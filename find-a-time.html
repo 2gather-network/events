@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.16
+  Version 3.17
 -->
 <head>
   <meta charset="UTF-8">
@@ -292,7 +292,7 @@
 
       <!-- Calendar upload panel -->
       <div id="panel-calendar" style="display:none;">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Paste a screenshot anywhere on this page (Cmd+V) or upload a screenshot of your calendar week view. It reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Copy/paste a screenshot or upload a screenshot of your calendar week view. It reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
 
         <div id="persons-list"></div>
 
@@ -599,19 +599,20 @@ async function readCalendarWithAI(imageB64, personName) {
         role:"user",
         content:[
           {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
-          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar screenshot. Identify all clearly OPEN time slots (no events, no blocks) that are at least 30 minutes long. Focus on standard hours (7am-8pm). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "label" (e.g. "Mon, Apr 7 · 2:00 pm"). Limit to 10 best slots. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"label":"Mon, Apr 7 · 2:00 pm"}]`}
+          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. I need you to find all the GAPS between events - these are the open/free time slots where there are NO colored event blocks visible. Look carefully at the white/empty space between events in each column (each column = one day). Even if the calendar looks busy, there are gaps. Focus on the hours 7am-7pm. Return ONLY a JSON array, no other text, no markdown, no explanation. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer, e.g. 14), "label" (e.g. "Mon, Apr 7 · 2:00 pm"). Find at least 5-10 gaps if possible. Limit to 10. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"label":"Mon, Apr 7 · 2:00 pm"}]`}
         ]
       }]
     })
   });
   if(!response.ok) throw new Error("API error "+response.status);
   const data=await response.json();
+  console.log("Worker response:", JSON.stringify(data).slice(0,300));
+  if(data.error) throw new Error(data.error.message||"API error");
   const text=data.content?.find(c=>c.type==="text")?.text||"";
   console.log("AI raw response:", text);
   if(!text) throw new Error("Empty response from AI");
-  // Extract JSON array from anywhere in the response
   const match=text.match(/\[[\s\S]*\]/);
-  if(!match) throw new Error("No JSON array in response: "+text.slice(0,100));
+  if(!match) throw new Error("No slots found: "+text.slice(0,100));
   return JSON.parse(match[0]);
 }
 
@@ -879,6 +880,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.16 -->
+<!-- v3.17 -->
 </body>
 </html>
