@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.19
+  Version 3.20
 -->
 <head>
   <meta charset="UTF-8">
@@ -668,8 +668,9 @@ async function readCalendarWithAI(imageB64, personName) {
   const text=data.content?.find(c=>c.type==="text")?.text||"";
   console.log("AI raw response:", text);
   if(!text) throw new Error("Empty response from AI");
-  const match=text.match(/\[[\s\S]*\]/);
-  if(!match) throw new Error("No slots found: "+text.slice(0,100));
+  const clean=text.replace(/```json|```/g,"").trim();
+  const match=clean.match(/\[[\s\S]*\]/);
+  if(!match) throw new Error("No slots found: "+text.slice(0,200));
   return JSON.parse(match[0]);
 }
 
@@ -940,6 +941,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.19 -->
+<!-- v3.20 -->
 </body>
 </html>
