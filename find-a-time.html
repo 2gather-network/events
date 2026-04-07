@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.14
+  Version 3.15
 -->
 <head>
   <meta charset="UTF-8">
@@ -299,7 +299,7 @@
         <div class="cal-drop" id="drop-0" ondragover="event.preventDefault()" ondrop="orgDropFile(event)" style="margin-bottom:10px;">
           <input type="file" accept="image/*" onchange="orgFileChosen(event)" id="org-file-input">
           <div class="cal-drop-icon">📷</div>
-          <div class="cal-drop-label" id="org-drop-label">Tap to upload your calendar screenshot</div>
+          <div class="cal-drop-label" id="org-drop-label">Tap to upload · or paste a screenshot (Cmd+V)</div>
         </div>
         <div id="org-weeks-list"></div>
         <div class="err" id="err-cal-persons" style="margin-bottom:10px;">Upload at least one calendar screenshot.</div>
@@ -557,6 +557,19 @@ function removePerson(i) { persons.splice(i,1); renderOrgWeeks(); }
 function removeWeek(i,wi) { persons[i].weeks.splice(wi,1); renderOrgWeeks(); }
 function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,0); }
 function orgFileChosen(e) { const f=e.target.files[0]; if(f){processFile(f,0);e.target.value="";} }
+
+// Paste support - Cmd+V anywhere on the page
+document.addEventListener("paste", e => {
+  if(activeMethod !== "calendar") return;
+  const items = e.clipboardData?.items;
+  if(!items) return;
+  for(const item of items) {
+    if(item.type.startsWith("image/")) {
+      const f = item.getAsFile();
+      if(f) { processFile(f, 0); break; }
+    }
+  }
+});
 function dropFile(e,i) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,i); }
 function fileChosen(e,i) { const f=e.target.files[0]; if(f)processFile(f,i); }
 
@@ -864,6 +877,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.14 -->
+<!-- v3.15 -->
 </body>
 </html>
