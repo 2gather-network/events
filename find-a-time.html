@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.34
+  Version 3.35
 -->
 <head>
   <meta charset="UTF-8">
@@ -370,7 +370,7 @@
       <div id="share-code-card" style="display:none;margin-top:14px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);border-radius:10px;padding:14px 16px;">
         <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.6);margin-bottom:6px;">Share this code so others can vote</div>
         <div id="share-code-display" style="font-size:28px;font-weight:800;color:white;letter-spacing:.05em;margin-bottom:10px;"></div>
-        <button class="btn btn-ghost btn-full btn-sm" onclick="copyCode()">📋 Copy invite link</button>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="copyInvite()">📋 Copy invite link</button>
       </div>
     </div>
     <div class="winner-banner" id="winner-banner" style="display:none;">
@@ -865,6 +865,10 @@ async function joinSession() {
 function showHeader(c) { const hc=document.getElementById("header-code"); hc.style.display="flex"; hc.textContent=`📋 Code: ${c}`; }
 function copyCode() {
   if(!code)return;
+  navigator.clipboard.writeText(code).then(()=>{ document.getElementById("header-code").textContent="✓ Copied!"; setTimeout(()=>showHeader(code),2000); });
+}
+function copyInvite() {
+  if(!code)return;
   const txt=`Vote on when to meet for "${session?.title}" - use code: ${code} at https://jessieupp.github.io/DayBalancer-events/find-a-time.html`;
   navigator.clipboard.writeText(txt).then(()=>{ document.getElementById("header-code").textContent="✓ Copied!"; setTimeout(()=>showHeader(code),2000); });
 }
@@ -1050,6 +1054,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.34 -->
+<!-- v3.35 -->
 </body>
 </html>
