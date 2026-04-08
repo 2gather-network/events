@@ -4,7 +4,7 @@
   Find a Time · A simple event timing vote
   Brought to you by DayBalancer LLC
   https://daybalancer.com
-  Version 3.30
+  Version 3.34
 -->
 <head>
   <meta charset="UTF-8">
@@ -428,6 +428,7 @@ const COLORS = ["#1B6896","#2E7D52","#C05A14","#1A6B7A","#5B4FCF","#B5116A","#C0
 const TOD    = { morning:[7,8,9,10], afternoon:[12,13,14,15,16], evening:[17,18,19,20], late:[21,22,23] };
 
 let session=null, code=null, myName="", myPicks=new Set(), isOrg=false;
+let joinerCompatible=null; // Set of option ids that match joiner's calendar; null = no calendar uploaded yet
 let soptCount=0, genOpts=[], calOpts=[], activeMethod=null;
 let persons=[]; // [{name, weeks:[{imageB64, slots:[], status:""}]}]
 let refreshTimer=null;
@@ -483,7 +484,7 @@ function checkResumeCard() {
   document.getElementById("resume-card").style.display="block";
 }
 function resetToHome() {
-  session=null;code=null;myName="";myPicks.clear();isOrg=false;
+  session=null;code=null;myName="";myPicks.clear();isOrg=false;joinerCompatible=null;
   soptCount=0;genOpts=[];calOpts=[];persons=[];activeMethod=null;
   document.getElementById("header-code").style.display="none";
   document.getElementById("specific-list").innerHTML="";
@@ -651,11 +652,27 @@ function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; i
 function processFile(file,i) {
   const reader=new FileReader();
   reader.onload=e=>{
-    if(!persons[i]) persons[i]={name:"Me",weeks:[]};
-    persons[i].weeks.push({imageB64:e.target.result, slots:[], status:""});
-    renderOrgWeeks();
+    compressImage(e.target.result, 1000, 0.72, compressed=>{
+      if(!persons[i]) persons[i]={name:"Me",weeks:[]};
+      persons[i].weeks.push({imageB64:compressed, slots:[], status:""});
+      renderOrgWeeks();
+    });
   };
   reader.readAsDataURL(file);
+}
+
+function compressImage(dataUrl, maxWidth, quality, cb) {
+  const img=new Image();
+  img.onload=()=>{
+    const scale=Math.min(1, maxWidth/img.width);
+    const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+    const canvas=document.createElement("canvas");
+    canvas.width=w; canvas.height=h;
+    canvas.getContext("2d").drawImage(img,0,0,w,h);
+    cb(canvas.toDataURL("image/jpeg", quality));
+  };
+  img.onerror=()=>cb(dataUrl); // fallback to original if compress fails
+  img.src=dataUrl;
 }
 
 async function readCalendarWithAI(imageB64) {
@@ -664,22 +681,44 @@ async function readCalendarWithAI(imageB64) {
   const today=new Date();
   const todayStr=today.toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
-  const response=await fetch("https://findatime.jessieupp.workers.dev/",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-haiku-4-5-20251001",
-      max_tokens:4000,
-      messages:[{
-        role:"user",
-        content:[
-          {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
-          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. For each open slot, determine both the start time AND end time of the gap (when the next event begins, or 8pm if nothing follows). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "endHour" (24h integer - when the gap ends), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 - 4:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"endHour":16,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 - 4:00 pm PDT"}]`}
-        ]
-      }]
-    })
+  const payload=JSON.stringify({
+    model:"claude-haiku-4-5-20251001",
+    max_tokens:4000,
+    messages:[{
+      role:"user",
+      content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:base64}},
+        {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. For each open slot, determine both the start time AND end time of the gap (when the next event begins, or 8pm if nothing follows). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "endHour" (24h integer - when the gap ends), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 - 4:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"endHour":16,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 - 4:00 pm PDT"}]`}
+      ]
+    }]
   });
-  if(!response.ok) throw new Error("API error "+response.status);
+  console.log("Payload size (KB):", Math.round(payload.length/1024));
+  let response;
+  try {
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),30000);
+    response=await fetch("https://findatime.jessieupp.workers.dev/",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:payload,
+      signal:controller.signal,
+      mode:"cors"
+    });
+    clearTimeout(timer);
+  } catch(netErr) {
+    if(netErr.name==="AbortError") throw new Error("Request timed out - try a smaller screenshot");
+    // Try a connectivity ping to distinguish worker-down vs CORS
+    try {
+      await fetch("https://findatime.jessieupp.workers.dev/",{method:"OPTIONS",mode:"cors"});
+      throw new Error("Worker reachable but POST blocked - possible CORS issue ("+netErr.message+")");
+    } catch(pingErr) {
+      throw new Error("Worker unreachable - check Cloudflare dashboard ("+netErr.message+")");
+    }
+  }
+  if(!response.ok) {
+    const errText=await response.text().catch(()=>"");
+    throw new Error("Worker error "+response.status+": "+errText.slice(0,120));
+  }
   const data=await response.json();
   if(data.error) throw new Error(data.error.message||"API error");
   const text=data.content?.find(c=>c.type==="text")?.text||"";
@@ -859,27 +898,28 @@ async function joinerProcessFile(file) {
   const reader=new FileReader();
   reader.onload=async e=>{
     try {
-      const slots=await readCalendarWithAI(e.target.result);
-      let matched=0;
+      const compressed=await new Promise(res=>compressImage(e.target.result,1000,0.72,res));
+      const slots=await readCalendarWithAI(compressed);
+      joinerCompatible=new Set();
       session.options.forEach(opt=>{
-        // Match by day + date, and check that the slot's time range overlaps the option's start hour
         const match=slots.find(s=>{
           const dayMatch = opt.label.toLowerCase().includes(s.day.toLowerCase()) &&
                            opt.label.toLowerCase().includes(s.date.toLowerCase());
           if (!dayMatch) return false;
-          // Extract the option's hour from its label (e.g. "2:00 pm" → 14)
           const optHourMatch = opt.label.match(/·\s*(\d+)(?::(\d+))?\s*(am|pm)/i);
-          if (!optHourMatch) return true; // can't parse, accept day match
+          if (!optHourMatch) return true;
           let optH = parseInt(optHourMatch[1]);
           const optPeriod = optHourMatch[3].toLowerCase();
           if (optPeriod === "pm" && optH !== 12) optH += 12;
           if (optPeriod === "am" && optH === 12) optH = 0;
-          // Slot covers the option's start time
           return optH >= s.startHour && (s.endHour == null || optH < s.endHour);
         });
-        if(match){myPicks.add(opt.id);matched++;}
+        if(match){ joinerCompatible.add(opt.id); myPicks.add(opt.id); }
       });
-      statusEl.innerHTML=matched?`✓ Found ${matched} matching time${matched===1?"":"s"} - review and save`:`✓ Calendar read - no exact matches. Select times manually below.`;
+      const matched=joinerCompatible.size;
+      statusEl.innerHTML=matched
+        ?`✓ Showing ${matched} time${matched===1?"":"s"} that work for you`
+        :`✓ Calendar read - no matching times found. All options shown below.`;
       renderCards();updateBtn();
     } catch(err) {
       statusEl.innerHTML="⚠️ Couldn't read calendar - select times manually below.";
@@ -890,7 +930,11 @@ async function joinerProcessFile(file) {
 
 function renderCards() {
   const maxV=Math.max(...session.options.map(o=>o.voters.length),1);
-  let html=session.options.map(o=>{
+  // If joiner uploaded calendar, only show compatible options (or all if none matched)
+  const visibleOpts = (!isOrg && joinerCompatible && joinerCompatible.size>0)
+    ? session.options.filter(o=>joinerCompatible.has(o.id))
+    : session.options;
+  let html=visibleOpts.map(o=>{
     const picked=myPicks.has(o.id),winner=session.winner===o.id;
     const cls=winner?"vote-card is-winner":picked?"vote-card picked":"vote-card";
     const check=winner?"🏆":picked?"✓":"";
@@ -1006,6 +1050,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.30 -->
+<!-- v3.34 -->
 </body>
 </html>
