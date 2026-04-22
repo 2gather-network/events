@@ -2,7 +2,12 @@
 <!--
   Community Events · DayBalancer LLC
   https://daybalancer.com
-  Version 6.71
+  Version 6.72
+  
+  v6.72 Changes:
+  - Added AI parse feature: paste event text and Claude extracts fields
+  - New choice modal when clicking "Post an event"
+  - New paste modal with textarea and Parse button
 -->
 <html lang="en">
 <head>
@@ -124,6 +129,23 @@
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
 
+  /* v6.72: Choice modal and paste modal styles */
+  .choice-modal { max-width:400px; text-align:center; }
+  .choice-modal .modal-title { margin-bottom:12px; }
+  .choice-options { display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+  .choice-btn { display:flex; align-items:center; gap:12px; padding:16px 20px; background:var(--white); border:2px solid var(--border); border-radius:12px; cursor:pointer; text-align:left; transition:all .15s; }
+  .choice-btn:hover { border-color:var(--primary); background:var(--primary-light); }
+  .choice-btn-icon { font-size:24px; }
+  .choice-btn-text { flex:1; }
+  .choice-btn-title { font-size:15px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+  .choice-btn-desc { font-size:13px; color:var(--muted); }
+  .paste-modal { max-width:560px; }
+  .paste-textarea { width:100%; min-height:200px; border:1.5px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; resize:vertical; line-height:1.5; }
+  .paste-textarea:focus { border-color:var(--primary); }
+  .paste-hint { font-size:13px; color:var(--muted); margin-top:8px; margin-bottom:16px; }
+  .parse-error { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
+  .parsing-status { color:var(--primary); font-size:13px; margin-bottom:12px; display:none; font-weight:600; }
+
   @media(max-width:768px) {
     .header { padding:12px 16px; gap:8px; }
     .header-right { display:flex; gap:8px; flex-wrap:wrap; }
@@ -166,7 +188,7 @@
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
-    <button class="btn btn-white btn-sm" onclick="openModal()">+ Post an event</button>
+    <button class="btn btn-white btn-sm" onclick="openChoiceModal()">+ Post an event</button>
   </div>
 </div>
 
@@ -227,6 +249,55 @@
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
+</div>
+
+<!-- CHOICE MODAL (v6.72) -->
+<div class="modal-overlay" id="choice-modal">
+  <div class="modal choice-modal">
+    <div class="modal-title">Post an event</div>
+    <p style="font-size:14px;color:var(--muted);">How would you like to add your event?</p>
+    <div class="choice-options">
+      <button class="choice-btn" onclick="closeChoiceModal(); openModal(false);">
+        <div class="choice-btn-icon">📝</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">Fill out form</div>
+          <div class="choice-btn-desc">Enter details field by field</div>
+        </div>
+      </button>
+      <button class="choice-btn" onclick="closeChoiceModal(); openPasteModal();">
+        <div class="choice-btn-icon">📋</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">Paste event details</div>
+          <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
+        </div>
+      </button>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="closeChoiceModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASTE MODAL (v6.72) -->
+<div class="modal-overlay" id="paste-modal">
+  <div class="modal paste-modal">
+    <div class="modal-title">Paste event details</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Paste any text describing your event - an email, flyer, or notes. We'll extract the details and fill the form for you to review.</p>
+    <textarea class="paste-textarea" id="paste-text" placeholder="Example:
+
+Join us for Wellness Wednesday!
+March 15, 2026 from 12:00 PM to 1:00 PM
+Virtual event hosted by Jessie Upp
+
+A weekly pause to reconnect with what matters..."></textarea>
+    <div class="paste-hint">Include: event name, date, time, host name, description, and whether it's virtual or in-person.</div>
+    <p class="parse-error" id="parse-error"></p>
+    <p class="parsing-status" id="parsing-status">✨ Reading your event details...</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" id="parse-btn" onclick="parseEventText()">Parse and fill form</button>
+      <button class="btn btn-outline" onclick="closePasteModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- POST MODAL -->
@@ -308,8 +379,6 @@
     <div class="field">
       <label class="field-label">Who's hosting? *</label>
       <input class="input" id="f-host" placeholder="Full name">
-
-
     </div>
 
     <div class="field">
@@ -584,6 +653,149 @@ let selectedCats = new Set();
 
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
+// v6.72: AI Parse Feature
+const WORKER_URL = "https://findatime.jessieupp.workers.dev/";
+
+function openChoiceModal() {
+  document.getElementById("choice-modal").classList.add("open");
+}
+
+function closeChoiceModal() {
+  document.getElementById("choice-modal").classList.remove("open");
+}
+
+function openPasteModal() {
+  document.getElementById("paste-text").value = "";
+  document.getElementById("parse-error").style.display = "none";
+  document.getElementById("parsing-status").style.display = "none";
+  document.getElementById("parse-btn").disabled = false;
+  document.getElementById("parse-btn").textContent = "Parse and fill form";
+  document.getElementById("paste-modal").classList.add("open");
+  setTimeout(() => document.getElementById("paste-text").focus(), 100);
+}
+
+function closePasteModal() {
+  document.getElementById("paste-modal").classList.remove("open");
+}
+
+async function parseEventText() {
+  const text = document.getElementById("paste-text").value.trim();
+  const errEl = document.getElementById("parse-error");
+  const statusEl = document.getElementById("parsing-status");
+  const btn = document.getElementById("parse-btn");
+  
+  if (!text || text.length < 20) {
+    errEl.textContent = "Please paste more details about your event.";
+    errEl.style.display = "block";
+    return;
+  }
+  
+  errEl.style.display = "none";
+  statusEl.style.display = "block";
+  btn.disabled = true;
+  btn.textContent = "Parsing...";
+  
+  const prompt = `Extract event details from this text. Return ONLY a JSON object with these fields (use null for missing info):
+
+{
+  "title": "event name/title",
+  "host": "host/organizer name",
+  "date": "YYYY-MM-DD format",
+  "time": "HH:MM in 24hr format (start time)",
+  "endtime": "HH:MM in 24hr format (end time)",
+  "format": "virtual" or "inperson" or "both",
+  "location": "address if in-person",
+  "description": "event description",
+  "hostlink": "any URL for the host's page",
+  "cooplink": "any group/organization URL",
+  "paymentlink": "any registration/payment URL",
+  "contactEmail": "contact email if mentioned",
+  "contactPhone": "contact phone if mentioned"
+}
+
+Text to parse:
+${text}
+
+Return ONLY the JSON object, no explanation.`;
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error("API request failed");
+    }
+    
+    const data = await response.json();
+    const content = data.content?.[0]?.text || "";
+    
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1];
+    jsonStr = jsonStr.trim();
+    
+    const parsed = JSON.parse(jsonStr);
+    
+    // Close paste modal and open the form
+    closePasteModal();
+    openModal(true); // skipDraft = true
+    
+    // Fill in the form fields
+    if (parsed.title) document.getElementById("f-title").value = parsed.title;
+    if (parsed.host) document.getElementById("f-host").value = parsed.host;
+    if (parsed.date) document.getElementById("f-date").value = parsed.date;
+    if (parsed.time) document.getElementById("f-time").value = parsed.time;
+    if (parsed.endtime) document.getElementById("f-endtime").value = parsed.endtime;
+    if (parsed.description) document.getElementById("f-desc").value = parsed.description;
+    if (parsed.location) document.getElementById("f-location").value = parsed.location;
+    if (parsed.hostlink) {
+      document.getElementById("f-hostlink").value = parsed.hostlink;
+      document.getElementById("show-hostlink").checked = true;
+    }
+    if (parsed.cooplink) {
+      document.getElementById("f-cooplink").value = parsed.cooplink;
+      document.getElementById("show-cooplink").checked = true;
+    }
+    if (parsed.paymentlink) {
+      document.getElementById("f-paymentlink").value = parsed.paymentlink;
+      document.getElementById("show-paymentlink").checked = true;
+    }
+    if (parsed.contactEmail) {
+      document.getElementById("f-contact-email").value = parsed.contactEmail;
+      document.getElementById("show-contact").checked = true;
+    }
+    if (parsed.contactPhone) {
+      document.getElementById("f-contact-phone").value = parsed.contactPhone;
+      document.getElementById("show-contact").checked = true;
+    }
+    toggleLinkFields();
+    
+    // Set format
+    if (parsed.format) {
+      setFormat(parsed.format);
+    }
+    
+    // Show toast
+    showToast("✨ Event details filled - please review and complete!");
+    
+  } catch (e) {
+    console.error("Parse error:", e);
+    errEl.textContent = "Could not parse the text. Please try again or use the form instead.";
+    errEl.style.display = "block";
+    statusEl.style.display = "none";
+    btn.disabled = false;
+    btn.textContent = "Parse and fill form";
+  }
+}
+
 function evToSheet(ev) {
   return {
     id: ev.id, title: ev.title || "", categories: Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
@@ -812,7 +1024,6 @@ function resetFilters() {
   setFilter("all");
   setDateFilter("upcoming");
   setMode("all");
-  // restore Washington default for in-person
   const stateEl = document.getElementById("filter-state");
   if (stateEl) stateEl.value = "Washington";
 }
@@ -841,7 +1052,6 @@ function renderEvents() {
     const evStartMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
     const isPast    = evEndMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
-    // Date range filter
     let matchDate = true;
     const MS_WEEK    = 7*24*60*60*1000;
     const MS_MONTH   = 30*24*60*60*1000;
@@ -851,8 +1061,7 @@ function renderEvents() {
     else if (activeDateFilter === "past-week")   matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
     else if (activeDateFilter === "past-month")  matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
     else if (activeDateFilter === "past-quarter") matchDate = evEndMs >= now - MS_QUARTER && evEndMs < now;
-    else if (activeDateFilter === "upcoming") matchDate = true; // all upcoming, no cap
-    // Hard cap: never show past events older than a quarter
+    else if (activeDateFilter === "upcoming") matchDate = true;
     if (isPast && evEndMs < now - MS_QUARTER) matchDate = false;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
@@ -953,7 +1162,6 @@ async function markGoing(id) {
 }
 
 const DRAFT_KEY = "db-event-draft";
-
 const EDIT_DRAFT_KEY = "db-edit-draft";
 
 function saveEditDraft() {
@@ -1051,13 +1259,11 @@ function restoreDraft() {
     document.getElementById("f-cooplink").value = d.cooplink || "";
     document.getElementById("f-passcode").value = d.passcode || "";
     document.getElementById("f-paymentlink").value = d.paymentlink || "";
-    // Restore checkboxes
     const sl = (d.showLinks || "").split(",");
     ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
       const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
     });
     toggleLinkFields();
-    // Restore exchange type
     setExchange(d.exchangeType || "");
     const otherDraftEl = document.getElementById("f-exch-other"); if (otherDraftEl) otherDraftEl.value = d.otherExchange || "";
     if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
@@ -1199,18 +1405,14 @@ function loadEditForm(id) {
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
-  // Restore checkboxes
   const sl = (ev.showLinks || "").split(",").filter(Boolean);
   ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
     const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
   });
   toggleLinkFields();
-  // Restore payment link
   const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
-  // Restore exchange type
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
-  // Restore recurring - fall back to "weekly" for any recurring event
   recurFreq = ev.recurFreq || (found.isRecurring ? "weekly" : null);
   const recurCb = document.getElementById("f-recurring");
   if (recurCb) { recurCb.checked = !!recurFreq; }
@@ -1218,11 +1420,9 @@ function loadEditForm(id) {
   if (freqWrap) freqWrap.style.display = recurFreq ? "flex" : "none";
   if (recurFreq) setRecurFreq(recurFreq);
   buildFormChips(); updateRoomPreview();
-  // Check for unsaved edit draft
   if (restoreEditDraft(id)) {
     showToast("✏️ Restored your unsaved edits - review before saving.");
   }
-  // Restore hosting option after updateRoomPreview so the section is visible
   if (ev.meetinglink) {
     hostingOption = "own";
     setHostingOption("own");
@@ -1260,15 +1460,12 @@ function toggleExchange(type) {
   });
   const otherField = document.getElementById("field-exch-other");
   if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
-  // Payment link required indicator
   const label = document.getElementById("payment-required-label");
   if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
-  // Auto-check payment link checkbox if money selected
   const cb = document.getElementById("show-paymentlink");
   if (cb && selectedExchangeTypes.has("money")) { cb.checked = true; toggleLinkFields(); }
 }
 
-// Legacy single-value restore on edit
 function setExchange(val) {
   selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
   ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => {
@@ -1301,7 +1498,6 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
       const dy = e.touches[0].clientY - startY;
       const dx = e.touches[0].clientX - startX;
       if (window.innerWidth > 768) return;
-      // Ignore if horizontal movement exceeds vertical (left/right swipe)
       if (Math.abs(dx) > Math.abs(dy)) return;
       if (dy > 0 && startScrollTop === 0) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
     }, { passive:false });
@@ -1310,7 +1506,6 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
       const dy = e.changedTouches[0].clientY - startY;
       const dx = e.changedTouches[0].clientX - startX;
       modal.style.transition = ""; modal.style.transform = ""; dragging = false;
-      // Only close on clear downward swipe, not horizontal
       if (dy > 100 && Math.abs(dy) > Math.abs(dx)) {
         const id = overlay.id;
         if (id === "post-modal") {
@@ -1322,6 +1517,8 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
         else if (id === "room-modal") closeRoomModal();
         else if (id === "summary-modal") closeSummaryModal();
         else if (id === "passcode-modal") closePasscodeModal();
+        else if (id === "choice-modal") closeChoiceModal();
+        else if (id === "paste-modal") closePasteModal();
       }
     }, { passive:true });
   });
@@ -1356,7 +1553,6 @@ function addToCalendar(id) {
   const titleKey = (ev.title||"").toLowerCase().trim();
   const rrule = RRULE_MAP[id] || Object.entries(RRULE_MAP).find(([k]) => titleKey.includes(k))?.[1];
   const params = new URLSearchParams({ text:ev.title, dates:start+"/"+end, details, location });
-  // Sheet-based recurring: use recurFreq field
   if (ev.recurFreq === "weekly") {
     const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
     params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
@@ -1382,6 +1578,8 @@ function checkEventLink() {
 
 function safeOn(id, evt, fn) { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); }
 safeOn("post-modal",    "click", e => { if (e.target.id === "post-modal")    closeModal(); });
+safeOn("choice-modal",  "click", e => { if (e.target.id === "choice-modal")  closeChoiceModal(); });
+safeOn("paste-modal",   "click", e => { if (e.target.id === "paste-modal")   closePasteModal(); });
 safeOn("f-date",        "change", checkAndWarnConflict);
 safeOn("f-time",        "change", checkAndWarnConflict);
 safeOn("f-endtime",     "change", checkAndWarnConflict);
@@ -1563,7 +1761,6 @@ async function deleteEvent() {
 }
 
 function setTab(tab) {
-  // Legacy - redirect to setDateFilter
   setDateFilter(tab === "past" ? "past-week" : "upcoming");
 }
 
@@ -1572,7 +1769,6 @@ function setDateFilter(f) {
   const sel = document.getElementById("date-filter-select");
   if (sel) {
     sel.value = f;
-    const isPastMode = f.startsWith("past");
     sel.style.background = "var(--primary)";
     sel.style.color = "#fff";
     sel.style.borderColor = "var(--primary)";
@@ -1713,12 +1909,10 @@ function cloneEvent() {
   if (!ev) return;
   const count = isMasterUser ? parseInt(document.getElementById("clone-count")?.value || "1") : 1;
   if (count > 1) {
-    // Bulk clone: show date picker modal
     closeModal();
     openBulkCloneModal(ev, count);
     return;
   }
-  // Single clone: original behaviour
   closeModal();
   setTimeout(() => {
     openModal(true);
@@ -1739,10 +1933,8 @@ function cloneEvent() {
     ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
     document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
     buildFormChips(); updateRoomPreview();
-    // Restore hosting option
     if (ev.meetinglink) { hostingOption = "own"; setHostingOption("own"); const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink; }
     else if (ev.room) { hostingOption = "db"; setHostingOption("db"); }
-    // Restore showLinks, paymentlink, exchangeType
     const sl = (ev.showLinks || "").split(",").filter(Boolean);
     ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
     toggleLinkFields();
@@ -1761,7 +1953,6 @@ function openBulkCloneModal(ev, count) {
   const container = document.getElementById("bulk-clone-dates");
   container.innerHTML = "";
   document.getElementById("bulk-clone-error").style.display = "none";
-  // Pre-fill dates: start from 1 week after source event, weekly increments
   const baseDate = ev.date ? new Date(ev.date + "T12:00:00") : new Date();
   for (let i = 0; i < count; i++) {
     const d = new Date(baseDate);
@@ -1794,7 +1985,6 @@ async function submitBulkClone() {
     if (!inp.value) { errEl.textContent = "Please set a date for each copy."; errEl.style.display = "block"; return; }
     dates.push(inp.value);
   }
-  // Check for duplicate dates among the copies
   if (new Set(dates).size !== dates.length) { errEl.textContent = "Each copy needs a unique date."; errEl.style.display = "block"; return; }
 
   const btn = document.querySelector("#bulk-clone-modal .btn-green");
@@ -1812,7 +2002,7 @@ async function submitBulkClone() {
     };
     delete newEv.adminOnly;
     events.push(newEv);
-    try { await apiSave(newEv); created++; } catch(e) { console.warn("Clone save failed", e); }
+    try { await apiAdd(newEv); created++; } catch(e) { console.warn("Clone save failed", e); }
   }
 
   btn.disabled = false; btn.textContent = "Create copies";
@@ -1946,11 +2136,10 @@ const savedMode   = localStorage.getItem("db-mode");
 if (savedFilter) activeFilter = savedFilter;
 
 renderPills();
-// FIX: call setMode() to restore button visual state, not just the variable
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.71 -->
+<!-- v6.72 -->
 </body>
 </html>
