@@ -2,9 +2,7 @@
 <html lang="en">
 <!--
   Find a Time · A simple event timing vote
-  Brought to you by DayBalancer LLC
-  https://daybalancer.com
-  Version 3.35
+  Version 3.14
 -->
 <head>
   <meta charset="UTF-8">
@@ -30,9 +28,6 @@
     body { font-family: "Nunito Sans", sans-serif; background: var(--light); color: var(--dark); min-height: 100vh; }
 
     .header { background: var(--primary-dark); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .logo { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.3px; }
-    .logo span { font-weight: 400; }
-    .header-tag { font-size: 10px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.07em; }
     .code-badge { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: white; cursor: pointer; white-space: nowrap; }
     .code-badge:hover { background: rgba(255,255,255,0.25); }
 
@@ -126,7 +121,6 @@
     .view { display: none; }
     .view.active { display: block; }
 
-    /* ── Calendar upload panel ── */
     .cal-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all .2s; background: var(--white); position: relative; }
     .cal-drop:hover, .cal-drop.drag { border-color: var(--primary); background: #f0f7fd; }
     .cal-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
@@ -136,12 +130,7 @@
     .cal-status { font-size: 13px; font-weight: 700; color: var(--primary); margin-top: 10px; display: none; text-align: center; }
     .cal-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .person-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .person-name-input { flex: 1; }
-    .add-person-btn { white-space: nowrap; }
     .person-block { background: var(--light); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; border: 1.5px solid var(--border); }
-    .person-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .person-block-name { font-size: 13px; font-weight: 800; color: var(--dark); }
 
     @media (max-width: 420px) {
       .vote-day { font-size: 15px; }
@@ -153,11 +142,7 @@
 <body>
 
 <div class="header">
-  <div>
-    <div class="logo">Day<span>Balancer</span></div>
-    <div class="header-tag">Find a Time</div>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;">
+  <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
     <div class="code-badge" id="header-code" style="display:none;" onclick="copyCode()">📋 Copy code</div>
     <button class="btn btn-ghost btn-sm" onclick="resetToHome()">+ New</button>
   </div>
@@ -204,6 +189,16 @@
   <!-- SETUP -->
   <div class="view" id="view-setup">
     <div class="card">
+      <div style="font-size:18px;font-weight:800;margin-bottom:20px;">Create a vote</div>
+
+      <div class="field">
+        <label class="field-label">Title</label>
+        <input class="input input-lg" id="s-title" placeholder="Team sync, bonfire, lunch...">
+        <div class="err" id="err-title">Please add a title.</div>
+      </div>
+
+      <hr class="divider">
+
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <button class="btn btn-outline" id="method-specific-btn" onclick="setMethod('specific')" style="flex:1;min-width:130px;padding:14px 10px;flex-direction:column;gap:4px;height:auto;">
           <div style="font-size:20px;">📌</div>
@@ -282,53 +277,21 @@
 
       <!-- Calendar upload panel -->
       <div id="panel-calendar" style="display:none;">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Copy/paste a screenshot or upload a screenshot of your calendar week view. It reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Upload a screenshot of your Google Calendar week view. AI reads your open slots - remove any you don't want, then share a code so others can add their own availability.</p>
 
         <div id="persons-list"></div>
 
         <div class="cal-drop" id="drop-0" ondragover="event.preventDefault()" ondrop="orgDropFile(event)" style="margin-bottom:10px;">
           <input type="file" accept="image/*" onchange="orgFileChosen(event)" id="org-file-input">
           <div class="cal-drop-icon">📷</div>
-          <div class="cal-drop-label" id="org-drop-label">Tap to upload · or paste a screenshot (Cmd+V)</div>
+          <div class="cal-drop-label" id="org-drop-label">Tap to upload your calendar screenshot</div>
         </div>
         <div id="org-weeks-list"></div>
         <div class="err" id="err-cal-persons" style="margin-bottom:10px;">Upload at least one calendar screenshot.</div>
 
         <div id="cal-results-preview" style="display:none;margin-top:14px;">
-          <div style="margin-bottom:10px;">
-            <div class="sec-title" style="margin-bottom:6px;">Your open slots (<span id="tz-display">timezone unknown</span>) <span class="opt-label">- remove any that don't work</span></div>
-            <div id="tz-picker" style="display:none;margin-top:6px;">
-              <label class="field-label" style="margin-bottom:4px;">Your timezone</label>
-              <select class="input" id="tz-select" onchange="applyTimezone()" style="font-size:13px;padding:8px 10px;">
-                <option value="">Select your timezone...</option>
-                <option value="GMT-12">GMT-12 (Baker Island)</option>
-                <option value="GMT-11">GMT-11 (Samoa)</option>
-                <option value="GMT-10">GMT-10 / HST (Hawaii)</option>
-                <option value="GMT-9">GMT-9 / AKDT (Alaska)</option>
-                <option value="GMT-8">GMT-8 / PST (Los Angeles)</option>
-                <option value="GMT-7">GMT-7 / PDT (Los Angeles summer)</option>
-                <option value="GMT-6">GMT-6 / MDT (Denver)</option>
-                <option value="GMT-5">GMT-5 / CDT (Chicago)</option>
-                <option value="GMT-4">GMT-4 / EDT (New York summer)</option>
-                <option value="GMT-3">GMT-3 (Buenos Aires)</option>
-                <option value="GMT-2">GMT-2</option>
-                <option value="GMT-1">GMT-1 (Azores)</option>
-                <option value="GMT+0">GMT+0 / UTC (London)</option>
-                <option value="GMT+1">GMT+1 / CET (Paris)</option>
-                <option value="GMT+2">GMT+2 / EET (Athens)</option>
-                <option value="GMT+3">GMT+3 (Moscow)</option>
-                <option value="GMT+4">GMT+4 (Dubai)</option>
-                <option value="GMT+5">GMT+5 (Karachi)</option>
-                <option value="GMT+5:30">GMT+5:30 (India)</option>
-                <option value="GMT+6">GMT+6 (Dhaka)</option>
-                <option value="GMT+7">GMT+7 (Bangkok)</option>
-                <option value="GMT+8">GMT+8 (Singapore)</option>
-                <option value="GMT+9">GMT+9 / JST (Tokyo)</option>
-                <option value="GMT+10">GMT+10 / AEST (Sydney)</option>
-                <option value="GMT+11">GMT+11 (Solomon Islands)</option>
-                <option value="GMT+12">GMT+12 (Auckland)</option>
-              </select>
-            </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="sec-title" style="margin-bottom:0;">Your open slots <span class="opt-label">(remove any that don't work)</span></div>
           </div>
           <div id="cal-results-list"></div>
         </div>
@@ -345,14 +308,6 @@
         <button class="btn btn-primary btn-full" onclick="findMySlots()" id="find-overlaps-btn" style="margin-bottom:8px;">🔍 Find my open times</button>
       </div>
 
-      <div id="title-field" style="display:none;margin-top:4px;">
-        <hr class="divider">
-        <div class="field" style="margin-bottom:0;">
-          <label class="field-label">What are you scheduling?</label>
-          <input class="input input-lg" id="s-title" placeholder="Team sync, bonfire, lunch...">
-          <div class="err" id="err-title">Please add a title.</div>
-        </div>
-      </div>
       <hr class="divider" id="launch-divider" style="display:none;">
       <button class="btn btn-primary btn-full" id="launch-btn" onclick="launch()" style="padding:14px;display:none;">Create vote and get shared code →</button>
       <div style="margin-top:10px;">
@@ -367,11 +322,6 @@
       <label class="field-label">Your name</label>
       <input class="input input-lg" id="v-name" placeholder="What do people call you?" autocomplete="given-name" oninput="onNameInput()">
       <div class="err" id="err-vname">Please enter your name to vote.</div>
-      <div id="share-code-card" style="display:none;margin-top:14px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);border-radius:10px;padding:14px 16px;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.6);margin-bottom:6px;">Share this code so others can vote</div>
-        <div id="share-code-display" style="font-size:28px;font-weight:800;color:white;letter-spacing:.05em;margin-bottom:10px;"></div>
-        <button class="btn btn-ghost btn-full btn-sm" onclick="copyInvite()">📋 Copy invite link</button>
-      </div>
     </div>
     <div class="winner-banner" id="winner-banner" style="display:none;">
       <div class="w-label">🎉 It's happening!</div>
@@ -421,16 +371,16 @@
 </div>
 
 <script>
-const GS_URL = "https://script.google.com/macros/s/AKfycbzorQnmouatmpXCsPy1NBKnu-OdgpOdAkS5f4DikOIENU4TxzgqUhNbmRm2aXX2-g5c9w/exec";
+const GS_URL     = "https://script.google.com/macros/s/AKfycbzorQnmouatmpXCsPy1NBKnu-OdgpOdAkS5f4DikOIENU4TxzgqUhNbmRm2aXX2-g5c9w/exec";
+const WORKER_URL = "https://findatime.jessieupp.workers.dev/";
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const COLORS = ["#1B6896","#2E7D52","#C05A14","#1A6B7A","#5B4FCF","#B5116A","#C07A00","#1D7A5C"];
 const TOD    = { morning:[7,8,9,10], afternoon:[12,13,14,15,16], evening:[17,18,19,20], late:[21,22,23] };
 
 let session=null, code=null, myName="", myPicks=new Set(), isOrg=false;
-let joinerCompatible=null; // Set of option ids that match joiner's calendar; null = no calendar uploaded yet
 let soptCount=0, genOpts=[], calOpts=[], activeMethod=null;
-let persons=[]; // [{name, weeks:[{imageB64, slots:[], status:""}]}]
+let persons=[];
 let refreshTimer=null;
 
 const esc  = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -443,26 +393,6 @@ function makeCode() {
 }
 function fmtHour(h) { const a=h>=12?"pm":"am",hr=h>12?h-12:(h===0?12:h); return `${hr}:00 ${a}`; }
 function fmtLabel(dateObj,hour) { return `${DAYS[dateObj.getDay()]}, ${MONTHS[dateObj.getMonth()]} ${dateObj.getDate()} · ${fmtHour(hour)}`; }
-
-// Build a "start - end" label from a slot object returned by the AI
-function fmtSlotLabel(slot) {
-  const { day, date, startHour, endHour, timezone } = slot;
-  const tz = timezone ? " " + timezone : "";
-  if (endHour != null && endHour !== startHour) {
-    const startA = startHour >= 12 ? "pm" : "am";
-    const endA   = endHour   >= 12 ? "pm" : "am";
-    const startHr = startHour > 12 ? startHour - 12 : (startHour === 0 ? 12 : startHour);
-    const endHr   = endHour   > 12 ? endHour   - 12 : (endHour   === 0 ? 12 : endHour);
-    // Omit first am/pm if both periods match, e.g. "2 - 3 pm"
-    const startStr = startA === endA ? `${startHr}:00` : `${startHr}:00 ${startA}`;
-    return `${day}, ${date} · ${startStr} - ${endHr}:00 ${endA}${tz}`;
-  }
-  // Fallback: just start hour
-  const a = startHour >= 12 ? "pm" : "am";
-  const hr = startHour > 12 ? startHour - 12 : (startHour === 0 ? 12 : startHour);
-  return `${day}, ${date} · ${hr}:00 ${a}${tz}`;
-}
-
 function durStr(s) {
   if (!s.durNum||s.durNum==="-"||s.durNum==="") return "";
   const n=s.durNum,u=s.durUnit;
@@ -484,7 +414,7 @@ function checkResumeCard() {
   document.getElementById("resume-card").style.display="block";
 }
 function resetToHome() {
-  session=null;code=null;myName="";myPicks.clear();isOrg=false;joinerCompatible=null;
+  session=null;code=null;myName="";myPicks.clear();isOrg=false;
   soptCount=0;genOpts=[];calOpts=[];persons=[];activeMethod=null;
   document.getElementById("header-code").style.display="none";
   document.getElementById("specific-list").innerHTML="";
@@ -496,7 +426,6 @@ function resetToHome() {
   document.getElementById("persons-list").innerHTML="";
   document.getElementById("cal-results-preview").style.display="none";
   document.getElementById("find-overlaps-btn").style.display="none";
-  document.getElementById("title-field").style.display="none";
   document.getElementById("launch-divider").style.display="none";
   document.getElementById("launch-btn").style.display="none";
   showView("home");
@@ -518,12 +447,10 @@ function setMethod(method) {
   document.getElementById("panel-calendar").style.display=method==="calendar"?"block":"none";
   if (method==="specific"&&soptCount===0) addSpecific();
   if (method==="calendar") initOrganizerCalendar();
-  document.getElementById("title-field").style.display="none";
   document.getElementById("launch-divider").style.display="none";
   document.getElementById("launch-btn").style.display="none";
 }
 
-// ── Specific ───────────────────────────────────────────
 function addSpecific() {
   if (soptCount>=7)return;
   soptCount++;
@@ -534,7 +461,6 @@ function addSpecific() {
   row.innerHTML=`<input type="date" class="input" id="${id}d" style="flex:1.2;"><input type="time" class="input" id="${id}t" style="flex:1;" value="18:00"><button class="remove-btn" onclick="removeSpecific('${id}')">×</button>`;
   wrap.appendChild(row);
   if(soptCount>=7) document.getElementById("add-sopt-btn").style.display="none";
-  document.getElementById("title-field").style.display="block";
   document.getElementById("launch-divider").style.display="block";
   document.getElementById("launch-btn").style.display="block";
 }
@@ -553,7 +479,6 @@ function getSpecifics() {
   return out;
 }
 
-// ── Generator ─────────────────────────────────────────
 function generateOpts() {
   const range=getVals("range-row")[0]||"2w";
   const days=getVals("day-row").map(Number);
@@ -575,7 +500,6 @@ function generateOpts() {
   let picked=pickedDates.map(dk=>byDate[dk][0]);
   genOpts=picked.map(c=>({id:uid(),label:fmtLabel(c.date,c.hour),voters:[],ts:new Date(c.date).setHours(c.hour,0,0,0)}));
   renderGenPreview();
-  document.getElementById("title-field").style.display="block";
   document.getElementById("launch-divider").style.display="block";
   document.getElementById("launch-btn").style.display="block";
 }
@@ -585,14 +509,15 @@ function renderGenPreview() {
 }
 function removeGen(i) { genOpts.splice(i,1); renderGenPreview(); }
 
-// ── Calendar AI reader ─────────────────────────────────
+function addPerson() {}
 function initOrganizerCalendar() {
   if(persons.length===0) persons.push({name:"Me", weeks:[]});
   renderOrgWeeks();
 }
+function renderPersons() { renderOrgWeeks(); }
 function renderOrgWeeks() {
   const p=persons[0]; if(!p) return;
-  const wl=document.getElementById("org-weeks-list"); 
+  const wl=document.getElementById("org-weeks-list");
   if(wl) wl.innerHTML=p.weeks.map((w,wi)=>`
     <div style="margin-bottom:8px;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--white);">
@@ -608,71 +533,19 @@ function renderOrgWeeks() {
   if(lbl) lbl.textContent=p.weeks.length?"+ Add another week":"Tap to upload your calendar screenshot";
 }
 
+function removePerson(i) { persons.splice(i,1); renderOrgWeeks(); }
 function removeWeek(i,wi) { persons[i].weeks.splice(wi,1); renderOrgWeeks(); }
-let detectedTimezone = "";
-
-function applyTimezone() {
-  const sel = document.getElementById("tz-select");
-  detectedTimezone = sel.value;
-  document.getElementById("tz-display").textContent = detectedTimezone || "timezone unknown";
-  calOpts = calOpts.map(o => ({
-    ...o,
-    label: o.label.replace(/ (GMT[+-]\d+[\:?\d]*|[A-Z]{2,4}T)$/, "") + (detectedTimezone ? " " + detectedTimezone : "")
-  }));
-  renderCalResults();
-}
-
-function setDetectedTimezone(tz) {
-  detectedTimezone = tz;
-  const display = document.getElementById("tz-display");
-  const picker = document.getElementById("tz-picker");
-  if (tz) {
-    if (display) display.textContent = tz;
-    if (picker) picker.style.display = "none";
-  } else {
-    if (display) display.textContent = "select your timezone below";
-    if (picker) picker.style.display = "block";
-  }
-}
-function orgFileChosen(e) { const f=e.target.files[0]; if(f){processFile(f,0);e.target.value="";} }
-
-document.addEventListener("paste", e => {
-  if(activeMethod !== "calendar") return;
-  const items = e.clipboardData?.items;
-  if(!items) return;
-  for(const item of items) {
-    if(item.type.startsWith("image/")) {
-      const f = item.getAsFile();
-      if(f) { processFile(f, 0); break; }
-    }
-  }
-});
 function orgDropFile(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processFile(f,0); }
+function orgFileChosen(e) { const f=e.target.files[0]; if(f){processFile(f,0);e.target.value="";} }
 
 function processFile(file,i) {
   const reader=new FileReader();
   reader.onload=e=>{
-    compressImage(e.target.result, 1000, 0.72, compressed=>{
-      if(!persons[i]) persons[i]={name:"Me",weeks:[]};
-      persons[i].weeks.push({imageB64:compressed, slots:[], status:""});
-      renderOrgWeeks();
-    });
+    if(!persons[i]) persons[i]={name:"Me",weeks:[]};
+    persons[i].weeks.push({imageB64:e.target.result, slots:[], status:""});
+    renderOrgWeeks();
   };
   reader.readAsDataURL(file);
-}
-
-function compressImage(dataUrl, maxWidth, quality, cb) {
-  const img=new Image();
-  img.onload=()=>{
-    const scale=Math.min(1, maxWidth/img.width);
-    const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
-    const canvas=document.createElement("canvas");
-    canvas.width=w; canvas.height=h;
-    canvas.getContext("2d").drawImage(img,0,0,w,h);
-    cb(canvas.toDataURL("image/jpeg", quality));
-  };
-  img.onerror=()=>cb(dataUrl); // fallback to original if compress fails
-  img.src=dataUrl;
 }
 
 async function readCalendarWithAI(imageB64) {
@@ -681,69 +554,28 @@ async function readCalendarWithAI(imageB64) {
   const today=new Date();
   const todayStr=today.toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
-  const payload=JSON.stringify({
-    model:"claude-haiku-4-5-20251001",
-    max_tokens:4000,
-    messages:[{
-      role:"user",
-      content:[
-        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:base64}},
-        {type:"text",text:`Today is ${todayStr}. This is a Google Calendar week view screenshot. Your job is to find ALL gaps between events - empty white space where no colored blocks appear. For EACH day visible, find EVERY gap that is at least 30 minutes long between 7am and 8pm. There may be 3-5 gaps per day. Look carefully at each column top to bottom. Note the timezone shown in the top left corner of the calendar and use it in your labels. For each open slot, determine both the start time AND end time of the gap (when the next event begins, or 8pm if nothing follows). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "endHour" (24h integer - when the gap ends), "timezone" (e.g. "PDT"), "label" (e.g. "Mon, Apr 7 · 2:00 - 4:00 pm PDT"). Find as many gaps as possible - aim for 15-20 total across all days. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"endHour":16,"timezone":"PDT","label":"Mon, Apr 7 · 2:00 - 4:00 pm PDT"}]`}
-      ]
-    }]
+  const response=await fetch(WORKER_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-haiku-4-5-20251001",
+      max_tokens:1000,
+      messages:[{
+        role:"user",
+        content:[
+          {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
+          {type:"text",text:`Today is ${todayStr}. This is a Google Calendar screenshot. Identify all clearly OPEN time slots (no events, no blocks) that are at least 30 minutes long. Focus on standard hours (7am-8pm). Return ONLY a JSON array, no other text, no markdown. Each object must have: "day" (e.g. "Mon"), "date" (e.g. "Apr 7"), "startHour" (24h integer), "label" (e.g. "Mon, Apr 7 · 2:00 pm"). Limit to 10 best slots. Example: [{"day":"Mon","date":"Apr 7","startHour":14,"label":"Mon, Apr 7 · 2:00 pm"}]`}
+        ]
+      }]
+    })
   });
-  console.log("Payload size (KB):", Math.round(payload.length/1024));
-  let response;
-  try {
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),30000);
-    response=await fetch("https://findatime.jessieupp.workers.dev/",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:payload,
-      signal:controller.signal,
-      mode:"cors"
-    });
-    clearTimeout(timer);
-  } catch(netErr) {
-    if(netErr.name==="AbortError") throw new Error("Request timed out - try a smaller screenshot");
-    // Try a connectivity ping to distinguish worker-down vs CORS
-    try {
-      await fetch("https://findatime.jessieupp.workers.dev/",{method:"OPTIONS",mode:"cors"});
-      throw new Error("Worker reachable but POST blocked - possible CORS issue ("+netErr.message+")");
-    } catch(pingErr) {
-      throw new Error("Worker unreachable - check Cloudflare dashboard ("+netErr.message+")");
-    }
-  }
-  if(!response.ok) {
-    const errText=await response.text().catch(()=>"");
-    throw new Error("Worker error "+response.status+": "+errText.slice(0,120));
-  }
+  if(!response.ok) throw new Error("API error "+response.status);
   const data=await response.json();
-  if(data.error) throw new Error(data.error.message||"API error");
   const text=data.content?.find(c=>c.type==="text")?.text||"";
   if(!text) throw new Error("Empty response from AI");
-  const clean=text.replace(/```json|```/g,"").trim();
-  const match=clean.match(/\[[\s\S]*/);
-  if(!match) throw new Error("No slots found: "+text.slice(0,200));
-  let slots;
-  try {
-    // Try to parse as complete JSON array
-    const arr = match[0].match(/\[[\s\S]*\]/);
-    slots = JSON.parse(arr ? arr[0] : match[0]);
-  } catch(e) {
-    // JSON truncated - extract each complete {...} object manually
-    const raw = match[0];
-    slots = [];
-    let depth=0, start=-1;
-    for(let i=0;i<raw.length;i++){
-      if(raw[i]==='{'){if(depth===0)start=i;depth++;}
-      else if(raw[i]==='}'){depth--;if(depth===0&&start>=0){try{slots.push(JSON.parse(raw.slice(start,i+1)));}catch{}start=-1;}}
-    }
-    if(!slots.length) throw new Error("No slots found: "+text.slice(0,200));
-  }
-  // Rebuild labels client-side so they're consistent even if AI label drifts
-  return slots.map(s => ({ ...s, label: fmtSlotLabel(s) }));
+  const match=text.match(/\[[\s\S]*\]/);
+  if(!match) throw new Error("No JSON array in response: "+text.slice(0,100));
+  return JSON.parse(match[0]);
 }
 
 async function findMySlots() {
@@ -754,45 +586,25 @@ async function findMySlots() {
   const btn=document.getElementById("find-overlaps-btn");
   btn.textContent="🔍 Reading your calendar...";btn.disabled=true;
 
-  try {
-    for(let wi=0;wi<p.weeks.length;wi++){
-      if(!p.weeks[wi].slots.length&&p.weeks[wi].imageB64){
-        try {
-          const slots=await readCalendarWithAI(p.weeks[wi].imageB64);
-          p.weeks[wi].slots=slots;
-          p.weeks[wi].status=`✓ ${slots.length} slot${slots.length===1?"":"s"}`;
-        } catch(err) {
-          console.error("Calendar AI error:", err);
-          p.weeks[wi].status="⚠️ "+err.message;
-        }
+  for(let wi=0;wi<p.weeks.length;wi++){
+    if(!p.weeks[wi].slots.length&&p.weeks[wi].imageB64){
+      try {
+        const slots=await readCalendarWithAI(p.weeks[wi].imageB64);
+        p.weeks[wi].slots=slots;
+        p.weeks[wi].status=`✓ ${slots.length} slot${slots.length===1?"":"s"}`;
+      } catch(err) {
+        p.weeks[wi].status="⚠️ "+err.message;
         renderOrgWeeks();
       }
     }
-    const allSlots=p.weeks.flatMap(w=>w.slots);
-    if(!allSlots.length) {
-      alert("No open slots found - try a clearer screenshot with more white space visible.");
-    } else {
-      // Group by day, sort each day by gap duration desc, keep top 2 per day
-      const byDay={};
-      allSlots.forEach(s=>{
-        const key=s.day+"|"+s.date;
-        if(!byDay[key]) byDay[key]=[];
-        byDay[key].push(s);
-      });
-      const trimmed=Object.values(byDay).flatMap(daySlots=>
-        daySlots.sort((a,b)=>((b.endHour||0)-(b.startHour||0))-((a.endHour||0)-(a.startHour||0))).slice(0,2)
-      );
-      calOpts=trimmed.map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now(),startHour:s.startHour,endHour:s.endHour}));
-      const tzMatch = allSlots.find(s=>s.timezone);
-      setDetectedTimezone(tzMatch ? tzMatch.timezone : "");
-      renderCalResults();
-      document.getElementById("title-field").style.display="block";
-      document.getElementById("launch-divider").style.display="block";
-      document.getElementById("launch-btn").style.display="block";
-    }
-  } finally {
-    btn.textContent="🔍 Find my open times";btn.disabled=false;
   }
+
+  const allSlots=p.weeks.flatMap(w=>w.slots);
+  calOpts=allSlots.slice(0,10).map(s=>({id:uid(),label:s.label,voters:[],ts:Date.now()}));
+  renderCalResults();
+  btn.textContent="🔍 Find my open times";btn.disabled=false;
+  document.getElementById("launch-divider").style.display=calOpts.length?"block":"none";
+  document.getElementById("launch-btn").style.display=calOpts.length?"block":"none";
 }
 
 function renderCalResults() {
@@ -806,16 +618,15 @@ function renderCalResults() {
 }
 function removeCal(i) { calOpts.splice(i,1); renderCalResults(); }
 
-// ── Launch ─────────────────────────────────────────────
 async function launch() {
   const title=document.getElementById("s-title").value.trim();
-  if(!title){document.getElementById("err-title").style.display="block";document.getElementById("s-title").focus();return;}
+  if(!title){document.getElementById("err-title").style.display="block";return;}
   document.getElementById("err-title").style.display="none";
 
   const specifics=activeMethod==="specific"?getSpecifics():[];
   const generated=activeMethod==="generate"?genOpts:[];
   const calendar=activeMethod==="calendar"?calOpts:[];
-  const all=[...specifics,...generated,...calendar].slice(0,14);
+  const all=[...specifics,...generated,...calendar].slice(0,7);
 
   if(!all.length){
     const errMap={specific:"err-options",generate:"err-options-gen",calendar:"err-options-cal"};
@@ -830,21 +641,16 @@ async function launch() {
   const durUnit=document.getElementById(durUnitId)?.value||"hr";
   const orgPin=uid().slice(0,6);
   const newCode=makeCode();
-  const newSession={title,durNum,durUnit,options:all,winner:null,organizerPin:orgPin,suggestions:[],voters:[],createdAt:Date.now(),timezone:detectedTimezone||""};
+  const newSession={title,durNum,durUnit,options:all,winner:null,organizerPin:orgPin,suggestions:[],voters:[],createdAt:Date.now()};
 
-  // Navigate immediately - save in background
-  const btn=document.getElementById("launch-btn");
-  btn.textContent="Creating...";btn.disabled=true;
+  try{await apiSave(newCode,newSession);}catch(e){console.warn("Server save failed",e);}
   session=newSession;code=newCode;isOrg=true;
   localStorage.setItem("org-"+newCode,orgPin);
   localStorage.setItem("wtm-last-code",newCode);
   localStorage.setItem("wtm-last-title",title);
   showHeader(newCode);showView("vote");renderVote();
-  btn.textContent="Create vote and get shared code →";btn.disabled=false;
-  apiSave(newCode,newSession).catch(e=>console.warn("Server save failed",e));
 }
 
-// ── Join ───────────────────────────────────────────────
 async function joinSession() {
   const c=document.getElementById("join-code").value.trim().toLowerCase();
   const errEl=document.getElementById("join-err");
@@ -865,10 +671,6 @@ async function joinSession() {
 function showHeader(c) { const hc=document.getElementById("header-code"); hc.style.display="flex"; hc.textContent=`📋 Code: ${c}`; }
 function copyCode() {
   if(!code)return;
-  navigator.clipboard.writeText(code).then(()=>{ document.getElementById("header-code").textContent="✓ Copied!"; setTimeout(()=>showHeader(code),2000); });
-}
-function copyInvite() {
-  if(!code)return;
   const txt=`Vote on when to meet for "${session?.title}" - use code: ${code} at https://jessieupp.github.io/DayBalancer-events/find-a-time.html`;
   navigator.clipboard.writeText(txt).then(()=>{ document.getElementById("header-code").textContent="✓ Copied!"; setTimeout(()=>showHeader(code),2000); });
 }
@@ -876,7 +678,7 @@ function copyInvite() {
 function renderVote() {
   if(!session)return;
   document.getElementById("v-title").textContent=session.title;
-  document.getElementById("v-meta").textContent=`${durStr(session)} · ${session.options.length} options${session.timezone?" · Times in "+session.timezone:""}`;
+  document.getElementById("v-meta").textContent=`${durStr(session)} · ${session.options.length} options to vote on`;
   const wb=document.getElementById("winner-banner");
   if(session.winner){
     const w=session.options.find(o=>o.id===session.winner);
@@ -885,7 +687,6 @@ function renderVote() {
   const saved=myName||localStorage.getItem("wtm-name-"+code)||"";
   if(saved){document.getElementById("v-name").value=saved;myName=saved;myPicks=new Set(session.options.filter(o=>o.voters.some(v=>v.name.toLowerCase()===saved.toLowerCase())).map(o=>o.id));}
   renderCards();renderWho();updateBtn();
-  document.getElementById("share-code-display").textContent=(code||"").toUpperCase();
   const joinerCalSection=document.getElementById("joiner-cal-section");
   if(joinerCalSection) joinerCalSection.style.display=(!isOrg&&!session.winner)?"block":"none";
   const os=document.getElementById("org-section");
@@ -902,28 +703,13 @@ async function joinerProcessFile(file) {
   const reader=new FileReader();
   reader.onload=async e=>{
     try {
-      const compressed=await new Promise(res=>compressImage(e.target.result,1000,0.72,res));
-      const slots=await readCalendarWithAI(compressed);
-      joinerCompatible=new Set();
+      const slots=await readCalendarWithAI(e.target.result);
+      let matched=0;
       session.options.forEach(opt=>{
-        const match=slots.find(s=>{
-          const dayMatch = opt.label.toLowerCase().includes(s.day.toLowerCase()) &&
-                           opt.label.toLowerCase().includes(s.date.toLowerCase());
-          if (!dayMatch) return false;
-          const optHourMatch = opt.label.match(/·\s*(\d+)(?::(\d+))?\s*(am|pm)/i);
-          if (!optHourMatch) return true;
-          let optH = parseInt(optHourMatch[1]);
-          const optPeriod = optHourMatch[3].toLowerCase();
-          if (optPeriod === "pm" && optH !== 12) optH += 12;
-          if (optPeriod === "am" && optH === 12) optH = 0;
-          return optH >= s.startHour && (s.endHour == null || optH < s.endHour);
-        });
-        if(match){ joinerCompatible.add(opt.id); myPicks.add(opt.id); }
+        const match=slots.find(s=>opt.label.toLowerCase().includes(s.day.toLowerCase())&&opt.label.toLowerCase().includes(s.date.toLowerCase()));
+        if(match){myPicks.add(opt.id);matched++;}
       });
-      const matched=joinerCompatible.size;
-      statusEl.innerHTML=matched
-        ?`✓ Showing ${matched} time${matched===1?"":"s"} that work for you`
-        :`✓ Calendar read - no matching times found. All options shown below.`;
+      statusEl.innerHTML=matched?`✓ Found ${matched} matching time${matched===1?"":"s"} - review and save`:`✓ Calendar read - no exact matches. Select times manually below.`;
       renderCards();updateBtn();
     } catch(err) {
       statusEl.innerHTML="⚠️ Couldn't read calendar - select times manually below.";
@@ -934,11 +720,7 @@ async function joinerProcessFile(file) {
 
 function renderCards() {
   const maxV=Math.max(...session.options.map(o=>o.voters.length),1);
-  // If joiner uploaded calendar, only show compatible options (or all if none matched)
-  const visibleOpts = (!isOrg && joinerCompatible && joinerCompatible.size>0)
-    ? session.options.filter(o=>joinerCompatible.has(o.id))
-    : session.options;
-  let html=visibleOpts.map(o=>{
+  let html=session.options.map(o=>{
     const picked=myPicks.has(o.id),winner=session.winner===o.id;
     const cls=winner?"vote-card is-winner":picked?"vote-card picked":"vote-card";
     const check=winner?"🏆":picked?"✓":"";
@@ -974,14 +756,7 @@ function renderOrgList() {
 }
 
 function togglePick(id) { if(session.winner)return; myPicks.has(id)?myPicks.delete(id):myPicks.add(id); renderCards();updateBtn(); }
-function onNameInput() {
-  updateBtn();
-  if(isOrg) {
-    const name=document.getElementById("v-name").value.trim();
-    const card=document.getElementById("share-code-card");
-    if(card) card.style.display=name?"block":"none";
-  }
-}
+function onNameInput() { updateBtn(); }
 function updateBtn() { const name=document.getElementById("v-name")?.value.trim(); const btn=document.getElementById("vote-btn"); const ok=name&&myPicks.size>0&&!session.winner; btn.disabled=!ok; btn.className="btn btn-full "+(ok?"btn-green":"btn-disabled"); }
 
 async function submitVote() {
@@ -1054,6 +829,6 @@ async function apiGet(c) { return apiCall({action:"get",code:c}); }
 async function apiSave(c,sess) { return apiCall({action:"save",session:{...sess,code:c}}); }
 checkResumeCard();
 </script>
-<!-- v3.35 -->
+<!-- v3.14 -->
 </body>
 </html>
