@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events · Appear Network
-  Version 6.72
+  Version 6.73
   
   v6.72 Changes:
   - Added AI parse feature: paste event text and Claude extracts fields
@@ -328,12 +328,12 @@ A weekly pause to reconnect with what matters..."></textarea>
       <div id="hosting-choice" style="display:none;margin-bottom:12px;">
         <div class="room-preview-label" style="margin-bottom:8px;">Where are you hosting this virtually?</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" class="format-chip" id="hopt-db" onclick="setHostingOption('db')">🏠 DayBalancer room</button>
+          <button type="button" class="format-chip" id="hopt-db" onclick="setHostingOption('db')">🏠 Community room</button>
           <button type="button" class="format-chip" id="hopt-own" onclick="setHostingOption('own')">🔗 My own link</button>
         </div>
       </div>
       <div id="db-room-section" style="display:none;">
-        <div class="room-preview-label" id="room-preview-label">Which DayBalancer virtual room is best for this event?</div>
+        <div class="room-preview-label" id="room-preview-label">Which virtual room is best for this event?</div>
         <div class="form-cat-chips" id="room-options"></div>
       </div>
       <div id="own-link-section" style="display:none;" class="field">
@@ -389,7 +389,7 @@ A weekly pause to reconnect with what matters..."></textarea>
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-hostlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
-          My DayBalancer profile page
+          My profile page
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-cooplink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
@@ -403,8 +403,8 @@ A weekly pause to reconnect with what matters..."></textarea>
     </div>
 
     <div class="field" id="field-hostlink" style="display:none;">
-      <label class="field-label">Your DayBalancer page link</label>
-      <input class="input" id="f-hostlink" type="url" placeholder="https://app.daybalancer.com/...">
+      <label class="field-label">Your profile page link</label>
+      <input class="input" id="f-hostlink" type="url" placeholder="https://...">
     </div>
 
     <div class="field" id="field-cooplink" style="display:none;">
@@ -973,7 +973,7 @@ function renderRoomChips() {
   if (rooms.length === 0) { document.getElementById("db-room-section").style.display = "none"; return; }
   if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
   if (rooms.length === 1) selectedRoom = rooms[0];
-  label.textContent = rooms.length === 1 ? "DayBalancer virtual room for this event:" : "Which DayBalancer virtual room is best for this event?";
+  label.textContent = rooms.length === 1 ? "Virtual room for this event:" : "Which virtual room is best for this event?";
   roomOptions.innerHTML = "";
   rooms.forEach(room => {
     const chip = document.createElement("button");
@@ -1661,7 +1661,7 @@ async function submitEvent() {
   if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; return; }
   if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; return; }
   if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
-  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a DayBalancer room or your own link."; errEl.style.display = "block"; return; }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; return; }
   if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
   if (selectedRoom && date) {
     const conflict = checkConflict(selectedRoom, date, time, editingId);
@@ -2139,6 +2139,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.72 -->
+<!-- v6.73 -->
 </body>
 </html>
