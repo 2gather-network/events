@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-  Community Events · Let's Gather
-  Version 6.73
+  Community Events · Appear Network
+  Version 6.74
   
   v6.72 Changes:
   - Added AI parse feature: paste event text and Claude extracts fields
@@ -12,7 +12,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Let's Gather · Community Events</title>
+<title>Appear Network · Community Events</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -182,7 +182,7 @@
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div>
-    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;"><span>Let's Gather</span></div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;"><span>Appear Network</span></div>
     <div class="tagline">Community events</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
@@ -1498,7 +1498,7 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
       const dx = e.touches[0].clientX - startX;
       if (window.innerWidth > 768) return;
       if (Math.abs(dx) > Math.abs(dy)) return;
-      if (dy > 0 && startScrollTop === 0) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
+      if (dy > 10 && startScrollTop <= 2) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
     }, { passive:false });
     modal.addEventListener("touchend", e => {
       if (window.innerWidth > 768 || !dragging) { modal.style.transition = ""; modal.style.transform = ""; dragging = false; return; }
@@ -2139,6 +2139,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.73 -->
+<!-- v6.74 -->
 </body>
 </html>
