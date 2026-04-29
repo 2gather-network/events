@@ -431,6 +431,18 @@ Start your week with other independents. Share what you're working on, what you 
     </div>
 
     <div class="field">
+      <label class="field-label">What does this event intend to help participants feel? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="experience-chips">
+        <button type="button" class="format-chip" id="exp-connected" onclick="toggleExperience('connected')">🌐 Connected</button>
+        <button type="button" class="format-chip" id="exp-expressed" onclick="toggleExperience('expressed')">🎨 Expressed</button>
+        <button type="button" class="format-chip" id="exp-nourished" onclick="toggleExperience('nourished')">🥘 Nourished</button>
+        <button type="button" class="format-chip" id="exp-energized" onclick="toggleExperience('energized')">🌀 Energized</button>
+        <button type="button" class="format-chip" id="exp-playful" onclick="toggleExperience('playful')">🏓 Playful</button>
+        <button type="button" class="format-chip" id="exp-rested" onclick="toggleExperience('rested')">💙 Rested</button>
+      </div>
+    </div>
+
+    <div class="field">
       <label class="field-label">What would you welcome from participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
         <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
@@ -586,7 +598,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
     categories:["learning"],
     description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    adminOnly:true,
+    experience:"connected,energized", adminOnly:true,
   },
   {
     title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
@@ -595,7 +607,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
     categories:["learning"],
     description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
-    adminOnly:true,
+    experience:"connected,expressed,rested", adminOnly:true,
   },
   {
     title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00",
@@ -603,7 +615,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["care","faith","resources","movement","learning"],
     description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
-    adminOnly:false,
+    experience:"rested,energized", adminOnly:false,
   },
   {
     title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45",
@@ -611,7 +623,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
     description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.",
-    adminOnly:false,
+    experience:"connected,expressed,energized", adminOnly:false,
   },
   {
     title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00",
@@ -619,7 +631,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","social","resources","care"],
     description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.",
-    adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", adminOnly:false, recurFreq:"weekly",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -627,7 +639,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning"],
     description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
-    adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", adminOnly:false, recurFreq:"weekly",
   },
   {
     title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
@@ -639,7 +651,7 @@ const RECURRING_EVENTS = [
     description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
-    adminOnly:false, recurFreq:"weekly",
+    experience:"connected,expressed,nourished,playful", adminOnly:false, recurFreq:"weekly",
   },
 ];
 
@@ -831,7 +843,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "",
   };
 }
 
@@ -865,7 +877,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "",
   };
 }
 
@@ -1148,6 +1160,7 @@ function renderEvents() {
       <div class="event-card-body">
         <div class="event-meta">
           <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
+          ${ev.experience ? (() => { const expMap = {"connected":"🌐 Connected","expressed":"🎨 Expressed","nourished":"🥘 Nourished from food/drink","energized":"🌀 Energized","playful":"🏓 Playful","rested":"💙 Rested"}; const labels = ev.experience.split(",").filter(Boolean).map(t => expMap[t] || t).join(" · "); return `<div class="event-meta-item"><span>✨</span><strong>Experience:</strong> ${labels}</div>`; })() : ""}
           ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
           ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
           ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
@@ -1209,6 +1222,7 @@ function saveEditDraft() {
     paymentlink: document.getElementById("f-paymentlink")?.value || "",
     exchangeType: [...selectedExchangeTypes].join(",") || "",
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    experience: [...selectedExperiences].join(",") || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -1240,6 +1254,7 @@ function restoreEditDraft(id) {
     toggleLinkFields();
     setExchange(d.exchangeType || "");
     const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = d.otherExchange || "";
+    setExperience(d.experience || "");
     if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
     if (d.format) {
       selectedFormat = d.format;
@@ -1293,6 +1308,7 @@ function restoreDraft() {
     toggleLinkFields();
     setExchange(d.exchangeType || "");
     const otherDraftEl = document.getElementById("f-exch-other"); if (otherDraftEl) otherDraftEl.value = d.otherExchange || "";
+    setExperience(d.experience || "");
     if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
     if (d.format) {
       selectedFormat = d.format;
@@ -1332,6 +1348,7 @@ function openModal(skipDraft = false) {
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
   selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExperiences = new Set(); ["connected","expressed","nourished","energized","playful","rested"].forEach(t => { const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected"); });
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1440,6 +1457,7 @@ function loadEditForm(id) {
   const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+  setExperience(ev.experience || "");
   recurFreq = ev.recurFreq || (found.isRecurring ? "weekly" : null);
   const recurCb = document.getElementById("f-recurring");
   if (recurCb) { recurCb.checked = !!recurFreq; }
@@ -1491,6 +1509,22 @@ function toggleExchange(type) {
   if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
   const cb = document.getElementById("show-paymentlink");
   if (cb && selectedExchangeTypes.has("money")) { cb.checked = true; toggleLinkFields(); }
+}
+
+let selectedExperiences = new Set();
+function toggleExperience(type) {
+  if (selectedExperiences.has(type)) { selectedExperiences.delete(type); } else { selectedExperiences.add(type); }
+  ["connected","expressed","nourished","energized","playful","rested"].forEach(t => {
+    const btn = document.getElementById("exp-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExperiences.has(t));
+  });
+}
+function setExperience(val) {
+  selectedExperiences = new Set(val ? val.split(",").filter(Boolean) : []);
+  ["connected","expressed","nourished","energized","playful","rested"].forEach(t => {
+    const btn = document.getElementById("exp-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExperiences.has(t));
+  });
 }
 
 function setExchange(val) {
@@ -1720,6 +1754,7 @@ async function submitEvent() {
     paymentlink: document.getElementById("f-paymentlink")?.value.trim() || "",
     exchangeType: [...selectedExchangeTypes].join(",") || "",
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    experience: [...selectedExperiences].join(",") || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
     recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
