@@ -245,12 +245,32 @@ const RECURRING_EVENTS = [
     adminOnly:false,
   },
   {
-    title:"Monday Kickoff", dayOfWeek:1, time:"09:00", endtime:"10:00",
+    title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00",
     format:"virtual", room:"The Commons", host:"Jessie Upp",
     hostlink:"https://app.daybalancer.com/dl/impact-map/m/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","social","resources","care"],
-    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking - thrive apart, together.",
+    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking.",
     adminOnly:false,
+  },
+  {
+    title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
+    format:"virtual", room:"The Commons", host:"Jessie Upp",
+    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    categories:["learning"],
+    description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
+    adminOnly:false, recurFreq:"weekly",
+  },
+  {
+    title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
+    format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043",
+    host:"Jessie Upp",
+    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+    contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
+    categories:["learning","wealth","resources","social"],
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
+    exchangeType:"free,feedback,noask,money",
+    showLinks:"hostlink,paymentlink,contact",
+    adminOnly:false, recurFreq:"weekly",
   },
 ];
 
@@ -279,7 +299,7 @@ function parseSheetTime(val) {
 }
 
 function sheetToEv(row) {
-  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays"];
+  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays","shine your light"];
   const RECURRING_IDS    = ["kickoff-001","onboarding-001","ikigai-001"];
   const titleKey = (row.title||"").toLowerCase().trim();
   const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
