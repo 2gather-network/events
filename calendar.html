@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <!--
-  Community Events (public/read-only)
-  Version 2.37
+  Community Events
+  Version 6.90
+  
+  v6.72 Changes:
+  - Added AI parse feature: paste event text and Claude extracts fields
+  - New choice modal when clicking "Post an event"
+  - New paste modal with textarea and Parse button
 -->
 <html lang="en">
 <head>
@@ -14,7 +19,7 @@
   :root {
     --primary: #1B6896; --primary-dark: #154F74; --primary-light: #E8F2F9;
     --green: #4CAF7D; --light: #F5F7FA; --border: #DCE3EA;
-    --dark: #2C3A47; --muted: #6B7C8D; --white: #FFFFFF;
+    --dark: #2C3A47; --muted: #4A5A6B; --white: #FFFFFF;
   }
   body { font-family: 'Nunito Sans','Segoe UI',sans-serif; background:var(--light); color:var(--dark); }
 
@@ -28,12 +33,17 @@
   .btn:hover { background:var(--primary-dark); }
   .btn-outline { background:var(--white); color:var(--dark); border:1.5px solid var(--border); }
   .btn-outline:hover { background:var(--light); }
+  .btn-green { background:var(--green); color:white; border:none; }
+  .btn-green:hover { background:#3d9e6a; }
   .btn-sm { padding:8px 14px; font-size:13px; }
   .btn-white { background:rgba(255,255,255,.95); color:var(--primary-dark); }
   .btn-white:hover { background:white; }
 
-  .input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
-  .input:focus { border-color:var(--primary); }
+  .input,.textarea { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
+  .input:focus,.textarea:focus { border-color:var(--primary); }
+  .textarea { resize:vertical; min-height:180px; }
+  .field-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+  .field { margin-bottom:18px; }
 
   .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:8000px; }
   .embed-mode .page-body { padding-top:8px; }
@@ -51,11 +61,21 @@
   .cat-pill:hover { border-color:var(--primary); color:var(--primary); }
   .cat-pill.active { background:#154F74; border-color:#154F74; color:white; }
 
+  .form-cat-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .form-cat-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; user-select:none; }
+  .form-cat-chip:hover { border-color:var(--primary); color:var(--primary); }
+  .form-cat-chip.selected { background:#154F74; border-color:#154F74; color:white; }
+
   .event-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
   .event-card { background:var(--white); border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,.05); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s,transform .15s; }
   .event-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.1); transform:translateY(-2px); }
 
-  .event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
+  
+.event-card-img { overflow:hidden; border-radius:0; margin:0; transition: height 0.3s ease; }
+.event-card-img img { transition: height 0.3s ease; }
+.event-card-top + .event-card-img { border-top:1px solid var(--border); }
+
+.event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
   .event-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:8px; }
   .event-cats { display:flex; gap:6px; flex-wrap:wrap; }
   .event-cat-tag { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:10px; }
@@ -66,19 +86,69 @@
   .event-desc { font-size:14px; color:var(--muted); line-height:1.5; }
 
   .event-card-footer { padding:12px 18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .going-count { font-size:13px; color:var(--muted); font-weight:600; }
+  .going-count span { color:var(--green); font-weight:800; }
+  .room-badge { font-size:12px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:5px 10px; border-radius:6px; white-space:nowrap; }
 
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; touch-action:pan-y; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:95vh; overflow-y:scroll; box-shadow:0 20px 60px rgba(0,0,0,.2); overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
+  .modal input, .modal textarea, .modal select, .modal button { touch-action:manipulation; }
+  .modal-title { font-size:22px; font-weight:800; margin-bottom:24px; }
+  .modal-actions { display:flex; gap:10px; margin-top:8px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  @media(max-width:768px) {
+    .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
+    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:98vh; padding:8px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
+    .modal-overlay.open .modal { transform:translateY(0); }
+    .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
+    .modal-title { font-size:20px; }
+  }
+
+  .room-preview { display:none; margin-bottom:18px; padding:14px 16px; background:var(--white); border-radius:8px; border:1.5px solid var(--border); }
   .loading-bar { display:none; position:fixed; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--primary), var(--green)); z-index:9999; animation: loadpulse 1s ease-in-out infinite; }
   @keyframes loadpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
+  .room-chip { background:var(--light); border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--dark); transition:all .15s; white-space:nowrap; }
+  .room-chip:hover { border-color:var(--primary); color:var(--primary); background:var(--white); }
+  .room-chip.selected { background:#154F74; border-color:#154F74; color:white; }
   .format-chip { background:var(--white); border:1.5px solid var(--border); border-radius:20px; padding:6px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; white-space:nowrap; }
   .format-chip:hover { border-color:var(--primary); color:var(--primary); }
-  .format-chip.active { background:#154F74; border-color:#154F74; color:white; }
+  .format-chip.selected { background:#154F74; border-color:#154F74; color:white; }
+  .format-chip.active   { background:#154F74; border-color:#154F74; color:white; }
 
+  .room-schedule-modal { max-width:640px; }
+  .room-section { margin-bottom:24px; }
+  .room-section-title { font-size:14px; font-weight:800; color:var(--dark); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .room-event-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--light); gap:10px; flex-wrap:wrap; }
+  .room-event-row:last-child { border-bottom:none; }
+  .room-event-name { font-size:14px; font-weight:700; }
+  .room-event-time { font-size:12px; color:var(--muted); }
+  .room-empty { font-size:13px; color:var(--muted); font-style:italic; padding:6px 0; }
+  .conflict-warning { background:#FFF3E0; border:1.5px solid #E8732A; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#b85a00; font-weight:700; display:none; }
   .empty-icon { font-size:48px; margin-bottom:16px; }
   .empty-title { font-size:18px; font-weight:700; margin-bottom:8px; color:var(--dark); }
+  .error-msg { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
 
   .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* v6.72: Choice modal and paste modal styles */
+  .choice-modal { max-width:400px; text-align:center; }
+  .choice-modal .modal-title { margin-bottom:12px; }
+  .choice-options { display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+  .choice-btn { display:flex; align-items:center; gap:12px; padding:16px 20px; background:var(--white); border:2px solid var(--border); border-radius:12px; cursor:pointer; text-align:left; transition:all .15s; }
+  .choice-btn:hover { border-color:var(--primary); background:var(--primary-light); }
+  .choice-btn-icon { font-size:24px; }
+  .choice-btn-text { flex:1; }
+  .choice-btn-title { font-size:15px; font-weight:700; color:var(--dark); margin-bottom:2px; }
+  .choice-btn-desc { font-size:13px; color:var(--muted); }
+  .paste-modal { max-width:560px; }
+  .paste-textarea { width:100%; min-height:200px; border:1.5px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; resize:vertical; line-height:1.5; }
+  .paste-textarea:focus { border-color:var(--primary); }
+  .paste-hint { font-size:13px; color:var(--muted); margin-top:8px; margin-bottom:16px; }
+  .parse-error { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
+  .parsing-status { color:var(--primary); font-size:13px; margin-bottom:12px; display:none; font-weight:600; }
 
   @media(max-width:768px) {
     .header { padding:12px 16px; gap:8px; }
@@ -88,11 +158,17 @@
     .filter-row { flex-direction:column; gap:8px; }
     .filter-search { width:100%; min-width:unset; box-sizing:border-box; }
     .cat-pills { gap:6px; margin-bottom:16px; }
+    .two-col { grid-template-columns:1fr; gap:0; }
     .event-card-footer { flex-direction:column; align-items:flex-start; gap:8px; }
+    .room-schedule-modal { max-width:100%; }
+    .room-event-row { flex-direction:column; align-items:flex-start; gap:4px; }
     .btn-sm { font-size:12px; padding:6px 10px; }
+    .modal-actions { flex-wrap:wrap; }
   }
   @media(max-width:420px) {
     .event-title { font-size:15px; }
+    .modal { padding:16px 14px; }
+    .modal-title { font-size:18px; }
     .btn { font-size:13px; padding:9px 14px; }
     .event-grid { gap:10px; }
     .format-chip { font-size:12px; padding:6px 12px; }
@@ -109,13 +185,14 @@
 <body>
 
 <div id="loading-bar" class="loading-bar"></div>
-
 <div class="header">
   <div>
-
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;"></div>
+    <div class="tagline">Community events</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
-    <a class="btn btn-white btn-sm" href="https://app.daybalancer.com/dl/events/s/4b6ef9" target="_blank" rel="noopener" style="font-weight:700;">🔑 Sign in to post &amp; edit</a>
+    <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
+    <button class="btn btn-white btn-sm" onclick="openChoiceModal()">+ Post an event</button>
   </div>
 </div>
 
@@ -123,7 +200,7 @@
   <div class="page-title-row">
     <div>
       <div class="page-title" id="page-title">What's happening</div>
-      <div class="page-sub">Events posted by members</div>
+      <div class="page-sub">Events posted for the common good.</div>
     </div>
   </div>
 
@@ -178,19 +255,348 @@
   <div class="event-grid" id="event-grid"></div>
 </div>
 
+<!-- CHOICE MODAL (v6.72) -->
+<div class="modal-overlay" id="choice-modal">
+  <div class="modal choice-modal">
+    <div class="modal-title">Post an event</div>
+    <p style="font-size:14px;color:var(--muted);">How would you like to add your event?</p>
+    <div class="choice-options">
+      <button class="choice-btn" onclick="closeChoiceModal(); openModal(false);">
+        <div class="choice-btn-icon">📝</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">Fill out form</div>
+          <div class="choice-btn-desc">Enter details field by field</div>
+        </div>
+      </button>
+      <button class="choice-btn" onclick="closeChoiceModal(); openPasteModal();">
+        <div class="choice-btn-icon">📋</div>
+        <div class="choice-btn-text">
+          <div class="choice-btn-title">Paste event details</div>
+          <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
+        </div>
+      </button>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="closeChoiceModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASTE MODAL (v6.72) -->
+<div class="modal-overlay" id="paste-modal">
+  <div class="modal paste-modal">
+    <div class="modal-title">Paste event details</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Paste any text describing your event - an email, flyer, or notes. We'll extract the details and fill the form for you to review.</p>
+    <textarea class="paste-textarea" id="paste-text" placeholder="Example:
+
+Kick off Mondays for indies
+Every Monday, 9:00 AM - 10:00 AM PST
+Virtual event hosted by Jessie Upp
+
+Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking."></textarea>
+    <div class="paste-hint">Include: event name, date, time, host name, description, and whether it's virtual or in-person.</div>
+    <p class="parse-error" id="parse-error"></p>
+    <p class="parsing-status" id="parsing-status">✨ Reading your event details...</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" id="parse-btn" onclick="parseEventText()">Parse and fill form</button>
+      <button class="btn btn-outline" onclick="closePasteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Post an event</div>
+    <div id="draft-notice" style="display:none; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:8px 12px; font-size:13px; margin-bottom:16px;">✏️ Your draft was restored - pick up where you left off!</div>
+
+    <div class="field">
+      <label class="field-label">Event title *</label>
+      <input class="input" id="f-title" placeholder="Give your event a clear name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Categories * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- select all that apply</span></label>
+      <div class="form-cat-chips" id="f-cat-chips"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Format *</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="format-chip selected" id="fmt-virtual" onclick="setFormat('virtual')">💻 Virtual</button>
+        <button type="button" class="format-chip" id="fmt-inperson" onclick="setFormat('inperson')">📍 In-person</button>
+        <button type="button" class="format-chip" id="fmt-both" onclick="setFormat('both')">🔀 Hybrid</button>
+      </div>
+    </div>
+
+    <div class="room-preview" id="room-preview">
+      <div id="hosting-choice" style="display:none;margin-bottom:12px;">
+        <div class="room-preview-label" style="margin-bottom:8px;">Where are you hosting this virtually?</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="format-chip" id="hopt-db" onclick="setHostingOption('db')">🏠 Community room</button>
+          <button type="button" class="format-chip" id="hopt-own" onclick="setHostingOption('own')">🔗 My own link</button>
+        </div>
+      </div>
+      <div id="db-room-section" style="display:none;">
+        <div class="room-preview-label" id="room-preview-label">Which virtual room is best for this event?</div>
+        <div class="form-cat-chips" id="room-options"></div>
+      </div>
+      <div id="own-link-section" style="display:none;" class="field">
+        <label class="field-label">Your meeting link</label>
+        <input class="input" id="f-meetinglink" placeholder="https://zoom.us/j/... or Google Meet link">
+      </div>
+    </div>
+
+    <div id="location-field" style="display:none;" class="field">
+      <label class="field-label">Full address</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="input" id="f-location" placeholder="City, State, Country" style="flex:1;" oninput="document.getElementById('f-lat').value='';document.getElementById('f-lng').value='';">
+        <button type="button" id="form-geo-btn" onclick="useMyLocationForForm()" style="white-space:nowrap;font-size:12px;font-weight:700;padding:8px 12px;border-radius:8px;border:1.5px solid var(--primary);background:var(--white);color:var(--primary);cursor:pointer;">📍 Use my location</button>
+      </div>
+      <input type="hidden" id="f-lat">
+      <input type="hidden" id="f-lng">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Description</label>
+      <textarea class="textarea" id="f-desc" placeholder="Tell people what to expect..."></textarea>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label">Date *</label>
+        <input class="input" id="f-date" type="date">
+      </div>
+      <div class="field">
+        <label class="field-label">Start time *</label>
+        <input class="input" id="f-time" type="time">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label class="field-label">End time *</label>
+        <input class="input" id="f-endtime" type="time">
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Who's hosting? *</label>
+      <input class="input" id="f-host" placeholder="Full name">
+    </div>
+
+    <div class="field">
+      <label class="field-label">What would you like to share with participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Contact info (email / phone)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-hostlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          My profile page
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-cooplink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Group / cooperative link
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-paymentlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Payment or registration link
+        </label>
+      </div>
+    </div>
+
+    <div class="field" id="field-hostlink" style="display:none;">
+      <label class="field-label">Your profile page link</label>
+      <input class="input" id="f-hostlink" type="url" placeholder="https://...">
+    </div>
+
+    <div class="field" id="field-cooplink" style="display:none;">
+      <label class="field-label">Group link</label>
+      <input class="input" id="f-cooplink" type="url" placeholder="https://...">
+    </div>
+
+    <div class="field" id="field-paymentlink" style="display:none;">
+      <label class="field-label">Payment or registration link <span id="payment-required-label" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);"></span></label>
+      <input class="input" id="f-paymentlink" type="url" placeholder="https://...">
+    </div>
+
+    <div id="field-contact" style="display:none;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;" class="field">
+          <label class="field-label">Contact email</label>
+          <input class="input" id="f-contact-email" type="email" placeholder="hello@example.com">
+        </div>
+        <div style="flex:1;min-width:140px;" class="field">
+          <label class="field-label">Contact phone</label>
+          <input class="input" id="f-contact-phone" type="tel" placeholder="e.g. 206-555-0100">
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Cover image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows on the event card</span></label>
+      <input type="url" id="f-image-url" class="input" placeholder="https://..." style="width:100%;">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Detail image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows inside the event page</span></label>
+      <input type="url" id="f-detail-image-url" class="input" placeholder="https://..." style="width:100%;">
+    </div>
+
+    <div class="field">
+      <label class="field-label">What does this event intend to help participants feel? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="experience-chips">
+        <button type="button" class="format-chip" id="exp-connected" onclick="toggleExperience('connected')">🌐 Connected</button>
+        <button type="button" class="format-chip" id="exp-expressed" onclick="toggleExperience('expressed')">🎨 Expressed</button>
+        <button type="button" class="format-chip" id="exp-nourished" onclick="toggleExperience('nourished')">🥘 Nourished</button>
+        <button type="button" class="format-chip" id="exp-energized" onclick="toggleExperience('energized')">🌀 Energized</button>
+        <button type="button" class="format-chip" id="exp-playful" onclick="toggleExperience('playful')">🏓 Playful</button>
+        <button type="button" class="format-chip" id="exp-rested" onclick="toggleExperience('rested')">💙 Rested</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">What would you welcome from participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
+        <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
+        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">💬 Give feedback</button>
+        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">🔁 Trade time</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">☕ Coffee</button>
+        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">💸 Tip</button>
+        <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">💰 Paid</button>
+        <button type="button" class="format-chip" id="exch-other" onclick="toggleExchange('other')">✏️ Other</button>
+      </div>
+      <div id="field-exch-other" style="display:none;margin-top:8px;">
+        <input class="input" id="f-exch-other" type="text" placeholder="Describe what you're asking for..." maxlength="120">
+      </div>
+    </div>
+
+    <div class="field" id="passcode-field">
+      <label class="field-label">Private edit PIN * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, only you need this to edit later. Do not share.</span></label>
+      <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;" autocomplete="off">
+    </div>
+
+    <div class="field" id="recurring-field" style="display:none;">
+      <label class="field-label">Recurring event <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="f-recurring" onchange="toggleRecurring()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Make this a recurring event
+        </label>
+      </div>
+      <div id="recurring-freq-wrap" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="format-chip" id="freq-weekly" onclick="setRecurFreq('weekly')">🔁 Weekly</button>
+          <button type="button" class="format-chip" id="freq-monthly" onclick="setRecurFreq('monthly')">📅 Monthly</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="error-msg" id="post-error"></p>
+    <div class="conflict-warning" id="conflict-warning"></div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label class="field-label" style="margin-bottom:8px;">Visibility</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="format-chip selected" id="vis-public" onclick="setVisibility('public')" style="flex:1;">🌐 Public</button>
+        <button type="button" class="format-chip" id="vis-private" onclick="setVisibility('private')" style="flex:1;">🔒 Private</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;" id="vis-hint">Visible to everyone on the events calendar.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="onCloneBtnClick()" title="Clone this event">⧉ Clone</button>
+      <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
+        <label for="clone-count" style="white-space:nowrap;">× how many?</label>
+        <select id="clone-count" class="input" style="width:60px;padding:6px 8px;font-size:13px;">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </span>
+      <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK CLONE MODAL -->
+<div class="modal-overlay" id="bulk-clone-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Duplicate event</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Set a date for each copy. All other details stay the same.</p>
+    <div id="bulk-clone-dates" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;"></div>
+    <div id="bulk-clone-error" style="display:none;color:#c0392b;font-size:13px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-green" style="flex:1;" onclick="submitBulkClone()">Create copies</button>
+      <button class="btn btn-outline" onclick="closeBulkCloneModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROOM SCHEDULE MODAL -->
+<div class="modal-overlay" id="room-modal">
+  <div class="modal room-schedule-modal">
+    <div class="modal-title">Room schedules</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">Upcoming events by virtual room. Check availability before posting.</p>
+    <div id="room-schedule-body"></div>
+    <div style="margin-top:8px;">
+      <button class="btn btn-outline btn-full" onclick="closeRoomModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT SUMMARY MODAL -->
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal" style="max-width:480px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:8px;">✅</div>
+      <div class="modal-title" style="margin-bottom:4px;">Event posted!</div>
+      <p style="font-size:14px;color:var(--muted);">Save your private edit PIN - you'll need it to make changes later. Don't share it.</p>
+    </div>
+    <div id="summary-body" style="background:var(--light);border-radius:10px;padding:18px;font-size:14px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;font-family:inherit;color:var(--dark);"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-green" style="flex:1;" onclick="copySummary()">📋 Copy all</button>
+      <button class="btn btn-outline" style="flex:1;" id="summary-cal-btn" onclick="addToCalendarFromSummary()">📅 Add to calendar</button>
+      <button class="btn btn-outline" onclick="closeSummaryModal()">Done</button>
+    </div>
+    <p id="copy-confirm" style="text-align:center;font-size:13px;color:var(--green);font-weight:700;margin-top:10px;display:none;">Copied to clipboard!</p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+
+<!-- PASSCODE MODAL -->
+<div class="modal-overlay" id="passcode-modal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" style="font-size:18px;">Enter your private edit PIN</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">This is the 4-digit code you set when you posted the event.</p>
+    <div class="field">
+      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off">
+    </div>
+    <p class="error-msg" id="passcode-error">Incorrect passcode. Please try again.</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="verifyPasscode()">Unlock</button>
+      <button class="btn btn-outline" onclick="closePasscodeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const CATEGORIES = [
   { id:"arts",         label:"Arts/culture",             emoji:"🎭", room:"Co-Create room",     extraRooms:["Coworking room"] },
   { id:"movement",     label:"Physical health/wellness",          emoji:"🏓", room:"Wellness room",       extraRooms:["Coworking room"] },
-  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-create room",     extraRooms:["Ikigai room","Coworking room"] },
+  { id:"learning",     label:"Learning/discovery",       emoji:"🌱", room:"Co-Create room",     extraRooms:["Ikigai room","Coworking room"] },
   { id:"nature",       label:"Nature/outdoors",          emoji:"🌲", room:"Coworking room" },
   { id:"professional", label:"Work/skills",          emoji:"💼", room:"Conference room",     extraRooms:["Coworking room"] },
   { id:"creative",     label:"Creative making",          emoji:"🎨", room:"Co-Create room",     extraRooms:["Coworking room"] },
   { id:"faith",        label:"Inner life",               emoji:"💙", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"resources",    label:"Resource sharing",         emoji:"🔧", room:"The Commons",         extraRooms:["Coworking room"] },
-  { id:"care",         label:"Mental health/wellness", emoji:"💛", room:"Wellness room",     extraRooms:["Coworking room"] },
+  { id:"care",         label:"Mental health/wellness", emoji:"💛", room:"Wellness room",       extraRooms:["Coworking room"] },
   { id:"social",       label:"Social gathering",         emoji:"🎉", room:"The Commons",         extraRooms:["Coworking room"] },
   { id:"family",       label:"Family/caregiving/home",    emoji:"🏡", room:"Community Care room", extraRooms:["Coworking room"] },
   { id:"food",         label:"Food/drink",               emoji:"🥘", room:"The Commons",         extraRooms:["Coworking room"] },
@@ -203,7 +609,6 @@ const ROOMS = [
   { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
   { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
   { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"Co-create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
   { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
   { name:"Abundance room",         url:"", comingSoon: true },
@@ -237,11 +642,11 @@ const RECURRING_EVENTS = [
     experience:"rested,energized", adminOnly:false,
   },
   {
-    title:"Feedback Fridays", dayOfWeek:5, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"Co-create room", host:"Jessie Upp",
+    title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45",
+    format:"virtual", room:"Co-Create room", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
-    description:"Come with your small or big idea and receive supportive feedback.",
+    description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.",
     experience:"connected,expressed,energized", adminOnly:false,
   },
   {
@@ -249,8 +654,8 @@ const RECURRING_EVENTS = [
     format:"virtual", room:"The Commons", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","social","resources","care"],
-    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking.",
-    experience:"connected,energized", adminOnly:false,
+    description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.",
+    experience:"connected,energized", adminOnly:false, recurFreq:"weekly",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -279,8 +684,192 @@ let activeFilter = "all";
 let activeTab    = "upcoming";
 let activeDateFilter = "upcoming";
 let activeMode   = "all";
+let selectedCats = new Set();
 
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
+
+// v6.72: AI Parse Feature
+const WORKER_URL = "https://findatime.jessieupp.workers.dev/";
+
+function openChoiceModal() {
+  document.getElementById("choice-modal").classList.add("open");
+}
+
+function closeChoiceModal() {
+  document.getElementById("choice-modal").classList.remove("open");
+}
+
+function openPasteModal() {
+  document.getElementById("paste-text").value = "";
+  document.getElementById("parse-error").style.display = "none";
+  document.getElementById("parsing-status").style.display = "none";
+  document.getElementById("parse-btn").disabled = false;
+  document.getElementById("parse-btn").textContent = "Parse and fill form";
+  document.getElementById("paste-modal").classList.add("open");
+  setTimeout(() => document.getElementById("paste-text").focus(), 100);
+}
+
+function closePasteModal() {
+  document.getElementById("paste-modal").classList.remove("open");
+}
+
+async function parseEventText() {
+  const text = document.getElementById("paste-text").value.trim();
+  const errEl = document.getElementById("parse-error");
+  const statusEl = document.getElementById("parsing-status");
+  const btn = document.getElementById("parse-btn");
+  
+  if (!text || text.length < 20) {
+    errEl.textContent = "Please paste more details about your event.";
+    errEl.style.display = "block";
+    return;
+  }
+  
+  errEl.style.display = "none";
+  statusEl.style.display = "block";
+  btn.disabled = true;
+  btn.textContent = "Parsing...";
+  
+  const prompt = `Extract event details from this text. Return ONLY a JSON object with these fields (use null for missing info):
+
+{
+  "title": "event name/title",
+  "host": "host/organizer name",
+  "date": "YYYY-MM-DD format",
+  "time": "HH:MM in 24hr format (start time)",
+  "endtime": "HH:MM in 24hr format (end time)",
+  "format": "virtual" or "inperson" or "both",
+  "location": "address if in-person",
+  "description": "event description",
+  "hostlink": "any URL for the host's page",
+  "cooplink": "any group/organization URL",
+  "paymentlink": "any registration/payment URL",
+  "contactEmail": "contact email if mentioned",
+  "contactPhone": "contact phone if mentioned",
+  "categories": array of 1-3 category IDs that best fit the event, chosen from: arts, movement, learning, nature, professional, creative, faith, resources, care, social, family, food, wealth
+}
+
+Category guide: arts=arts/culture/performance, movement=physical activity/fitness/sports, learning=education/workshops/discovery, nature=outdoors/environment, professional=work/business/skills, creative=making/crafts/design, faith=spirituality/inner life/mindfulness, resources=sharing/tools/mutual aid, care=mental health/wellness/emotional support, social=gathering/community/networking, family=family/parenting/caregiving, food=food/drink/cooking, wealth=money/abundance/financial
+
+Text to parse:
+${text}
+
+Return ONLY the JSON object, no explanation.`;
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error("API request failed");
+    }
+    
+    const data = await response.json();
+    const content = data.content?.[0]?.text || "";
+    
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1];
+    jsonStr = jsonStr.trim();
+    
+    const parsed = JSON.parse(jsonStr);
+    
+    // Close paste modal and open the form
+    closePasteModal();
+    openModal(true); // skipDraft = true
+    
+    // Fill in the form fields
+    if (parsed.title) document.getElementById("f-title").value = parsed.title;
+    if (parsed.host) document.getElementById("f-host").value = parsed.host;
+    if (parsed.date) document.getElementById("f-date").value = parsed.date;
+    if (parsed.time) document.getElementById("f-time").value = parsed.time;
+    if (parsed.endtime) document.getElementById("f-endtime").value = parsed.endtime;
+    if (parsed.description) document.getElementById("f-desc").value = parsed.description;
+    if (parsed.location) document.getElementById("f-location").value = parsed.location;
+    if (parsed.hostlink) {
+      document.getElementById("f-hostlink").value = parsed.hostlink;
+      document.getElementById("show-hostlink").checked = true;
+    }
+    if (parsed.cooplink) {
+      document.getElementById("f-cooplink").value = parsed.cooplink;
+      document.getElementById("show-cooplink").checked = true;
+    }
+    if (parsed.paymentlink) {
+      document.getElementById("f-paymentlink").value = parsed.paymentlink;
+      document.getElementById("show-paymentlink").checked = true;
+    }
+    if (parsed.contactEmail) {
+      document.getElementById("f-contact-email").value = parsed.contactEmail;
+      document.getElementById("show-contact").checked = true;
+    }
+    if (parsed.contactPhone) {
+      document.getElementById("f-contact-phone").value = parsed.contactPhone;
+      document.getElementById("show-contact").checked = true;
+    }
+    toggleLinkFields();
+
+    // Auto-select categories
+    if (parsed.categories && Array.isArray(parsed.categories)) {
+      const validIds = new Set(CATEGORIES.map(c => c.id));
+      parsed.categories.forEach(id => {
+        if (validIds.has(id)) {
+          selectedCats.add(id);
+        }
+      });
+      buildFormChips();
+      updateRoomPreview();
+    }
+
+    // Set format
+    if (parsed.format) {
+      setFormat(parsed.format);
+    }
+
+    // Warn if date is in the past
+    if (parsed.date) {
+      const eventDate = new Date(parsed.date + "T00:00:00");
+      const today = new Date(); today.setHours(0,0,0,0);
+      if (eventDate < today) {
+        const postErrEl = document.getElementById("post-error");
+        if (postErrEl) {
+          postErrEl.textContent = "⚠️ The date parsed from your text (" + parsed.date + ") is in the past. Please update it before posting.";
+          postErrEl.style.display = "block";
+        }
+      }
+    }
+
+    // Show toast
+    showToast("✨ Event details filled - please review and complete!");
+    
+  } catch (e) {
+    console.error("Parse error:", e);
+    errEl.textContent = "Could not parse the text. Please try again or use the form instead.";
+    errEl.style.display = "block";
+    statusEl.style.display = "none";
+    btn.disabled = false;
+    btn.textContent = "Parse and fill form";
+  }
+}
+
+function evToSheet(ev) {
+  return {
+    id: ev.id, title: ev.title || "", categories: Array.isArray(ev.categories) ? ev.categories.join(",") : (ev.categories || ""),
+    date: ev.date || "", startTime: ev.time || "", endTime: ev.endtime || "", format: ev.format || "",
+    location: ev.location || "", lat: ev.lat || "", lng: ev.lng || "", room: ev.room || "",
+    description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
+    contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
+    passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false,
+  };
+}
 
 function parseSheetDate(val) {
   if (!val) return "";
@@ -294,24 +883,25 @@ function parseSheetTime(val) {
   if (!val) return "";
   const s = String(val);
   if (/^\d{2}:\d{2}$/.test(s)) return s;
-  if (s.includes("T")) { const t = s.split("T")[1]; return t.substring(0,5); }
+  if (s.includes("T")) { const t = s.split("T")[1]; return t.substring(0, 5); }
   return s;
 }
 
 function sheetToEv(row) {
-  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays","shine your light"];
+  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays"];
   const RECURRING_IDS    = ["kickoff-001","onboarding-001","ikigai-001"];
-  const titleKey = (row.title||"").toLowerCase().trim();
+  const titleKey = (row.title || "").toLowerCase().trim();
   const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
   return {
-    id: String(row.id||""), title: row.title||"",
+    id: String(row.id || ""), title: row.title || "",
     categories: row.categories ? String(row.categories).split(",").filter(Boolean) : [],
     date: parseSheetDate(row.date), time: parseSheetTime(row.startTime), endtime: parseSheetTime(row.endTime),
-    format: row.format||"", location: row.location||"", lat: row.lat||"", lng: row.lng||"",
-    room: row.room||"", description: row.description||"", host: row.host||"",
-    hostlink: row.hostlink||"", contactEmail: row.contactEmail||"", contactPhone: row.contactPhone||"",
-    passcode: row.passcode||"", cooplink: row.cooplink||"", going: parseInt(row.going)||0,
-    meetinglink: row.meetinglink||"", recurring: isRecurring || !!(row.recurFreq), recurFreq: row.recurFreq||"", experience: row.experience||"",
+    format: row.format || "", location: row.location || "", lat: row.lat || "", lng: row.lng || "",
+    room: row.room || "", description: row.description || "", host: row.host || "",
+    hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
+    passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
+    meetinglink: row.meetinglink || "", recurring: isRecurring,
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false,
   };
 }
 
@@ -323,7 +913,7 @@ function jsonp(params) {
     const timeout = setTimeout(() => done(() => reject(new Error("JSONP timeout"))), 20000);
     window[cbName] = (data) => { clearTimeout(timeout); done(() => resolve(data)); };
     const qs = Object.entries(params)
-      .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v==="object"?JSON.stringify(v):v)}`).join("&");
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v)}`).join("&");
     const script = document.createElement("script");
     script.src = GS_URL + "?" + qs + "&callback=" + cbName;
     script.onerror = () => {};
@@ -333,7 +923,7 @@ function jsonp(params) {
 
 (function applyRecurringOverrides() {
   try {
-    const saved = JSON.parse(localStorage.getItem("db-recurring-overrides")||"{}");
+    const saved = JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}");
     Object.entries(saved).forEach(([slug, overrides]) => {
       const idx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
       if (idx > -1) RECURRING_EVENTS[idx] = { ...RECURRING_EVENTS[idx], ...overrides };
@@ -346,19 +936,14 @@ async function loadEvents() {
     showLoading(true);
     events = [];
     renderEvents();
-  // Deep link: open event from URL param
-  const urlParams = new URLSearchParams(window.location.search);
-  const evParam = urlParams.get("event");
-  if (evParam) { setTimeout(() => openEventById(evParam), 400); }
-
     const data = await jsonp({ t: Date.now() });
-    events = (data.events||[]).filter(r => r.id).map(sheetToEv);
+    events = (data.events || []).filter(r => r.id).map(sheetToEv);
   } catch(e) {
     console.warn("Events load failed, retrying...", e);
     try {
       await new Promise(r => setTimeout(r, 2000));
       const data = await jsonp({ t: Date.now() });
-      events = (data.events||[]).filter(r => r.id).map(sheetToEv);
+      events = (data.events || []).filter(r => r.id).map(sheetToEv);
     } catch(e2) {
       console.warn("Events retry also failed - showing recurring events only", e2);
       const bar = document.getElementById("loading-bar");
@@ -389,9 +974,99 @@ function populateHostFilter() {
   });
 }
 
+async function apiAdd(ev)          { return jsonp({ action:"add",    event:evToSheet(ev) }); }
+async function apiUpdate(ev)       { return jsonp({ action:"update", event:evToSheet(ev) }); }
+async function apiDelete(id)       { return jsonp({ action:"delete", id }); }
+async function apiGoing(id, delta) { return jsonp({ action:"going",  id, delta }); }
+
 function showLoading(on) {
   const el = document.getElementById("loading-bar");
   if (el) el.style.display = on ? "block" : "none";
+}
+
+function buildFormChips() {
+  const container = document.getElementById("f-cat-chips");
+  container.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "form-cat-chip" + (selectedCats.has(cat.id) ? " selected" : "");
+    chip.textContent = `${cat.emoji} ${cat.label}`;
+    chip.onclick = () => toggleFormCat(cat.id, chip);
+    container.appendChild(chip);
+  });
+}
+
+function toggleFormCat(id, chip) {
+  if (selectedCats.has(id)) { selectedCats.delete(id); chip.classList.remove("selected"); }
+  else { selectedCats.add(id); chip.classList.add("selected"); }
+  updateRoomPreview();
+}
+
+let selectedRoom = null;
+let selectedFormat = "virtual";
+let editingId = null;
+
+function setFormat(fmt) {
+  selectedFormat = fmt;
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === fmt));
+  document.getElementById("location-field").style.display = (fmt === "inperson" || fmt === "both") ? "block" : "none";
+  updateRoomPreview();
+}
+
+let hostingOption = null;
+
+function setHostingOption(opt) {
+  hostingOption = opt;
+  document.getElementById("hopt-db").classList.toggle("selected", opt === "db");
+  document.getElementById("hopt-own").classList.toggle("selected", opt === "own");
+  document.getElementById("db-room-section").style.display  = opt === "db"  ? "block" : "none";
+  document.getElementById("own-link-section").style.display = opt === "own" ? "block" : "none";
+  if (opt === "db") renderRoomChips();
+  if (opt === "own") selectedRoom = null;
+}
+
+function renderRoomChips() {
+  const label = document.getElementById("room-preview-label");
+  const roomOptions = document.getElementById("room-options");
+  const rooms = [...new Set(Array.from(selectedCats).flatMap(id => {
+    const cat = CATEGORIES.find(c => c.id === id);
+    if (!cat) return [];
+    return [cat.room, ...(cat.extraRooms || [])].filter(Boolean);
+  }))].filter(r => { const ro = ROOMS.find(ro => ro.name === r); return !ro?.hidden; });
+  if (rooms.length === 0) { document.getElementById("db-room-section").style.display = "none"; return; }
+  if (selectedRoom && !rooms.includes(selectedRoom)) selectedRoom = null;
+  if (rooms.length === 1) selectedRoom = rooms[0];
+  label.textContent = rooms.length === 1 ? "Virtual room for this event:" : "Which virtual room is best for this event?";
+  roomOptions.innerHTML = "";
+  rooms.forEach(room => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    if (rooms.length === 1) {
+      chip.className = "room-chip selected"; chip.style.cursor = "default"; chip.textContent = room;
+    } else {
+      chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
+      chip.textContent = room;
+      chip.onclick = () => { selectedRoom = room; roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected")); chip.classList.add("selected"); checkAndWarnConflict(); };
+    }
+    roomOptions.appendChild(chip);
+  });
+}
+
+function updateRoomPreview() {
+  const preview = document.getElementById("room-preview");
+  const showRooms = selectedCats.size > 0 && (selectedFormat === "virtual" || selectedFormat === "both");
+  if (!showRooms) {
+    preview.style.display = "none";
+    document.getElementById("hosting-choice").style.display = "none";
+    document.getElementById("db-room-section").style.display = "none";
+    document.getElementById("own-link-section").style.display = "none";
+    selectedRoom = null; hostingOption = null;
+    return;
+  }
+  preview.style.display = "block";
+  document.getElementById("hosting-choice").style.display = "block";
+  if (hostingOption === "db") renderRoomChips();
 }
 
 function renderPills() {
@@ -426,7 +1101,7 @@ function renderEvents() {
   const publicRec = getPublicRecurring(2);
   const allEvents = [...events, ...publicRec];
 
-  let list = allEvents.filter(e => {
+  let list = allEvents.filter(e => !e.isPrivate).filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
     cats = cats.map(c => {
       const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
@@ -440,35 +1115,37 @@ function renderEvents() {
     const evStartMs = new Date(e.date + "T" + (e.time||"00:00")).getTime();
     const isPast    = evEndMs < now;
     const matchTab  = activeTab === "past" ? isPast : !isPast;
-    const MS_WEEK = 7*24*60*60*1000, MS_MONTH = 30*24*60*60*1000, MS_QUARTER = 91*24*60*60*1000;
     let matchDate = true;
-    if (activeDateFilter === "week")           matchDate = evStartMs >= now && evStartMs <= now + MS_WEEK;
-    else if (activeDateFilter === "month")     matchDate = evStartMs >= now && evStartMs <= now + MS_MONTH;
-    else if (activeDateFilter === "past-week") matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
-    else if (activeDateFilter === "past-month") matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
+    const MS_WEEK    = 7*24*60*60*1000;
+    const MS_MONTH   = 30*24*60*60*1000;
+    const MS_QUARTER = 91*24*60*60*1000;
+    if (activeDateFilter === "week")         matchDate = evStartMs >= now && evStartMs <= now + MS_WEEK;
+    else if (activeDateFilter === "month")   matchDate = evStartMs >= now && evStartMs <= now + MS_MONTH;
+    else if (activeDateFilter === "past-week")   matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
+    else if (activeDateFilter === "past-month")  matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
     else if (activeDateFilter === "past-quarter") matchDate = evEndMs >= now - MS_QUARTER && evEndMs < now;
-    const activeHost = document.getElementById("host-filter")?.value || "";
-    if (isPast && evEndMs < now - MS_QUARTER && !activeHost) matchDate = false;
+    else if (activeDateFilter === "upcoming") matchDate = true;
+    if (isPast && evEndMs < now - MS_QUARTER) matchDate = false;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
     const matchMode  = q ? true : activeMode === "all" ? true : activeMode === "virtual" ? isVirtual : isInPerson;
     let matchLocation = true;
     if (activeMode === "inperson") {
       const state = document.getElementById("filter-state")?.value || "";
-      const loc   = (e.location||"").toLowerCase();
+      const loc   = (e.location || "").toLowerCase();
       if (state) {
         const stateAbbr = (US_STATES_ABBR && US_STATES_ABBR[state]) || "";
-        matchLocation = loc.includes(state.toLowerCase()) || (stateAbbr && new RegExp("\\b" + stateAbbr + "\\b","i").test(e.location||""));
+        matchLocation = loc.includes(state.toLowerCase()) || (stateAbbr && loc.includes(", " + stateAbbr.toLowerCase())) || (stateAbbr && loc.includes(" " + stateAbbr.toLowerCase() + " ")) || (stateAbbr && new RegExp("\\b" + stateAbbr + "\\b","i").test(e.location||""));
       }
     }
+    const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    const effectiveMatchTab = activeHost ? true : matchTab;
-    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchDate;
+    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate;
   });
 
   list.sort((a, b) => {
-    const da = new Date(a.date+"T"+(a.time||"00:00")).getTime();
-    const db = new Date(b.date+"T"+(b.time||"00:00")).getTime();
+    const da = new Date(a.date + "T" + (a.time||"00:00")).getTime();
+    const db = new Date(b.date + "T" + (b.time||"00:00")).getTime();
     return activeTab === "past" ? db - da : da - db;
   });
 
@@ -499,46 +1176,450 @@ function renderEvents() {
     const card = document.createElement("div");
     card.className = "event-card";
     card.dataset.eventId = ev.id;
-    const evEndMsCard = ev.endtime ? new Date(ev.date + "T" + ev.endtime).getTime() : new Date(ev.date + "T" + (ev.time||"00:00")).getTime() + 3600000;
-    const isPastCard = evEndMsCard < Date.now();
     card.innerHTML = `
-      ${isPastCard ? '<div style="background:#f0f0f0;color:#666;font-size:11px;font-weight:700;letter-spacing:0.07em;padding:5px 18px;border-bottom:1px solid var(--border);">PAST EVENT</div>' : ""}
       <div class="event-card-top">
         <div class="event-title">${esc(ev.title)}${recurringBadge}${hybridBadge}</div>
         <div class="event-cats">${catTags}</div>
       </div>
+      ${ev.imageUrl ? `<div class="event-card-img" id="img-wrap-${ev.id}"><img src="${esc(ev.imageUrl)}" alt="" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ""}
       <div class="event-card-body">
-        <div class="event-meta">
-          <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
-          ${ev.experience ? (() => { const expMap = {"connected":"🌐 Connected","expressed":"🎨 Expressed","nourished":"🥘 Nourished from food/drink","energized":"🌀 Energized","playful":"🏓 Playful","rested":"💙 Rested"}; const labels = ev.experience.split(",").filter(Boolean).map(t => expMap[t] || t).join(" · "); return `<div class="event-meta-item"><span>✨</span><strong>Experience:</strong> ${labels}</div>`; })() : ""}
-          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
-          ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
-          ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink && ev.showLinks && ev.showLinks.includes("hostlink") ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
-          ${ev.cooplink && ev.showLinks && ev.showLinks.includes("cooplink") ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Group link</a></div>` : ""}
-          ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
-          ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
-          ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? (() => { const typeMap = {money:"💰 Payment required",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",free:"🎁 Free",share:"👥 Pass this along",noask:"🔗 No ask",other:"✏️ " + (ev.otherExchange || "Other")}; const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · "); return `<div class="event-meta-item" style="padding-left:0;flex-wrap:wrap;align-items:baseline;"><span style="color:var(--dark);margin-right:4px;white-space:nowrap;">Contributions welcomed:</span><span>${labels}</span></div>`; })() : ""}
-        </div>
-        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+        ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#EFF6FF;color:#1d4ed8;padding:3px 10px;border-radius:20px;">💻 Virtual</span></div>` : ""}
+        ${ev.format === "inperson" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#F0FDF4;color:#166534;padding:3px 10px;border-radius:20px;">📍 In-person</span></div>` : ""}
+        ${ev.description ? `<div class="event-desc" style="margin-top:8px;font-size:14px;color:var(--muted);line-height:1.5;">${escNl(trunc(ev.description, 200))}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
-          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
+          <a class="btn btn-sm" href="event.html?id=${ev.id}" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
+          ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
     grid.appendChild(card);
   });
 }
 
+async function markGoing(id) {
+  const key = "db-going-" + id;
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  const already = localStorage.getItem(key);
+  const delta = already ? -1 : 1;
+  if (already) { ev.going = Math.max((ev.going||1)-1,0); localStorage.removeItem(key); }
+  else { ev.going = (ev.going||0)+1; localStorage.setItem(key,"1"); }
+  const nowGone = !!localStorage.getItem(key);
+  showToast(nowGone ? "Marked as interested!" : "Removed - no problem!");
+  apiGoing(id, delta);
+}
+
+const DRAFT_KEY = "db-event-draft";
+const EDIT_DRAFT_KEY = "db-edit-draft";
+
+function saveEditDraft() {
+  if (!editingId) return;
+  const draft = {
+    id: editingId,
+    title: document.getElementById("f-title")?.value || "",
+    date: document.getElementById("f-date")?.value || "",
+    time: document.getElementById("f-time")?.value || "",
+    endtime: document.getElementById("f-endtime")?.value || "",
+    location: document.getElementById("f-location")?.value || "",
+    desc: document.getElementById("f-desc")?.value || "",
+    host: document.getElementById("f-host")?.value || "",
+    hostlink: document.getElementById("f-hostlink")?.value || "",
+    contactEmail: document.getElementById("f-contact-email")?.value || "",
+    contactPhone: document.getElementById("f-contact-phone")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "",
+    exchangeType: [...selectedExchangeTypes].join(",") || "",
+    otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    experience: [...selectedExperiences].join(",") || "",
+    imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
+    detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
+    isPrivate: currentVisibility === "private",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
+    cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
+  };
+  localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify(draft));
+}
+
+function clearEditDraft() { localStorage.removeItem(EDIT_DRAFT_KEY); }
+
+function restoreEditDraft(id) {
+  try {
+    const raw = localStorage.getItem(EDIT_DRAFT_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.id !== id) return false;
+    document.getElementById("f-title").value    = d.title || "";
+    document.getElementById("f-date").value     = d.date || "";
+    document.getElementById("f-time").value     = d.time || "12:00";
+    document.getElementById("f-endtime").value  = d.endtime || "13:00";
+    document.getElementById("f-location").value = d.location || "";
+    document.getElementById("f-desc").value     = d.desc || "";
+    document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-hostlink").value = d.hostlink || "";
+    document.getElementById("f-contact-email").value = d.contactEmail || "";
+    document.getElementById("f-contact-phone").value = d.contactPhone || "";
+    document.getElementById("f-cooplink").value = d.cooplink || "";
+    document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    const sl = (d.showLinks || "").split(",");
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
+    toggleLinkFields();
+    setExchange(d.exchangeType || "");
+    const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = d.otherExchange || "";
+    setExperience(d.experience || "");
+    if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
+    if (d.format) {
+      selectedFormat = d.format;
+      ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format));
+      document.getElementById("location-field").style.display = (d.format === "inperson" || d.format === "both") ? "block" : "none";
+      updateRoomPreview();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function saveDraft() {
+  if (editingId) return;
+  const draft = {
+    title: document.getElementById("f-title")?.value || "", date: document.getElementById("f-date")?.value || "",
+    time: document.getElementById("f-time")?.value || "", endtime: document.getElementById("f-endtime")?.value || "",
+    location: document.getElementById("f-location")?.value || "", desc: document.getElementById("f-desc")?.value || "",
+    host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
+    contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
+    cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
+    paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: [...selectedExchangeTypes].join(",") || "", otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
+    cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (!d.title && !d.desc && !d.host) return false;
+    document.getElementById("f-title").value    = d.title || "";
+    document.getElementById("f-date").value     = d.date || "";
+    document.getElementById("f-time").value     = d.time || "12:00";
+    document.getElementById("f-endtime").value  = d.endtime || "13:00";
+    document.getElementById("f-location").value = d.location || "";
+    document.getElementById("f-desc").value     = d.desc || "";
+    document.getElementById("f-host").value     = d.host || "";
+    document.getElementById("f-hostlink").value = d.hostlink || "";
+    document.getElementById("f-contact-email").value = d.contactEmail || "";
+    document.getElementById("f-contact-phone").value = d.contactPhone || "";
+    document.getElementById("f-cooplink").value = d.cooplink || "";
+    document.getElementById("f-passcode").value = d.passcode || "";
+    document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    const sl = (d.showLinks || "").split(",");
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+      const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
+    });
+    toggleLinkFields();
+    setExchange(d.exchangeType || "");
+    const otherDraftEl = document.getElementById("f-exch-other"); if (otherDraftEl) otherDraftEl.value = d.otherExchange || "";
+    setExperience(d.experience || "");
+    if (d.cats?.length) { selectedCats = new Set(d.cats); buildFormChips(); }
+    if (d.format) {
+      selectedFormat = d.format;
+      ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === d.format));
+      document.getElementById("location-field").style.display = (d.format === "inperson" || d.format === "both") ? "block" : "none";
+      updateRoomPreview();
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+function openModal(skipDraft = false) {
+  editingId = null; selectedCats = new Set(); selectedRoom = null; selectedFormat = null; hostingOption = null;
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.remove("selected"));
+  document.getElementById("hopt-db").classList.remove("selected");
+  document.getElementById("hopt-own").classList.remove("selected");
+  document.getElementById("hosting-choice").style.display = "none";
+  document.getElementById("db-room-section").style.display = "none";
+  document.getElementById("own-link-section").style.display = "none";
+  document.getElementById("location-field").style.display = "none";
+  document.getElementById("post-modal").classList.add("open");
+  document.getElementById("post-error").style.display = "none";
+  document.getElementById("room-preview").style.display = "none";
+  document.getElementById("conflict-warning").style.display = "none";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("submit-btn").style.opacity = "";
+  document.getElementById("f-date").min = new Date().toISOString().split("T")[0];
+  document.getElementById("modal-title").textContent = "Post an event";
+  document.getElementById("submit-btn").textContent = "Post event";
+  document.getElementById("passcode-field").style.display = "block";
+  document.getElementById("delete-btn").style.display = "none";
+  document.getElementById("clone-btn").style.display = "none";
+  document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
+  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
+  toggleLinkFields();
+  selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExperiences = new Set(); ["connected","expressed","nourished","energized","playful","rested"].forEach(t => { const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected"); });
+  const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = "";
+  const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = "";
+  setVisibility("public");
+  document.getElementById("f-time").value = "12:00";
+  document.getElementById("f-endtime").value = "13:00";
+  buildFormChips();
+  if (!skipDraft) {
+    const restored = restoreDraft();
+    if (restored) {
+      const notice = document.getElementById("draft-notice");
+      if (notice) { notice.style.display = "block"; setTimeout(() => notice.style.display = "none", 3000); }
+    }
+  }
+}
+
+let pendingEditId = null;
+function openEdit(id) {
+  pendingEditId = id;
+  document.getElementById("p-code").value = "";
+  document.getElementById("passcode-error").style.display = "none";
+  document.getElementById("passcode-modal").classList.add("open");
+  setTimeout(() => document.getElementById("p-code").focus(), 100);
+}
+
+function closePasscodeModal() { document.getElementById("passcode-modal").classList.remove("open"); pendingEditId = null; }
+
+const MASTER_PASSCODE = "6090";
+const MASTER_HOST     = "jessie upp";
+let   isMasterUser    = false;
+
+function verifyPasscode() {
+  const entered  = document.getElementById("p-code").value.trim();
+  const idToEdit = pendingEditId;
+  if (entered === MASTER_PASSCODE) {
+    const found = findEvById(idToEdit);
+    isMasterUser = !!(found && (found.ev.host || "").trim().toLowerCase() === MASTER_HOST);
+    closePasscodeModal(); loadEditForm(idToEdit); return;
+  }
+  const found = findEvById(idToEdit);
+  if (!found) return;
+  const ev = found.ev;
+  if (found.isRecurring || !ev.passcode) {
+    document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("passcode-error").textContent = "Recurring events require the master passcode.";
+    document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
+  }
+  if (entered !== ev.passcode) {
+    document.getElementById("passcode-error").style.display = "block";
+    document.getElementById("passcode-error").textContent = "Incorrect passcode. Please try again.";
+    document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
+  }
+  closePasscodeModal(); loadEditForm(idToEdit);
+}
+
+function findEvById(id) {
+  const sheetEv = events.find(e => e.id === id);
+  if (sheetEv) return { ev: sheetEv, isRecurring: false };
+  const allRec = getAllRecurring(4);
+  const recEv = allRec.find(e => e.id === id);
+  if (recEv) return { ev: recEv, isRecurring: true };
+  return null;
+}
+
+function loadEditForm(id) {
+  const found = findEvById(id);
+  if (!found) return;
+  const ev = found.ev;
+  editingId = id;
+  selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+  selectedRoom = ev.room || null; selectedFormat = ev.format || null;
+  document.getElementById("post-modal").classList.add("open");
+  document.getElementById("post-error").style.display = "none";
+  document.getElementById("modal-title").textContent = found.isRecurring ? "Edit recurring event" : "Edit event";
+  document.getElementById("submit-btn").textContent  = "Save changes";
+  document.getElementById("passcode-field").style.display = "none";
+  document.getElementById("delete-btn").style.display = "block";
+  document.getElementById("clone-btn").style.display  = "block";
+  const cloneCountWrap = document.getElementById("clone-count-wrap");
+  if (cloneCountWrap) cloneCountWrap.style.display = "none";
+  document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
+  let recurNote = document.getElementById("recur-edit-note");
+  if (found.isRecurring) {
+    if (!recurNote) {
+      recurNote = document.createElement("p"); recurNote.id = "recur-edit-note";
+      recurNote.style.cssText = "font-size:13px;color:var(--primary);background:#E8F2F9;border-radius:8px;padding:10px 12px;margin-bottom:12px;";
+      document.getElementById("post-error").after(recurNote);
+    }
+    recurNote.textContent = "🔁 You're editing a recurring event. Changes apply to all future occurrences.";
+    recurNote.style.display = "block";
+  } else if (recurNote) { recurNote.style.display = "none"; }
+  document.getElementById("f-title").value = ev.title || "";
+  document.getElementById("f-date").value  = ev.date || "";
+  document.getElementById("f-time").value  = ev.time || "";
+  document.getElementById("f-endtime").value = ev.endtime || "";
+  document.getElementById("f-location").value = ev.location || "";
+  document.getElementById("f-desc").value  = ev.description || "";
+  document.getElementById("f-host").value  = ev.host || "";
+  document.getElementById("f-hostlink").value = ev.hostlink || "";
+  document.getElementById("f-contact-email").value = ev.contactEmail || "";
+  document.getElementById("f-contact-phone").value = ev.contactPhone || "";
+  document.getElementById("f-cooplink").value = ev.cooplink || "";
+  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
+  document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
+  const sl = (ev.showLinks || "").split(",").filter(Boolean);
+  ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+    const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
+  });
+  toggleLinkFields();
+  const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
+  setExchange(ev.exchangeType || "");
+  const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+  setExperience(ev.experience || "");
+  recurFreq = ev.recurFreq || (found.isRecurring ? "weekly" : null);
+  const recurCb = document.getElementById("f-recurring");
+  if (recurCb) { recurCb.checked = !!recurFreq; }
+  const freqWrap = document.getElementById("recurring-freq-wrap");
+  if (freqWrap) freqWrap.style.display = recurFreq ? "flex" : "none";
+  if (recurFreq) setRecurFreq(recurFreq);
+  buildFormChips(); updateRoomPreview();
+  if (restoreEditDraft(id)) {
+    showToast("✏️ Restored your unsaved edits - review before saving.");
+  }
+  if (ev.meetinglink) {
+    hostingOption = "own";
+    setHostingOption("own");
+    const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink;
+  } else if (ev.room) {
+    hostingOption = "db";
+    setHostingOption("db");
+  }
+}
+
+let selectedExchangeTypes = new Set();
+let recurFreq = null;
+
+function toggleRecurring() {
+  const checked = document.getElementById("f-recurring").checked;
+  const wrap = document.getElementById("recurring-freq-wrap");
+  if (wrap) wrap.style.display = checked ? "flex" : "none";
+  if (!checked) { recurFreq = null; ["weekly","monthly"].forEach(f => document.getElementById("freq-"+f)?.classList.remove("selected")); }
+}
+
+function setRecurFreq(f) {
+  recurFreq = f;
+  ["weekly","monthly"].forEach(k => document.getElementById("freq-"+k)?.classList.toggle("selected", k === f));
+}
+
+function toggleExchange(type) {
+  if (selectedExchangeTypes.has(type)) {
+    selectedExchangeTypes.delete(type);
+  } else {
+    selectedExchangeTypes.add(type);
+  }
+  ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => {
+    const btn = document.getElementById("exch-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
+  });
+  const otherField = document.getElementById("field-exch-other");
+  if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
+  const label = document.getElementById("payment-required-label");
+  if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
+  const cb = document.getElementById("show-paymentlink");
+  if (cb && selectedExchangeTypes.has("money")) { cb.checked = true; toggleLinkFields(); }
+}
+
+let currentVisibility = "public";
+function setVisibility(v) {
+  currentVisibility = v;
+  const pub = document.getElementById("vis-public");
+  const priv = document.getElementById("vis-private");
+  const hint = document.getElementById("vis-hint");
+  if (pub) pub.classList.toggle("selected", v === "public");
+  if (priv) priv.classList.toggle("selected", v === "private");
+  if (hint) hint.textContent = v === "private"
+    ? "Only visible to people with a direct link - won\'t appear on the events calendar."
+    : "Visible to everyone on the events calendar.";
+}
+
+let selectedExperiences = new Set();
+function toggleExperience(type) {
+  if (selectedExperiences.has(type)) { selectedExperiences.delete(type); } else { selectedExperiences.add(type); }
+  ["connected","expressed","nourished","energized","playful","rested"].forEach(t => {
+    const btn = document.getElementById("exp-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExperiences.has(t));
+  });
+}
+function setExperience(val) {
+  selectedExperiences = new Set(val ? val.split(",").filter(Boolean) : []);
+  ["connected","expressed","nourished","energized","playful","rested"].forEach(t => {
+    const btn = document.getElementById("exp-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExperiences.has(t));
+  });
+}
+
+function setExchange(val) {
+  selectedExchangeTypes = new Set(val ? val.split(",").filter(Boolean) : []);
+  ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => {
+    const btn = document.getElementById("exch-"+t);
+    if (btn) btn.classList.toggle("selected", selectedExchangeTypes.has(t));
+  });
+  const otherField = document.getElementById("field-exch-other");
+  if (otherField) otherField.style.display = selectedExchangeTypes.has("other") ? "block" : "none";
+  const label = document.getElementById("payment-required-label");
+  if (label) label.textContent = selectedExchangeTypes.has("share") ? "- required" : "- optional";
+}
+
+function toggleLinkFields() {
+  ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
+    const field = document.getElementById("field-"+k);
+    const cb = document.getElementById("show-"+k);
+    if (field && cb) field.style.display = cb.checked ? "block" : "none";
+  });
+}
+
+function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; clearEditDraft(); const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
+
+(function() {
+  document.querySelectorAll(".modal-overlay").forEach(overlay => {
+    const modal = overlay.querySelector(".modal");
+    if (!modal) return;
+    let startY = 0, startX = 0, startScrollTop = 0, dragging = false;
+    modal.addEventListener("touchstart", e => { startY = e.touches[0].clientY; startX = e.touches[0].clientX; startScrollTop = modal.scrollTop; dragging = false; }, { passive:true });
+    modal.addEventListener("touchmove", e => {
+      const dy = e.touches[0].clientY - startY;
+      const dx = e.touches[0].clientX - startX;
+      if (window.innerWidth > 768) return;
+      if (Math.abs(dx) > Math.abs(dy)) return;
+      if (dy > 10 && startScrollTop <= 2) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
+    }, { passive:false });
+    modal.addEventListener("touchend", e => {
+      if (window.innerWidth > 768 || !dragging) { modal.style.transition = ""; modal.style.transform = ""; dragging = false; return; }
+      const dy = e.changedTouches[0].clientY - startY;
+      const dx = e.changedTouches[0].clientX - startX;
+      modal.style.transition = ""; modal.style.transform = ""; dragging = false;
+      if (dy > 100 && Math.abs(dy) > Math.abs(dx)) {
+        const id = overlay.id;
+        if (id === "post-modal") {
+          if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
+            if (!confirm("You have unsaved edits. Close anyway?")) { return; }
+          }
+          closeModal();
+        }
+        else if (id === "room-modal") closeRoomModal();
+        else if (id === "summary-modal") closeSummaryModal();
+        else if (id === "passcode-modal") closePasscodeModal();
+        else if (id === "choice-modal") closeChoiceModal();
+        else if (id === "paste-modal") closePasteModal();
+      }
+    }, { passive:true });
+  });
+})();
+
 
 function shareEvent(id) {
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
-  const url = window.location.origin + window.location.pathname + "?event=" + encodeURIComponent(id);
+  const url = window.location.origin + window.location.pathname.replace(/[^/]+$/, "") + "event.html?id=" + encodeURIComponent(id);
   const data = { title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url };
   if (navigator.share) {
     navigator.share(data).catch(() => {});
@@ -566,17 +1647,19 @@ function openEventById(id) {
 }
 
 function toggleDesc(id) {
-  const allEv = [...events, ...getAllRecurring(2)];
-  const ev = allEv.find(e => e.id === id);
+  const ev = [...events, ...getAllRecurring(2)].find(e => e.id === id);
   if (!ev || (ev.description||"").length <= 200) return;
   const el = document.getElementById("desc-"+id);
   if (!el) return;
   const isExpanded = el.dataset.expanded === "true";
+    const imgWrap = document.getElementById("img-wrap-" + id);
   if (isExpanded) {
     el.innerHTML = escNl(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
     el.dataset.expanded = "false";
   } else {
-    el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
+        if (imgWrap) { const img = imgWrap.querySelector("img"); if(img) img.style.height = "130px"; }
+  el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}    if (imgWrap) { const img = imgWrap.querySelector("img"); if(img) img.style.height = "220px"; }
+  }" style="color:var(--primary);font-size:13px;"> Show less</span>`;
     el.dataset.expanded = "true";
   }
 }
@@ -585,11 +1668,11 @@ function addToCalendar(id) {
   const allEv = [...events, ...getAllRecurring(2)];
   const ev = allEv.find(e => e.id === id);
   if (!ev || !ev.date) return;
-  function toCalDT(date, time) { const t = time||"00:00"; return date.replace(/-/g,"")+  "T"+t.replace(":","")+"00"; }
+  function toCalDT(date, time) { const t = time || "00:00"; return date.replace(/-/g,"") + "T" + t.replace(":","") + "00"; }
   const start = toCalDT(ev.date, ev.time);
-  const end   = toCalDT(ev.date, ev.endtime||ev.time);
+  const end   = toCalDT(ev.date, ev.endtime || ev.time);
   const roomObj = ROOMS.find(r => r.name === ev.room);
-  const location = ev.format === "virtual" ? (roomObj ? roomObj.url : "Virtual") : (ev.location||"");
+  const location = ev.format === "virtual" ? (roomObj ? roomObj.url : "Virtual") : (ev.location || "");
   const details = [ev.description||"", roomObj ? "Room: "+roomObj.url : "", ev.cooplink ? "Cooperative link: "+ev.cooplink : "", "\nHosted by "+ev.host, ev.contactEmail ? "Email: "+ev.contactEmail : "", ev.contactPhone ? "Phone: "+ev.contactPhone : ""].filter(Boolean).join("\n\n");
   const RRULE_MAP = { "kickoff-001":"RRULE:FREQ=WEEKLY;BYDAY=MO", "onboarding-001":"RRULE:FREQ=WEEKLY;BYDAY=MO", "ikigai-001":"RRULE:FREQ=WEEKLY;BYDAY=TU", "monday kickoff":"RRULE:FREQ=WEEKLY;BYDAY=MO", "daybalancer onboarding":"RRULE:FREQ=WEEKLY;BYDAY=MO", "ikigai tuesdays":"RRULE:FREQ=WEEKLY;BYDAY=TU" };
   const titleKey = (ev.title||"").toLowerCase().trim();
@@ -603,11 +1686,12 @@ function addToCalendar(id) {
   } else if (ev.recurring && rrule) {
     params.append("recur", rrule);
   }
-  window.open("https://calendar.google.com/calendar/r/eventedit?"+params.toString(), "_blank");
+  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
 function checkEventLink() {
-  const id = new URLSearchParams(window.location.search).get("event");
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("event");
   if (!id) return;
   const card = document.querySelector(`[data-event-id="${id}"]`);
   if (!card) return;
@@ -617,16 +1701,210 @@ function checkEventLink() {
   setTimeout(() => { card.style.outline = ""; card.style.boxShadow = ""; }, 3000);
 }
 
+function safeOn(id, evt, fn) { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); }
+safeOn("post-modal",    "click", e => { if (e.target.id === "post-modal")    closeModal(); });
+safeOn("choice-modal",  "click", e => { if (e.target.id === "choice-modal")  closeChoiceModal(); });
+safeOn("paste-modal",   "click", e => { if (e.target.id === "paste-modal")   closePasteModal(); });
+safeOn("f-date",        "change", checkAndWarnConflict);
+safeOn("f-time",        "change", checkAndWarnConflict);
+safeOn("f-endtime",     "change", checkAndWarnConflict);
+safeOn("p-code",        "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
+safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
+safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
+
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { safeOn(id,"input",() => { saveDraft(); saveEditDraft(); }); safeOn(id,"change",() => { saveDraft(); saveEditDraft(); }); });
+
+let summaryEventId = null;
+
+function showSummary(ev) {
+  summaryEventId = ev.id;
+  const roomObj = ROOMS.find(r => r.name === ev.room);
+  const timeLine = ev.endtime ? `${fmt12(ev.time)} - ${fmt12(ev.endtime)}` : fmt12(ev.time);
+  const lines = [
+    `📅 ${ev.title}`, ``,
+    `Date: ${fmtDateShort(ev.date)}`, `Time: ${timeLine}`,
+    ev.format ? `Format: ${ev.format === "virtual" ? "Virtual" : ev.format === "inperson" ? "In-person" : "Virtual + In-person"}` : "",
+    ev.location ? `Location: ${ev.location}` : "",
+    ev.room ? `Room: ${ev.room}` : "",
+    roomObj ? `Room link:  ${roomObj.url}` : "",
+    ev.description ? `\n${ev.description}` : "", ``,
+    `─────────────────────────`,
+    `Edit passcode:  ${ev.passcode}`,
+    `To edit, open the event board, click ✏️ on your event, and enter your private PIN.`,
+  ].filter(l => l !== "").join("\n");
+  document.getElementById("summary-body").textContent = lines;
+  document.getElementById("copy-confirm").style.display = "none";
+  document.getElementById("summary-modal").classList.add("open");
+}
+
+function addToCalendarFromSummary() { if (summaryEventId) addToCalendar(summaryEventId); }
+function closeSummaryModal() { document.getElementById("summary-modal").classList.remove("open"); }
+function copySummary() {
+  navigator.clipboard.writeText(document.getElementById("summary-body").textContent).then(() => {
+    document.getElementById("copy-confirm").style.display = "block";
+    setTimeout(() => document.getElementById("copy-confirm").style.display = "none", 2500);
+  });
+}
+
+function fmt12(t) {
+  if (!t) return "";
+  const [h,m] = t.split(":").map(Number);
+  return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`;
+}
+function fmtDateShort(date) {
+  if (!date) return "";
+  return new Date(date+"T12:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+}
+
+async function submitEvent() {
+  const title    = document.getElementById("f-title").value.trim();
+  const date     = document.getElementById("f-date").value;
+  const time     = document.getElementById("f-time").value;
+  const endtime  = document.getElementById("f-endtime").value;
+  const location = document.getElementById("f-location").value.trim();
+  const lat      = document.getElementById("f-lat")?.value || "";
+  const lng      = document.getElementById("f-lng")?.value || "";
+  const desc     = document.getElementById("f-desc").value.trim();
+  const host     = document.getElementById("f-host").value.trim();
+  const hostlink    = document.getElementById("f-hostlink").value.trim();
+  const contactEmail = document.getElementById("f-contact-email")?.value.trim() || "";
+  const contactPhone = document.getElementById("f-contact-phone")?.value.trim() || "";
+  const cooplink = document.getElementById("f-cooplink").value.trim();
+  const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
+  const errEl    = document.getElementById("post-error");
+
+  const missing = [];
+  if (selectedExchangeTypes.has("share") && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when Paid is selected)");
+  if (!title) missing.push("event title");
+  if (selectedCats.size === 0) missing.push("at least one category");
+  if (!selectedFormat) missing.push("virtual or in-person");
+  if (!date) missing.push("date");
+  if (!time) missing.push("start time");
+  if (!endtime) missing.push("end time");
+  if (!host) missing.push("host name");
+  if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
+  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; return; }
+  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; return; }
+  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; return; }
+  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
+  if (selectedRoom && date) {
+    const conflict = checkConflict(selectedRoom, date, time, editingId);
+    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; return; }
+  }
+  errEl.style.display = "none";
+
+  if (!editingId) {
+    const RL_KEY = "db-post-log";
+    const now24  = Date.now();
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
+    log = log.filter(t => now24 - t < 24*60*60*1000);
+    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; return; }
+    const dupExists = events.some(e => e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date);
+    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; return; }
+  }
+
+  const catIds = Array.from(selectedCats);
+  const eventData = {
+    title, categories:catIds, date, time, endtime, format:selectedFormat,
+    location:(selectedFormat==="inperson"||selectedFormat==="both") ? location : null,
+    lat:(selectedFormat==="inperson"||selectedFormat==="both") ? lat : "",
+    lng:(selectedFormat==="inperson"||selectedFormat==="both") ? lng : "",
+    description:desc, host, hostlink, contactEmail, contactPhone, cooplink,
+    room:(hostingOption==="db"&&(selectedFormat==="virtual"||selectedFormat==="both")) ? selectedRoom : null,
+    meetinglink:(hostingOption==="own") ? (document.getElementById("f-meetinglink")?.value.trim()||"") : "",
+    paymentlink: document.getElementById("f-paymentlink")?.value.trim() || "",
+    exchangeType: [...selectedExchangeTypes].join(",") || "",
+    otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
+    experience: [...selectedExperiences].join(",") || "",
+    imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
+    detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
+    isPrivate: currentVisibility === "private",
+    showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
+    recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
+    recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
+  };
+
+  if (editingId) {
+    const isRec = editingId.startsWith("recurring-");
+    if (isRec) {
+      const slug = editingId.replace(/^recurring-/,"").replace(/-\d{4}-\d{2}-\d{2}$/,"");
+      const tIdx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
+      if (tIdx > -1) {
+        RECURRING_EVENTS[tIdx] = { ...RECURRING_EVENTS[tIdx], ...eventData, title, categories:catIds, time, endtime, description:desc, host, hostlink, cooplink, format:selectedFormat, room:(selectedFormat==="virtual"||selectedFormat==="both")?selectedRoom:RECURRING_EVENTS[tIdx].room };
+        const saved = {};
+        try { Object.assign(saved, JSON.parse(localStorage.getItem("db-recurring-overrides")||"{}")); } catch {}
+        saved[slug] = RECURRING_EVENTS[tIdx];
+        localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
+      }
+      closeModal(); renderEvents(); showToast("🔁 Recurring event updated for all future occurrences!");
+    } else {
+      const idx = events.findIndex(e => e.id === editingId);
+      if (idx > -1) { events[idx] = { ...events[idx], ...eventData }; closeModal(); renderEvents(); showToast("✓ Event updated!"); apiUpdate(events[idx]).catch(e => console.warn("Update save failed",e)); }
+      else { closeModal(); renderEvents(); showToast("✓ Event updated!"); }
+    }
+  } else {
+    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const newEv = { id:newId, ...eventData, passcode, going:0 };
+    const RL_KEY = "db-post-log";
+    let log = []; try { log = JSON.parse(localStorage.getItem(RL_KEY)||"[]"); } catch {}
+    log.push(Date.now()); localStorage.setItem(RL_KEY, JSON.stringify(log));
+    const submitBtn = document.getElementById("submit-btn");
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Posted ✓"; setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = "Post event"; }, 10000); }
+    events.unshift(newEv); clearDraft(); clearEditDraft(); closeModal(); renderEvents(); showSummary(newEv);
+    apiAdd(newEv).catch(() => {});
+  }
+}
+
+function fmtDate(date, time, endtime) {
+  if (!date) return "Date TBD";
+  const d  = new Date(date + "T" + (time||"00:00"));
+  const ds = d.toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"});
+  if (!time) return ds;
+  const tz = d.toLocaleTimeString("en-US", {timeZoneName:"short"}).split(" ").pop();
+  const ts = d.toLocaleTimeString("en-US", {hour:"numeric",minute:"2-digit"});
+  if (!endtime) return ds + " · " + ts + " " + tz;
+  const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  return ds + " · " + ts + " - " + te + " " + tz;
+}
+function escNl(s) { return esc(s).replace(/\n/g, "<br>"); }
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+async function deleteEvent() {
+  if (!editingId) return;
+  const found = findEvById(editingId);
+  if (!found) return;
+  const ev = found.ev;
+  if (!confirm(`Delete "${ev.title}"? This can't be undone.`)) return;
+  events = events.filter(e => e.id !== editingId);
+  await apiDelete(editingId);
+  closeModal(); renderEvents(); showToast("Event deleted.");
+}
+
 function setTab(tab) {
   setDateFilter(tab === "past" ? "past-week" : "upcoming");
 }
 
 function setDateFilter(f) {
   activeDateFilter = f;
-  activeTab = f.startsWith("past") ? "past" : "upcoming";
   const sel = document.getElementById("date-filter-select");
-  if (sel) sel.value = f;
-  document.getElementById("page-title").textContent = activeTab === "past" ? "Past events" : "What's happening";
+  if (sel) {
+    sel.value = f;
+    sel.style.background = "var(--primary)";
+    sel.style.color = "#fff";
+    sel.style.borderColor = "var(--primary)";
+  }
+  const isPast = f.startsWith("past");
+  activeTab = isPast ? "past" : "upcoming";
+  document.getElementById("page-title").textContent = isPast ? "Past events" : "What's happening";
   renderEvents();
 }
 
@@ -644,6 +1922,30 @@ function setMode(mode) {
   }
   localStorage.setItem("db-mode", mode);
   renderEvents();
+}
+
+function useMyLocationForForm() {
+  const btn = document.getElementById("form-geo-btn");
+  btn.textContent = "📍 Detecting..."; btn.disabled = true;
+  if (!navigator.geolocation) { btn.textContent = "📍 Not supported"; btn.disabled = false; return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=en`)
+        .then(r => r.json()).then(data => {
+          const addr = data.address || {};
+          const parts = [addr.city||addr.town||addr.village||"", addr.state||"", addr.country||""].filter(Boolean);
+          document.getElementById("f-location").value = parts.join(", ");
+          document.getElementById("f-lat").value = pos.coords.latitude;
+          document.getElementById("f-lng").value = pos.coords.longitude;
+          btn.textContent = `📍 ${parts[0]||"Location set"}`; btn.disabled = false;
+        }).catch(() => { btn.textContent = "📍 Try again"; btn.disabled = false; alert("Location detected but couldn't look up your city. Please type it manually."); });
+    },
+    err => {
+      btn.disabled = false;
+      if (err.code === 1) { btn.textContent = "📍 Permission denied"; alert("Location access was blocked. Please allow location in your browser settings, or type your address."); }
+      else { btn.textContent = "📍 Use my location"; alert("Could not detect your location. Please type it manually."); }
+    }, { timeout:10000 }
+  );
 }
 
 const NORTH_AMERICA_COUNTRIES = ["United States","Canada","Mexico"];
@@ -716,6 +2018,140 @@ function useMyLocation() {
   );
 }
 
+function onCloneBtnClick() {
+  if (isMasterUser) {
+    const wrap = document.getElementById("clone-count-wrap");
+    const btn  = document.getElementById("clone-btn");
+    if (wrap && wrap.style.display !== "inline-flex") {
+      wrap.style.display = "inline-flex";
+      if (btn) btn.textContent = "▶ Go";
+      return;
+    }
+    if (btn) btn.textContent = "⧉ Clone";
+    if (wrap) wrap.style.display = "none";
+  }
+  cloneEvent();
+}
+
+function cloneEvent() {
+  const ev = events.find(e => e.id === editingId);
+  if (!ev) return;
+  const count = isMasterUser ? parseInt(document.getElementById("clone-count")?.value || "1") : 1;
+  if (count > 1) {
+    closeModal();
+    openBulkCloneModal(ev, count);
+    return;
+  }
+  closeModal();
+  setTimeout(() => {
+    openModal(true);
+    document.getElementById("f-title").value = ev.title + " (copy)";
+    document.getElementById("f-location").value = ev.location || "";
+    document.getElementById("f-desc").value = ev.description || "";
+    document.getElementById("f-host").value = ev.host || "";
+    document.getElementById("f-hostlink").value = ev.hostlink || "";
+    document.getElementById("f-cooplink").value = ev.cooplink || "";
+    document.getElementById("f-contact-email").value = ev.contactEmail || "";
+    document.getElementById("f-contact-phone").value = ev.contactPhone || "";
+    document.getElementById("f-lat").value = ev.lat || "";
+    document.getElementById("f-lng").value = ev.lng || "";
+    if (ev.time) document.getElementById("f-time").value = ev.time;
+    if (ev.endtime) document.getElementById("f-endtime").value = ev.endtime;
+    selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
+    selectedRoom = ev.room || null; selectedFormat = ev.format || null;
+    ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
+    document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
+    buildFormChips(); updateRoomPreview();
+    if (ev.meetinglink) { hostingOption = "own"; setHostingOption("own"); const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink; }
+    else if (ev.room) { hostingOption = "db"; setHostingOption("db"); }
+    const sl = (ev.showLinks || "").split(",").filter(Boolean);
+    ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
+    toggleLinkFields();
+    const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
+    setExchange(ev.exchangeType || "");
+    const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+    setDateFilter("upcoming");
+    showToast("Event cloned - set a new date and private PIN!");
+  }, 100);
+}
+
+let bulkCloneSource = null;
+
+function openBulkCloneModal(ev, count) {
+  bulkCloneSource = ev;
+  const container = document.getElementById("bulk-clone-dates");
+  container.innerHTML = "";
+  document.getElementById("bulk-clone-error").style.display = "none";
+  const baseDate = ev.date ? new Date(ev.date + "T12:00:00") : new Date();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + 7 * (i + 1));
+    const iso = d.toISOString().split("T")[0];
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:10px;";
+    row.innerHTML = `
+      <span style="font-size:13px;color:var(--muted);min-width:52px;">Copy ${i+1}</span>
+      <input class="input" type="date" id="bulk-date-${i}" value="${iso}" min="${new Date().toISOString().split('T')[0]}" style="flex:1;">
+    `;
+    container.appendChild(row);
+  }
+  document.getElementById("bulk-clone-modal").classList.add("open");
+}
+
+function closeBulkCloneModal() {
+  document.getElementById("bulk-clone-modal").classList.remove("open");
+  bulkCloneSource = null;
+}
+
+async function submitBulkClone() {
+  if (!bulkCloneSource) return;
+  const ev = bulkCloneSource;
+  const errEl = document.getElementById("bulk-clone-error");
+  errEl.style.display = "none";
+  const inputs = document.querySelectorAll("[id^='bulk-date-']");
+  const dates = [];
+  for (const inp of inputs) {
+    if (!inp.value) { errEl.textContent = "Please set a date for each copy."; errEl.style.display = "block"; return; }
+    dates.push(inp.value);
+  }
+  if (new Set(dates).size !== dates.length) { errEl.textContent = "Each copy needs a unique date."; errEl.style.display = "block"; return; }
+
+  const btn = document.querySelector("#bulk-clone-modal .btn-green");
+  btn.disabled = true; btn.textContent = "Creating...";
+
+  let created = 0;
+  for (const date of dates) {
+    const newEv = {
+      ...ev,
+      id: "ev-" + Date.now() + "-" + Math.random().toString(36).slice(2,7),
+      title: ev.title + " (copy)",
+      date,
+      passcode: ev.passcode || "0000",
+      going: 0
+    };
+    delete newEv.adminOnly;
+    events.push(newEv);
+    try { await apiAdd(newEv); created++; } catch(e) { console.warn("Clone save failed", e); }
+  }
+
+  btn.disabled = false; btn.textContent = "Create copies";
+  closeBulkCloneModal();
+  setTab("upcoming");
+  showToast(`${created} cop${created === 1 ? "y" : "ies"} created!`);
+}
+
+const BAD_WORDS = ["fuck","shit","bitch","asshole","cunt","dick","cock","pussy","bastard","ass","crap","piss","prick","slut","whore","nigger","faggot","retard"];
+function containsBadWords(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some(w => new RegExp("\\b"+w+"\\b").test(lower));
+}
+function checkAllFields() {
+  return ["f-title","f-desc","f-host","f-location"].some(id => { const el = document.getElementById(id); return el && containsBadWords(el.value); });
+}
+
+const ROOM_BUFFER_MINS = 90;
+
 function getNextOccurrences(template, count) {
   const results = [];
   const now = new Date();
@@ -742,28 +2178,82 @@ function getAllRecurring(count = 2) { return RECURRING_EVENTS.flatMap(t => getNe
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
   const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
-  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
+  const seenTitleDate = new Set(events.map(e => `${(e.title||"").toLowerCase()}|${e.date}`));
+  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`) && !seenTitleDate.has(`${(rec.title||"").toLowerCase()}|${rec.date}`));
 }
 
-function fmtDate(date, time, endtime) {
-  if (!date) return "Date TBD";
-  const d  = new Date(date+"T"+(time||"00:00"));
-  const ds = d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
-  if (!time) return ds;
-  const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop();
-  const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-  if (!endtime) return ds + " · " + ts + " " + tz;
-  const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-  return ds + " · " + ts + " - " + te + " " + tz;
+function getEventMs(ev) { if (!ev.date) return null; return new Date(ev.date+"T"+(ev.time||"09:00")).getTime(); }
+
+function checkConflict(room, date, time, excludeId) {
+  if (!room||!date||!time) return null;
+  const newMs = new Date(date+"T"+time).getTime();
+  if (isNaN(newMs)) return null;
+  const buffer = ROOM_BUFFER_MINS * 60 * 1000;
+  return events.find(ev => {
+    if (ev.id === excludeId || ev.room !== room || !ev.date || !ev.time || ev.date !== date) return false;
+    const evMs = new Date(ev.date+"T"+ev.time).getTime();
+    if (isNaN(evMs)) return false;
+    return Math.abs(newMs - evMs) < buffer;
+  }) || null;
 }
-function escNl(s) { return esc(s).replace(/\n/g, "<br>"); }
-function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
+
+function checkAndWarnConflict() {
+  const warningEl = document.getElementById("conflict-warning");
+  const submitBtn = document.getElementById("submit-btn");
+  if (!warningEl) return;
+  if (!selectedRoom || !document.getElementById("f-date").value || !document.getElementById("f-time").value) {
+    warningEl.style.display = "none"; submitBtn.disabled = false; submitBtn.style.opacity = ""; return;
+  }
+  const conflict = checkConflict(selectedRoom, document.getElementById("f-date").value, document.getElementById("f-time").value, editingId);
+  if (conflict) {
+    warningEl.textContent = `⚠️ "${selectedRoom}" may already be booked around this time for "${conflict.title}". You can still post, but consider a different time or room.`;
+    warningEl.style.display = "block"; submitBtn.disabled = false; submitBtn.style.opacity = "";
+  } else { warningEl.style.display = "none"; submitBtn.disabled = false; submitBtn.style.opacity = ""; }
 }
+
+function openRoomSchedule() {
+  const body = document.getElementById("room-schedule-body");
+  const now  = Date.now();
+  body.innerHTML = "";
+  const nav = document.createElement("div");
+  nav.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;";
+  ROOMS.forEach(({ name }) => {
+    const slug = name.toLowerCase().replace(/\s+/g,"-");
+    const pill = document.createElement("a");
+    pill.href = "#room-"+slug;
+    pill.style.cssText = "font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;border:1.5px solid var(--border);color:var(--primary);background:var(--white);white-space:nowrap;";
+    pill.textContent = "🏠 " + name;
+    nav.appendChild(pill);
+  });
+  body.appendChild(nav);
+  const allRecurring = getAllRecurring(2);
+  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
+  const allEventsForSchedule = [...events, ...allRecurring.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`))];
+  ROOMS.forEach(({ name, url, comingSoon }) => {
+    const slug = name.toLowerCase().replace(/\s+/g,"-");
+    const upcoming = allEventsForSchedule.filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000).sort((a,b) => getEventMs(a)-getEventMs(b)).slice(0,5);
+    const section = document.createElement("div");
+    section.id = "room-"+slug; section.style.cssText = "margin-bottom:28px;scroll-margin-top:20px;";
+    const visitBtn = comingSoon
+      ? `<span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--light);padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);">Link coming soon</span>`
+      : `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:5px 12px;border-radius:6px;white-space:nowrap;">Visit room →</a>`;
+    section.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);"><span style="font-size:15px;font-weight:800;color:var(--dark);">🏠 ${name}</span>${visitBtn}</div>`;
+    if (upcoming.length === 0) {
+      section.innerHTML += `<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0 4px;">Nothing scheduled yet - wide open!</div>`;
+    } else {
+      upcoming.forEach(ev => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:4px;background:var(--light);gap:12px;flex-wrap:wrap;";
+        row.innerHTML = `<span style="font-size:13px;font-weight:${ev.recurring?"600":"400"};color:${ev.recurring?"var(--muted)":"var(--dark)"};">${ev.recurring?"🚫 Blocked":esc(ev.title)}</span><span style="font-size:12px;color:var(--muted);white-space:nowrap;">${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span>`;
+        section.appendChild(row);
+      });
+    }
+    body.appendChild(section);
+  });
+  document.getElementById("room-modal").classList.add("open");
+}
+
+function closeRoomModal() { document.getElementById("room-modal").classList.remove("open"); }
 
 // ── Init ──────────────────────────────────────
 if (new URLSearchParams(window.location.search).get("embed") === "1") {
@@ -775,11 +2265,10 @@ const savedMode   = localStorage.getItem("db-mode");
 if (savedFilter) activeFilter = savedFilter;
 
 renderPills();
-// FIX: call setMode() to restore button visual state, not just the variable
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.37 -->
+<!-- v6.90 -->
 </body>
 </html>
