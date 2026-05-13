@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events (public/read-only)
-  Version 2.20
+  Version 2.37
 -->
 <html lang="en">
 <head>
@@ -346,6 +346,11 @@ async function loadEvents() {
     showLoading(true);
     events = [];
     renderEvents();
+  // Deep link: open event from URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const evParam = urlParams.get("event");
+  if (evParam) { setTimeout(() => openEventById(evParam), 400); }
+
     const data = await jsonp({ t: Date.now() });
     events = (data.events||[]).filter(r => r.id).map(sheetToEv);
   } catch(e) {
@@ -521,10 +526,43 @@ function renderEvents() {
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
+          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
         </div>
       </div>`;
     grid.appendChild(card);
   });
+}
+
+
+function shareEvent(id) {
+  const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
+  const ev = allEv.find(e => e.id === id);
+  if (!ev) return;
+  const url = window.location.origin + window.location.pathname + "?event=" + encodeURIComponent(id);
+  const data = { title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url };
+  if (navigator.share) {
+    navigator.share(data).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast("Link copied!")).catch(() => {
+      prompt("Copy this link:", url);
+    });
+  }
+}
+
+function openEventById(id) {
+  const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
+  const ev = allEv.find(e => e.id === id);
+  if (!ev) return;
+  const card = document.querySelector('[data-event-id="' + id + '"]');
+  if (!card) return;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.style.transition = "box-shadow 0.3s";
+  card.style.boxShadow = "0 0 0 3px var(--primary)";
+  setTimeout(() => { card.style.boxShadow = ""; }, 2000);
+  const descEl = document.getElementById("desc-" + id);
+  if (descEl && (ev.description || "").length > 200 && descEl.dataset.expanded !== "true") {
+    toggleDesc(id);
+  }
 }
 
 function toggleDesc(id) {
@@ -742,6 +780,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.27 -->
+<!-- v2.37 -->
 </body>
 </html>
