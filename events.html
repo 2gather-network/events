@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 6.84
+  Version 6.89
   
   v6.72 Changes:
   - Added AI parse feature: paste event text and Claude extracts fields
@@ -70,7 +70,12 @@
   .event-card { background:var(--white); border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 6px rgba(0,0,0,.05); overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s,transform .15s; }
   .event-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.1); transform:translateY(-2px); }
 
-  .event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
+  
+.event-card-img { overflow:hidden; border-radius:0; margin:0; transition: height 0.3s ease; }
+.event-card-img img { transition: height 0.3s ease; }
+.event-card-top + .event-card-img { border-top:1px solid var(--border); }
+
+.event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
   .event-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:8px; }
   .event-cats { display:flex; gap:6px; flex-wrap:wrap; }
   .event-cat-tag { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:10px; }
@@ -428,6 +433,11 @@ Start your week with other independents. Share what you're working on, what you 
           <input class="input" id="f-contact-phone" type="tel" placeholder="e.g. 206-555-0100">
         </div>
       </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Event image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL</span></label>
+      <input type="url" id="f-image-url" class="input" placeholder="https://..." style="width:100%;">
     </div>
 
     <div class="field">
@@ -843,7 +853,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "",
   };
 }
 
@@ -877,7 +887,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "",
   };
 }
 
@@ -1157,30 +1167,15 @@ function renderEvents() {
         <div class="event-title">${esc(ev.title)}${recurringBadge}${hybridBadge}</div>
         <div class="event-cats">${catTags}</div>
       </div>
+      ${ev.imageUrl ? `<div class="event-card-img" id="img-wrap-${ev.id}"><img src="${esc(ev.imageUrl)}" alt="" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ""}
       <div class="event-card-body">
-        <div class="event-meta">
-          <div class="event-meta-item"><span>🗓️</span>${esc(fmtDate(ev.date, ev.time, ev.endtime))}</div>
-          ${ev.experience ? (() => { const expMap = {"connected":"🌐 Connected","expressed":"🎨 Expressed","nourished":"🥘 Nourished from food/drink","energized":"🌀 Energized","playful":"🏓 Playful","rested":"💙 Rested"}; const labels = ev.experience.split(",").filter(Boolean).map(t => expMap[t] || t).join(" · "); return `<div class="event-meta-item"><span>✨</span><strong>Experience:</strong> ${labels}</div>`; })() : ""}
-          ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item"><span>💻</span>${ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Join virtual meeting</a>` : (roomObj?.url ? `<a href="${esc(roomObj.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.room)}</a>` : "Virtual")}</div>` : ""}
-          ${ev.format === "inperson" || ev.format === "both" ? `<div class="event-meta-item"><span>📍</span>${ev.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a>` : "In-person"}</div>` : ""}
-          ${!ev.format && ev.location ? `<div class="event-meta-item"><span>📍</span><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">${esc(ev.location)}</a></div>` : ""}
-          <div class="event-meta-item"><span>👤</span>Hosted by ${ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">${esc(ev.host)}</a>` : esc(ev.host)}</div>
-          ${ev.cooplink && ev.showLinks && ev.showLinks.includes("cooplink") ? `<div class="event-meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Group link</a></div>` : ""}
-          ${ev.paymentlink && ev.showLinks && ev.showLinks.includes("paymentlink") ? `<div class="event-meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700;">Register / Pay</a></div>` : ""}
-          ${ev.contactEmail && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);text-decoration:none;">${esc(ev.contactEmail)}</a></div>` : ""}
-          ${ev.contactPhone && ev.showLinks && ev.showLinks.includes("contact") ? `<div class="event-meta-item"><span>📞</span>${esc(ev.contactPhone)}</div>` : ""}
-          ${ev.exchangeType ? (() => {
-            const typeMap = {noask:"🔗 Spread the word",free:"💬 Give feedback",testimonial:"🔁 Trade time",money:"☕ Coffee",time:"💸 Tip",share:"💰 Paid",feedback:"🌟 Share your experience",other:"✏️ " + (ev.otherExchange || "Other")};
-            const labels = ev.exchangeType.split(",").filter(Boolean).map(t => typeMap[t] || t).join(" · ");
-            const firstName = (ev.host || "").trim().split(/\s+/)[0] || "Host";
-            return `<div class="event-meta-item" style="padding-left:0;display:block;"><span style="color:var(--dark);">What ${esc(firstName)} welcomes: </span>${labels}</div>`;
-          })() : ""}
-        </div>
-        ${ev.description ? `<div class="event-desc" id="desc-${ev.id}" style="cursor:pointer;white-space:pre-wrap;" onclick="toggleDesc('${ev.id}')">${escNl(trunc(ev.description,200))}${ev.description.length > 200 ? `<span id="desc-more-${ev.id}" style="color:var(--primary);font-size:13px;"> Read more</span>` : ""}</div>` : ""}
+        ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#EFF6FF;color:#1d4ed8;padding:3px 10px;border-radius:20px;">💻 Virtual</span></div>` : ""}
+        ${ev.format === "inperson" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#F0FDF4;color:#166534;padding:3px 10px;border-radius:20px;">📍 In-person</span></div>` : ""}
+        ${ev.description ? `<div class="event-desc" style="margin-top:8px;font-size:14px;color:var(--muted);line-height:1.5;">${escNl(trunc(ev.description, 200))}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
-          <button class="btn btn-sm btn-outline" onclick="addToCalendar('${ev.id}')" title="Add to Google Calendar" style="padding:8px 12px;">📅 Add to calendar</button>
+          <a class="btn btn-sm" href="event.html?id=${ev.id}" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
@@ -1224,6 +1219,7 @@ function saveEditDraft() {
     exchangeType: [...selectedExchangeTypes].join(",") || "",
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     experience: [...selectedExperiences].join(",") || "",
+    imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -1350,6 +1346,7 @@ function openModal(skipDraft = false) {
   toggleLinkFields();
   selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   selectedExperiences = new Set(); ["connected","expressed","nourished","energized","playful","rested"].forEach(t => { const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected"); });
+  const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = "";
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1591,7 +1588,7 @@ function shareEvent(id) {
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
-  const url = window.location.origin + window.location.pathname + "?event=" + encodeURIComponent(id);
+  const url = window.location.origin + window.location.pathname.replace(/[^/]+$/, "") + "event.html?id=" + encodeURIComponent(id);
   const data = { title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url };
   if (navigator.share) {
     navigator.share(data).catch(() => {});
@@ -1624,11 +1621,14 @@ function toggleDesc(id) {
   const el = document.getElementById("desc-"+id);
   if (!el) return;
   const isExpanded = el.dataset.expanded === "true";
+    const imgWrap = document.getElementById("img-wrap-" + id);
   if (isExpanded) {
     el.innerHTML = escNl(trunc(ev.description,200)) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Read more</span>`;
     el.dataset.expanded = "false";
   } else {
-    el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}" style="color:var(--primary);font-size:13px;"> Show less</span>`;
+        if (imgWrap) { const img = imgWrap.querySelector("img"); if(img) img.style.height = "130px"; }
+  el.innerHTML = escNl(ev.description) + `<span id="desc-more-${id}    if (imgWrap) { const img = imgWrap.querySelector("img"); if(img) img.style.height = "220px"; }
+  }" style="color:var(--primary);font-size:13px;"> Show less</span>`;
     el.dataset.expanded = "true";
   }
 }
@@ -1788,6 +1788,7 @@ async function submitEvent() {
     exchangeType: [...selectedExchangeTypes].join(",") || "",
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     experience: [...selectedExperiences].join(",") || "",
+    imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
     recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
@@ -2235,6 +2236,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.84 -->
+<!-- v6.89 -->
 </body>
 </html>
