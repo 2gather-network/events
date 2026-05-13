@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+  event.html
+  Version 1.1
+  Standalone event view - reads ?id= from URL, fetches from Google Sheet, shows full details
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #1b6896;
+      --dark: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f5f6fa;
+      --card-bg: #ffffff;
+      --radius: 14px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px 64px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      width: 100%;
+      max-width: 560px;
+      overflow: hidden;
+    }
+    .cover-img { width: 100%; height: 220px; object-fit: cover; display: block; }
+    .card-body { padding: 24px 24px 28px; }
+    .top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .format-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600; padding: 4px 10px;
+      border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap;
+    }
+    .badge-virtual  { background: #EFF6FF; color: #1d4ed8; }
+    .badge-inperson { background: #F0FDF4; color: #166534; }
+    .badge-hybrid   { background: #FFF7ED; color: #9a3412; }
+    .badge-recurring { background: #E8F2F9; color: var(--primary); }
+    h1 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 18px; }
+    .meta { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+    .meta-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; }
+    .meta-item span { flex-shrink: 0; }
+    .meta-item a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .contributions {
+      font-size: 13px; color: var(--muted);
+      margin-bottom: 18px; padding: 10px 14px;
+      background: #f9fafb; border-radius: 8px; border: 1px solid var(--border);
+    }
+    .detail-img { width: 100%; border-radius: 10px; margin-bottom: 16px; display: block; max-height: 300px; object-fit: cover; }
+    .description { font-size: 15px; color: #374151; line-height: 1.7; margin-bottom: 24px; white-space: pre-wrap; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: 1.5px solid transparent; text-decoration: none; transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-outline { background: transparent; border-color: var(--border); color: var(--dark); }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--muted); text-decoration: none; padding: 16px 24px 0;
+    }
+    .back-link:hover { color: var(--primary); }
+    .past-banner {
+      background: #f0f0f0; color: #666; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.07em; padding: 5px 18px; border-bottom: 1px solid var(--border);
+    }
+    .loading, .error { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 15px; }
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="loading">Loading event...</div>
+</div>
+<script>
+const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
+
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    let done = false;
+    const finish = (fn) => { if (done) return; done = true; delete window[cb]; try { el.remove(); } catch(e){} fn(); };
+    const t = setTimeout(() => finish(() => reject(new Error("timeout"))), 20000);
+    window[cb] = (d) => { clearTimeout(t); finish(() => resolve(d)); };
+    const qs = Object.entries(params).map(([k,v]) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
+    const el = document.createElement("script");
+    el.src = GS_URL + "?" + qs + "&callback=" + cb;
+    el.onerror = () => finish(() => reject(new Error("error")));
+    document.head.appendChild(el);
+  });
+}
+
+function parseDate(v) {
+  if (!v) return "";
+  const m = String(v).trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");
+  return String(v).trim();
+}
+
+function parseTime(v) {
+  if (!v) return "";
+  const m = String(v).trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!m) return "";
+  let h = parseInt(m[1]); const mn = m[2], ap = (m[3]||"").toUpperCase();
+  if (ap==="PM" && h<12) h+=12;
+  if (ap==="AM" && h===12) h=0;
+  return String(h).padStart(2,"0")+":"+mn;
+}
+
+function fmtDate(date, time, endtime) {
+  if (!date) return "";
+  const d = new Date(date+"T"+(time||"00:00"));
+  let s = d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  if (time) {
+    s += " · " + new Date(date+"T"+time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    if (endtime) s += " - " + new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    try { s += " " + Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop().replace(/_/g," "); } catch(e){}
+  }
+  return s;
+}
+
+function toEv(r) {
+  return {
+    id: String(r.id||""), title: r.title||"",
+    date: parseDate(r.date), time: parseTime(r.startTime), endtime: parseTime(r.endTime),
+    format: r.format||"", location: r.location||"", room: r.room||"",
+    description: r.description||"", host: r.host||"", hostlink: r.hostlink||"",
+    contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
+    cooplink: r.cooplink||"", paymentlink: r.paymentlink||"", meetinglink: r.meetinglink||"",
+    showLinks: r.showLinks||"", otherExchange: r.otherExchange||"",
+    exchangeType: r.exchangeType||"", recurFreq: r.recurFreq||"",
+    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
+  };
+}
+
+function render(ev) {
+  const isPast = ev.date && (ev.endtime
+    ? new Date(ev.date+"T"+ev.endtime)<Date.now()
+    : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000<Date.now());
+
+  const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
+  const typeMap = {noask:"🔗 No ask",free:"🎁 Free",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",share:"👥 Pass this along",money:"💰 Payment required"};
+
+  const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
+    : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
+    : ev.format==="both" ? `<span class="format-badge badge-hybrid">🔀 Hybrid</span>` : "";
+
+  const recurBadge = ev.recurFreq ? `<span class="format-badge badge-recurring">🔁 ${ev.recurFreq==="monthly"?"Monthly":"Weekly"}</span>` : "";
+
+  const roomUrl = "https://gather.daybalancer.com/events/yvrgej/zkxbzq";
+  const vLink = ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener">Join virtual meeting</a>`
+    : ev.room ? `<a href="${esc(roomUrl)}" target="_blank" rel="noopener">${esc(ev.room)}</a>` : "Virtual";
+
+  const locLink = ev.location
+    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`
+    : "In-person";
+
+  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener">${esc(ev.host)}</a>` : esc(ev.host);
+  const firstName = (ev.host||"").trim().split(/\s+/)[0]||"Host";
+
+  const sl = ev.showLinks||"";
+  const lines = [
+    ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
+    ev.experience ? `<div class="meta-item"><span>✨</span><span><strong>Experience:</strong> ${ev.experience.split(",").filter(Boolean).map(t=>expMap[t]||t).join(" · ")}</span></div>` : "",
+    (ev.format==="virtual"||ev.format==="both") ? `<div class="meta-item"><span>💻</span>${vLink}</div>` : "",
+    (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
+    (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
+    ev.host ? `<div class="meta-item"><span>👤</span><span>Hosted by ${hostHtml}</span></div>` : "",
+    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
+    (ev.cooplink&&sl.includes("cooplink")) ? `<div class="meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener">Group link</a></div>` : "",
+    (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
+    (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
+  ].filter(Boolean).join("");
+
+  const exchange = ev.exchangeType
+    ? `<div class="contributions">What ${esc(firstName)} welcomes: ${ev.exchangeType.split(",").filter(Boolean).map(t=>typeMap[t]||(t==="other"?"✏️ "+(ev.otherExchange||"Other"):t)).join(" · ")}</div>` : "";
+
+  document.getElementById("card").innerHTML = `
+    <a class="back-link" href="calendar.html">← All events</a>
+    ${ev.imageUrl ? `<img class="cover-img" src="${esc(ev.imageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
+    ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
+    <div class="card-body">
+      <div class="top-row">${fmtBadge}${recurBadge}</div>
+      <h1>${esc(ev.title)}</h1>
+      <div class="meta">${lines}</div>
+      ${exchange}
+      ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
+      <hr class="divider">
+      <div class="actions">
+        <button class="btn btn-primary" onclick="share()">🔗 Share</button>
+        <a class="btn btn-outline" href="calendar.html">← All events</a>
+      </div>
+    </div>`;
+
+  document.title = ev.title || "Event";
+}
+
+function share() {
+  const url = window.location.href;
+  if (navigator.share) { navigator.share({ title: document.title, url }).catch(()=>{}); }
+  else { navigator.clipboard.writeText(url).then(()=>alert("Link copied!")).catch(()=>prompt("Copy this link:",url)); }
+}
+
+function showError(msg) {
+  document.getElementById("card").innerHTML = `<div class="error">${esc(msg)}</div>`;
+}
+
+async function init() {
+  const id = new URLSearchParams(window.location.search).get("id");
+  if (!id) { showError("No event specified."); return; }
+  try {
+    const data = await jsonp({ t: Date.now() });
+    const ev = (data.events||[]).filter(r=>r.id).map(toEv).find(e=>e.id===id);
+    if (!ev) { showError("Event not found."); return; }
+    render(ev);
+  } catch(e) {
+    showError("Could not load event. Please try again.");
+  }
+}
+
+init();
+</script>
+</body>
+</html>
