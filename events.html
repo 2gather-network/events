@@ -1,12 +1,28 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 6.90
-  
-  v6.72 Changes:
-  - Added AI parse feature: paste event text and Claude extracts fields
-  - New choice modal when clicking "Post an event"
-  - New paste modal with textarea and Parse button
+  Version 6.91
+
+  v6.72 - AI parse feature (paste event text, Claude extracts fields); choice modal and paste modal
+  v6.73 - Removed DayBalancer UI branding from events board
+  v6.74 - Fixed modal scroll/drag-to-close conflict on mobile
+  v6.75 - Paste modal: Monday Commons placeholder, auto-select categories, past date warning
+  v6.76 - Added touch-action:pan-y to prevent Brave browser horizontal swipe closing modal
+  v6.77 - Removed Appear Network branding from HTML, page title, header
+  v6.78 - Renamed recurring events: "Kick off Mondays for indies", "Get started with Appear Network"; updated hostlinks to appear.network
+  v6.79 - Normalized all w.hssQR hostlinks to appear.network/dl/page
+  v6.80 - Commons room URL updated to appear.network/dl/commons (later reverted)
+  v6.81 - Added experience field: multi-select feelings chips in form, display on card; experience tags on all recurring events
+  v6.82 - Updated "Nourished" label to "Nourished from food/drink"; applied experience tags to recurring events
+  v6.83 - Reverted Commons room URL back to gather.daybalancer.com
+  v6.84 - Added share button (native share sheet / clipboard fallback) and deep link via ?event= param
+  v6.85 - Added imageUrl (cover image) field to form and card display; detailImageUrl in data model
+  v6.86 - Created event.html; "View event →" links to event.html?id=; share URL points to event.html
+  v6.87 - Stripped card to minimal view (title, cats, image, format, description preview, View button)
+  v6.88 - Rebuilt event.html with full event details
+  v6.89 - Added 200-char description preview to card; "View" button solid primary blue; no arrow
+  v6.90 - Added detail image field; public/private visibility toggle; private events hidden from calendar
+  v6.91 - View button opens in new tab; full changelog added
 -->
 <html lang="en">
 <head>
@@ -1189,7 +1205,7 @@ function renderEvents() {
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
-          <a class="btn btn-sm" href="event.html?id=${ev.id}" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
+          <a class="btn btn-sm" href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
@@ -2269,6 +2285,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.90 -->
+<!-- v6.91 -->
 </body>
 </html>
