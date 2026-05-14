@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 6.93
-  v6.93 - Host email field added; Find my event flow (email lookup + PIN to edit)
+  Version 6.95
+  v6.95 - Recurring event images added from Google Drive
 -->
 <html lang="en">
 <head>
@@ -532,6 +532,7 @@ Start your week with other independents. Share what you're working on, what you 
     <div class="modal-actions">
       <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="clearForm()" style="color:var(--muted);" title="Clear all fields and start over">Clear form</button>
       <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="onCloneBtnClick()" title="Clone this event">⧉ Clone</button>
       <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
         <label for="clone-count" style="white-space:nowrap;">× how many?</label>
@@ -662,7 +663,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["care","faith","resources","movement","learning"],
     description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
-    experience:"rested,energized", adminOnly:false,
+    experience:"rested,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false,
   },
   {
     title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45",
@@ -670,7 +671,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
     description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.",
-    experience:"connected,expressed,energized", adminOnly:false,
+    experience:"connected,expressed,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false,
   },
   {
     title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00",
@@ -678,7 +679,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","social","resources","care"],
     description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.",
-    experience:"connected,energized", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -686,7 +687,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning"],
     description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
-    experience:"connected,energized", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly",
   },
   {
     title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
@@ -698,7 +699,7 @@ const RECURRING_EVENTS = [
     description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
-    experience:"connected,expressed,nourished,playful", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,expressed,nourished,playful", imageUrl:"https://drive.google.com/uc?export=view&id=1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly",
   },
 ];
 
@@ -1720,6 +1721,35 @@ function confirmFindPin() {
   openEdit(findTargetId);
 }
 
+
+function clearForm() {
+  if (!confirm("Clear all fields and start over?")) return;
+  clearDraft();
+  clearEditDraft();
+  // Reset all inputs
+  ["f-host-email","f-title","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink",
+   "f-cooplink","f-paymentlink","f-contact-email","f-contact-phone","f-passcode",
+   "f-image-url","f-detail-image-url","f-keywords","f-exch-other"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  ["f-date","f-time","f-endtime"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  const lsEl = document.getElementById("f-life-stage"); if (lsEl) lsEl.value = "";
+  selectedCats = new Set(); renderPills();
+  selectedExchangeTypes = new Set();
+  ["spread","time","connections","feedback","skills","stuff","space","money","care","other","noask","free","testimonial","share"].forEach(t => {
+    const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected");
+  });
+  selectedExperiences = new Set();
+  ["connected","expressed","nourished","energized","playful","rested"].forEach(t => {
+    const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected");
+  });
+  setVisibility("public");
+  setFormat("virtual");
+  showToast("Form cleared.");
+}
+
 function shareEvent(id) {
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
@@ -2411,6 +2441,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- v6.93 -->
+<!-- v6.95 -->
 </body>
 </html>
