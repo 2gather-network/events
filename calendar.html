@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <!--
-  Community Events (public/read-only)
-  Version 2.48
-  v2.48 - Kick off Mondays updated
+  calendar.html Version 2.50
+  v2.50 - interestedEnabled optional on all recurring events; description + read more new tab
 -->
 <html lang="en">
 <head>
@@ -223,7 +222,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
     categories:["learning"],
     description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    experience:"connected,energized", adminOnly:true,
+    experience:"connected,energized", adminOnly:true, interestedEnabled:"optional",
   },
   {
     title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
@@ -232,7 +231,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
     categories:["learning"],
     description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
-    experience:"connected,expressed,rested", adminOnly:true,
+    experience:"connected,expressed,rested", adminOnly:true, interestedEnabled:"optional",
   },
   {
     title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00",
@@ -240,7 +239,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["care","faith","resources","movement","learning"],
     description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.",
-    experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false,
+    experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Feedback Fridays", dayOfWeek:5, time:"12:00", endtime:"13:00",
@@ -248,7 +247,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
     description:"Come with your small or big idea and receive supportive feedback.",
-    experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false,
+    experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false, interestedEnabled:"optional",
   },
   {
     title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00",
@@ -256,9 +255,9 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
-    description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local.",
+    description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local, right off the light rail.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
-    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false,
+    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -266,7 +265,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning"],
     description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
-    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
   {
     title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
@@ -278,7 +277,7 @@ const RECURRING_EVENTS = [
     description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
-    experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
 ];
 
@@ -512,7 +511,7 @@ function renderEvents() {
       : "";
     const descHtml = ev.description
       ? (ev.description.length > 200
-        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
         : escNl(ev.description))
       : "";
     const card = document.createElement("div");
@@ -794,6 +793,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.48 -->
+<!-- calendar.html v2.50 -->
 </body>
 </html>
