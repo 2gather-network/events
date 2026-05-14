@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events (public/read-only)
-  Version 2.46
-  v2.46 - Kick off Mondays: hybrid, 9-12, new image, location added
+  Version 2.48
+  v2.48 - Kick off Mondays updated
 -->
 <html lang="en">
 <head>
@@ -62,7 +62,7 @@
 .event-card-top + .event-card-img { border-top:1px solid var(--border); }
 
 .event-card-top { padding:16px 18px 12px; border-bottom:1px solid var(--border); }
-  .event-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:8px; }
+  .event-title { font-size:15px; font-weight:800; line-height:1.3; margin-bottom:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .event-cats { display:flex; gap:6px; flex-wrap:wrap; }
   .event-cat-tag { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--primary); background:var(--primary-light); padding:3px 8px; border-radius:10px; }
 
@@ -239,7 +239,7 @@ const RECURRING_EVENTS = [
     format:"virtual", room:"Wellness room", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["care","faith","resources","movement","learning"],
-    description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.",
+    description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.",
     experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false,
   },
   {
@@ -251,12 +251,14 @@ const RECURRING_EVENTS = [
     experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false,
   },
   {
-    title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"12:00",
+    title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00",
     format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories:["learning","professional","social","resources","care"],
-    description:"Start your week with support, fresh tools, and real talk about work and life. Stay for open coworking. Login virtually or join in at this space if you're local.",
-    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false,
+    contactEmail:"jessie@appear.network",
+    categories:["arts","learning","professional","creative","resources","care","social","wealth"],
+    description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local.",
+    experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
+    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false,
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -498,11 +500,20 @@ function renderEvents() {
     const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
     const catTags = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const roomObj = ROOMS.find(r => r.name === ev.room);
-    const recurringBadge = ev.recurring
-      ? `<span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
+    const formatBadge = ev.format === "virtual"
+      ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#EFF6FF;color:#1d4ed8;padding:3px 9px;border-radius:20px;white-space:nowrap;">💻 Virtual</span>`
+      : ev.format === "inperson"
+      ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:3px 9px;border-radius:20px;white-space:nowrap;">📍 In-person</span>`
+      : ev.format === "both"
+      ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#FFF7ED;color:#9a3412;padding:3px 9px;border-radius:20px;white-space:nowrap;">🔀 Hybrid</span>`
       : "";
-    const hybridBadge = ev.format === "both"
-      ? `<span style="font-size:11px;font-weight:700;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:0.03em;">🔀 Hybrid</span>`
+    const recurringBadge = ev.recurring
+      ? `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:3px 9px;border-radius:20px;white-space:nowrap;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
+      : "";
+    const descHtml = ev.description
+      ? (ev.description.length > 200
+        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        : escNl(ev.description))
       : "";
     const card = document.createElement("div");
     card.className = "event-card";
@@ -512,14 +523,16 @@ function renderEvents() {
     card.innerHTML = `
       ${isPastCard ? '<div style="background:#f0f0f0;color:#666;font-size:11px;font-weight:700;letter-spacing:0.07em;padding:5px 18px;border-bottom:1px solid var(--border);">PAST EVENT</div>' : ""}
       <div class="event-card-top">
-        <div class="event-title">${esc(ev.title)}${recurringBadge}${hybridBadge}</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div class="event-title">${esc(ev.title)}</div>
+          ${formatBadge}
+        </div>
       </div>
       ${ev.imageUrl ? `<div class="event-card-img" id="img-wrap-${ev.id}"><img src="${esc(ev.imageUrl)}" alt="" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ""}
       <div class="event-card-body">
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
-        ${ev.format === "virtual" || ev.format === "both" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#EFF6FF;color:#1d4ed8;padding:3px 10px;border-radius:20px;">💻 Virtual</span></div>` : ""}
-        ${ev.format === "inperson" ? `<div class="event-meta-item" style="margin-bottom:6px;"><span style="font-size:12px;font-weight:600;background:#F0FDF4;color:#166534;padding:3px 10px;border-radius:20px;">📍 In-person</span></div>` : ""}
-        ${ev.description ? `<div class="event-desc" style="margin-top:8px;font-size:14px;color:var(--muted);line-height:1.5;">${escNl(trunc(ev.description, 200))}</div>` : ""}
+        ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
+        ${recurringBadge ? `<div style="margin-top:8px;">${recurringBadge}</div>` : ""}
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
@@ -781,6 +794,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v2.46 -->
+<!-- v2.48 -->
 </body>
 </html>
