@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 7.3
-  v7.3 - Kick off Mondays updated; collapsible more options; clear form at top; swipe fix; ← All events top only
+  Events.html Version 7.5
+  v7.5 - Notes modal on cards; shared notes enabled for Kick off Mondays + Wellness Wednesdays
 -->
 <html lang="en">
 <head>
@@ -676,7 +676,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
     categories:["learning"],
     description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    experience:"connected,energized", adminOnly:true,
+    experience:"connected,energized", adminOnly:true, interestedEnabled:"optional",
   },
   {
     title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
@@ -685,7 +685,7 @@ const RECURRING_EVENTS = [
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
     categories:["learning"],
     description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
-    experience:"connected,expressed,rested", adminOnly:true,
+    experience:"connected,expressed,rested", adminOnly:true, interestedEnabled:"optional",
   },
   {
     title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00",
@@ -693,7 +693,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["care","faith","resources","movement","learning"],
     description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.",
-    experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false,
+    experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45",
@@ -701,7 +701,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning","professional","creative"],
     description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.",
-    experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false,
+    experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false, interestedEnabled:"optional",
   },
   {
     title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00",
@@ -709,9 +709,9 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
-    description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local.",
+    description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local, right off the light rail.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
-    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false, recurFreq:"weekly",
+    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false, recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30",
@@ -719,7 +719,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     categories:["learning"],
     description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
-    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
   {
     title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
@@ -731,7 +731,7 @@ const RECURRING_EVENTS = [
     description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
-    experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly",
+    experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
 ];
 
@@ -1241,7 +1241,7 @@ function renderEvents() {
       : "";
     const descHtml = ev.description
       ? (ev.description.length > 200
-        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
         : escNl(ev.description))
       : "";
     const card = document.createElement("div");
@@ -1258,12 +1258,13 @@ function renderEvents() {
       <div class="event-card-body">
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
         ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
-        ${recurringBadge ? `<div style="margin-top:8px;">${recurringBadge}</div>` : ""}
       </div>
-      <div class="event-card-footer">
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
+      <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
+        ${recurringBadge ? `<div>${recurringBadge}</div>` : ""}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
           <a class="btn btn-sm" href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+          ${ev.sharedNotesEnabled ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
@@ -1734,6 +1735,7 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
           closeModal();
         }
         else if (id === "room-modal") closeRoomModal();
+        else if (id === "notes-modal") closeNotesModal();
         else if (id === "summary-modal") closeSummaryModal();
         else if (id === "passcode-modal") closePasscodeModal();
         else if (id === "choice-modal") closeChoiceModal();
@@ -1943,6 +1945,7 @@ safeOn("f-time",        "change", checkAndWarnConflict);
 safeOn("f-endtime",     "change", checkAndWarnConflict);
 safeOn("p-code",        "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
 safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   closeNotesModal(); });
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
@@ -1973,6 +1976,46 @@ function showSummary(ev) {
 
 function addToCalendarFromSummary() { if (summaryEventId) addToCalendar(summaryEventId); }
 function closeSummaryModal() { document.getElementById("summary-modal").classList.remove("open"); }
+
+let _notesEventId = null;
+
+function openNotesModal(id) {
+  const ev = [...events, ...getAllRecurring(2)].find(e => e.id === id);
+  _notesEventId = id;
+  const title = document.getElementById("notes-modal-title");
+  if (title) title.textContent = "📝 " + (ev ? ev.title : "Shared notes");
+  const area = document.getElementById("notes-textarea");
+  if (area) area.value = ev ? (ev.sharedNotes || "") : "";
+  const errEl = document.getElementById("notes-error");
+  if (errEl) errEl.style.display = "none";
+  document.getElementById("notes-modal").classList.add("open");
+  setTimeout(() => area && area.focus(), 100);
+}
+
+function closeNotesModal() {
+  document.getElementById("notes-modal").classList.remove("open");
+  _notesEventId = null;
+}
+
+async function saveNotesFromModal() {
+  const area = document.getElementById("notes-textarea");
+  const errEl = document.getElementById("notes-error");
+  if (!area || !_notesEventId) return;
+  const notes = area.value.trim();
+  if (notes.length > 2000) { errEl.textContent = "Notes too long (max 2000 characters)."; errEl.style.display = "block"; return; }
+  const saveBtn = document.querySelector("#notes-modal .btn-green");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving..."; }
+  try {
+    await jsonp({ action: "sharedNotes", id: _notesEventId, notes });
+    const ev = events.find(e => e.id === _notesEventId);
+    if (ev) ev.sharedNotes = notes;
+    closeNotesModal();
+    showToast("📝 Notes saved!");
+  } catch(e) {
+    if (errEl) { errEl.textContent = "Could not save. Try again."; errEl.style.display = "block"; }
+  }
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save"; }
+}
 function copySummary() {
   navigator.clipboard.writeText(document.getElementById("summary-body").textContent).then(() => {
     document.getElementById("copy-confirm").style.display = "block";
@@ -2540,6 +2583,22 @@ loadEvents();
   </div>
 </div>
 
-<!-- v7.3 -->
+<!-- Notes modal -->
+<div class="modal-overlay" id="notes-modal">
+  <div class="modal" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;" id="notes-modal-title">📝 Shared notes</div>
+      <button onclick="closeNotesModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
+    </div>
+    <textarea id="notes-textarea" style="width:100%;min-height:160px;border:1.5px solid var(--border);border-radius:8px;padding:12px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;margin-bottom:12px;" placeholder="Add a note..."></textarea>
+    <p class="error-msg" id="notes-error"></p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="saveNotesFromModal()">Save</button>
+      <button class="btn btn-outline" onclick="closeNotesModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Events.html v7.5 -->
 </body>
 </html>
