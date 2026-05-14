@@ -3,7 +3,7 @@
 <head>
   <!--
   event.html
-  Version 1.3
+  Version 1.5
   v1.3 - Fixed recurring event ID parsing (dynamic slugs with date suffix)
   -->
   <meta charset="UTF-8">
@@ -21,7 +21,7 @@
       --radius: 14px;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Nunito Sans','Segoe UI',sans-serif;
       background: var(--bg);
       color: var(--dark);
       min-height: 100vh;
@@ -104,11 +104,11 @@ const ROOMS = {
 const RECURRING_EVENTS = [
   { id:"onboarding-001", title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00", format:"virtual", room:"DayBalancer Onboarding", host:"DayBalancer", hostlink:"", categories:["learning"], description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.", experience:"connected,energized", recurFreq:"weekly" },
   { id:"ikigai-001", title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00", format:"virtual", room:"Ikigai room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.", experience:"connected,expressed,rested", recurFreq:"weekly" },
-  { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.", experience:"rested,energized", recurFreq:"weekly" },
-  { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", recurFreq:"weekly" },
-  { id:"kickoff-001", title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.", experience:"connected,energized", recurFreq:"weekly" },
-  { id:"getstarted-001", title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.", experience:"connected,energized", recurFreq:"weekly" },
-  { id:"shinelight-001", title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", recurFreq:"weekly" },
+  { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.", experience:"rested,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", recurFreq:"weekly" },
+  { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", recurFreq:"weekly" },
+  { id:"kickoff-001", title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.", experience:"connected,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly" },
+  { id:"getstarted-001", title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.", experience:"connected,energized", imageUrl:"https://drive.google.com/uc?export=view&id=1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly" },
+  { id:"shinelight-001", title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", imageUrl:"https://drive.google.com/uc?export=view&id=1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", recurFreq:"weekly" },
 ];
 
 function getNextDate(dayOfWeek) {
@@ -133,7 +133,7 @@ function recurToEv(r) {
     meetinglink: ROOMS[r.room] || "", showLinks: r.showLinks||"",
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
-    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
+    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
   };
 }
 
@@ -182,7 +182,7 @@ function fmtDate(date, time, endtime) {
   if (time) {
     s += " · " + new Date(date+"T"+time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
     if (endtime) s += " - " + new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    try { s += " " + Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop().replace(/_/g," "); } catch(e){}
+    try { const tzAbbr = new Date(date+"T"+time).toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); s += " " + tzAbbr; } catch(e){}
   }
   return s;
 }
@@ -197,7 +197,7 @@ function toEv(r) {
     cooplink: r.cooplink||"", paymentlink: r.paymentlink||"", meetinglink: r.meetinglink||"",
     showLinks: r.showLinks||"", otherExchange: r.otherExchange||"",
     exchangeType: r.exchangeType||"", recurFreq: r.recurFreq||"",
-    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
+    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
   };
 }
 
@@ -207,7 +207,7 @@ function render(ev) {
     : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000<Date.now());
 
   const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
-  const typeMap = {noask:"🔗 No ask",free:"🎁 Free",feedback:"💬 Feedback",testimonial:"⭐ Testimonial",time:"⏱ Equal time trade",share:"👥 Pass this along",money:"💰 Payment required"};
+  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"📣 Spread the word",free:"💬 Feedback",testimonial:"⏰ Time",share:"💵 Money"};
 
   const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
     : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
@@ -256,12 +256,28 @@ function render(ev) {
       ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
       <hr class="divider">
       <div class="actions">
-        <button class="btn btn-primary" onclick="share()">🔗 Share</button>
+        <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/><polyline points="20 7 12 3 4 7"/></svg> Share</button>
         <a class="btn btn-outline" href="calendar.html">← All events</a>
       </div>
     </div>`;
 
   document.title = ev.title || "Event";
+}
+
+
+function addToCalendar(ev) {
+  if (!ev.date) return;
+  const pad = n => String(n).padStart(2,"0");
+  const toGCal = (d,t) => { const dt = new Date(d+"T"+(t||"00:00")); return dt.getFullYear()+pad(dt.getMonth()+1)+pad(dt.getDate())+"T"+pad(dt.getHours())+pad(dt.getMinutes())+"00"; };
+  const start = toGCal(ev.date, ev.time);
+  const end   = ev.endtime ? toGCal(ev.date, ev.endtime) : toGCal(ev.date, ev.time);
+  const loc   = ev.location || ev.meetinglink || "";
+  const url   = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    "&text=" + encodeURIComponent(ev.title) +
+    "&dates=" + start + "/" + end +
+    "&details=" + encodeURIComponent((ev.description||"").slice(0,500)) +
+    "&location=" + encodeURIComponent(loc);
+  window.open(url, "_blank");
 }
 
 function share() {
@@ -305,6 +321,6 @@ async function init() {
 
 init();
 </script>
+<!-- v1.5 -->
 </body>
-<!-- v1.3 -->
 </html>
