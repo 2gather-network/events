@@ -1,28 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 6.91
-
-  v6.72 - AI parse feature (paste event text, Claude extracts fields); choice modal and paste modal
-  v6.73 - Removed DayBalancer UI branding from events board
-  v6.74 - Fixed modal scroll/drag-to-close conflict on mobile
-  v6.75 - Paste modal: Monday Commons placeholder, auto-select categories, past date warning
-  v6.76 - Added touch-action:pan-y to prevent Brave browser horizontal swipe closing modal
-  v6.77 - Removed Appear Network branding from HTML, page title, header
-  v6.78 - Renamed recurring events: "Kick off Mondays for indies", "Get started with Appear Network"; updated hostlinks to appear.network
-  v6.79 - Normalized all w.hssQR hostlinks to appear.network/dl/page
-  v6.80 - Commons room URL updated to appear.network/dl/commons (later reverted)
-  v6.81 - Added experience field: multi-select feelings chips in form, display on card; experience tags on all recurring events
-  v6.82 - Updated "Nourished" label to "Nourished from food/drink"; applied experience tags to recurring events
-  v6.83 - Reverted Commons room URL back to gather.daybalancer.com
-  v6.84 - Added share button (native share sheet / clipboard fallback) and deep link via ?event= param
-  v6.85 - Added imageUrl (cover image) field to form and card display; detailImageUrl in data model
-  v6.86 - Created event.html; "View event →" links to event.html?id=; share URL points to event.html
-  v6.87 - Stripped card to minimal view (title, cats, image, format, description preview, View button)
-  v6.88 - Rebuilt event.html with full event details
-  v6.89 - Added 200-char description preview to card; "View" button solid primary blue; no arrow
-  v6.90 - Added detail image field; public/private visibility toggle; private events hidden from calendar
-  v6.91 - View button opens in new tab; full changelog added
+  Version 6.93
+  v6.93 - Host email field added; Find my event flow (email lookup + PIN to edit)
 -->
 <html lang="en">
 <head>
@@ -209,6 +189,7 @@
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
     <button class="btn btn-white btn-sm" onclick="openChoiceModal()">+ Post an event</button>
+    <button class="btn btn-white btn-sm" onclick="openFindModal()">🔍 Find my event</button>
   </div>
 </div>
 
@@ -325,6 +306,11 @@ Start your week with other independents. Share what you're working on, what you 
   <div class="modal">
     <div class="modal-title" id="modal-title">Post an event</div>
     <div id="draft-notice" style="display:none; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:8px 12px; font-size:13px; margin-bottom:16px;">✏️ Your draft was restored - pick up where you left off!</div>
+
+    <div class="field">
+      <label class="field-label">Host email <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- for finding and editing your event later</span></label>
+      <input class="input" id="f-host-email" type="email" placeholder="you@example.com">
+    </div>
 
     <div class="field">
       <label class="field-label">Event title *</label>
@@ -476,12 +462,15 @@ Start your week with other independents. Share what you're working on, what you 
     <div class="field">
       <label class="field-label">What would you welcome from participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="exchange-chips">
-        <button type="button" class="format-chip" id="exch-noask" onclick="toggleExchange('noask')">🔗 Spread the word</button>
-        <button type="button" class="format-chip" id="exch-free" onclick="toggleExchange('free')">💬 Give feedback</button>
-        <button type="button" class="format-chip" id="exch-testimonial" onclick="toggleExchange('testimonial')">🔁 Trade time</button>
-        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">☕ Coffee</button>
-        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">💸 Tip</button>
-        <button type="button" class="format-chip" id="exch-share" onclick="toggleExchange('share')">💰 Paid</button>
+        <button type="button" class="format-chip" id="exch-spread" onclick="toggleExchange('spread')">📣 Spread the word</button>
+        <button type="button" class="format-chip" id="exch-time" onclick="toggleExchange('time')">⏰ Time</button>
+        <button type="button" class="format-chip" id="exch-connections" onclick="toggleExchange('connections')">🌐 Referrals/Connections</button>
+        <button type="button" class="format-chip" id="exch-feedback" onclick="toggleExchange('feedback')">💬 Feedback</button>
+        <button type="button" class="format-chip" id="exch-skills" onclick="toggleExchange('skills')">🛠️ Skills</button>
+        <button type="button" class="format-chip" id="exch-stuff" onclick="toggleExchange('stuff')">🎁 Stuff</button>
+        <button type="button" class="format-chip" id="exch-space" onclick="toggleExchange('space')">📍 Space</button>
+        <button type="button" class="format-chip" id="exch-money" onclick="toggleExchange('money')">💵 Money</button>
+        <button type="button" class="format-chip" id="exch-care" onclick="toggleExchange('care')">💛 Care</button>
         <button type="button" class="format-chip" id="exch-other" onclick="toggleExchange('other')">✏️ Other</button>
       </div>
       <div id="field-exch-other" style="display:none;margin-top:8px;">
@@ -512,6 +501,24 @@ Start your week with other independents. Share what you're working on, what you 
 
     <p class="error-msg" id="post-error"></p>
     <div class="conflict-warning" id="conflict-warning"></div>
+
+    <div class="field">
+      <label class="field-label">Who is this for? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <select id="f-life-stage" class="input" style="width:100%;">
+        <option value="">Any life stage</option>
+        <option value="students">Students</option>
+        <option value="early-career">Early career</option>
+        <option value="mid-career">Mid-career</option>
+        <option value="senior-professional">Senior professional</option>
+        <option value="late-career">Late career / pre-retired</option>
+        <option value="retired">Retired</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Keywords <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, separate with commas</span></label>
+      <input type="text" id="f-keywords" class="input" placeholder="e.g. networking, AI, writing" style="width:100%;">
+    </div>
 
     <div class="field" style="margin-bottom:12px;">
       <label class="field-label" style="margin-bottom:8px;">Visibility</label>
@@ -882,8 +889,8 @@ function evToSheet(ev) {
     location: ev.location || "", lat: ev.lat || "", lng: ev.lng || "", room: ev.room || "",
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
-    passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false,
+    passcode: ev.passcode || "", hostEmail: ev.hostEmail || "", cooplink: ev.cooplink || "", going: ev.going || 0,
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, lifeStage: ev.lifeStage || "", keywords: ev.keywords || "",
   };
 }
 
@@ -915,9 +922,9 @@ function sheetToEv(row) {
     format: row.format || "", location: row.location || "", lat: row.lat || "", lng: row.lng || "",
     room: row.room || "", description: row.description || "", host: row.host || "",
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
-    passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
+    passcode: row.passcode || "", hostEmail: row.hostEmail || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false,
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.lifeStage || "", keywords: row.keywords || "",
   };
 }
 
@@ -1206,7 +1213,7 @@ function renderEvents() {
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <a class="btn btn-sm" href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
-          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;">🔗</button>
+          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/><polyline points="20 7 12 3 4 7"/></svg></button>
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
@@ -1241,6 +1248,7 @@ function saveEditDraft() {
     location: document.getElementById("f-location")?.value || "",
     desc: document.getElementById("f-desc")?.value || "",
     host: document.getElementById("f-host")?.value || "",
+    hostEmail: document.getElementById("f-host-email")?.value.trim() || "",
     hostlink: document.getElementById("f-hostlink")?.value || "",
     contactEmail: document.getElementById("f-contact-email")?.value || "",
     contactPhone: document.getElementById("f-contact-phone")?.value || "",
@@ -1252,6 +1260,8 @@ function saveEditDraft() {
     imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
     detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
     isPrivate: currentVisibility === "private",
+    lifeStage: document.getElementById("f-life-stage")?.value || "",
+    keywords: document.getElementById("f-keywords")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -1273,6 +1283,7 @@ function restoreEditDraft(id) {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
+    const heEl = document.getElementById("f-host-email"); if(heEl) heEl.value = d.hostEmail || "";
     document.getElementById("f-hostlink").value = d.hostlink || "";
     document.getElementById("f-contact-email").value = d.contactEmail || "";
     document.getElementById("f-contact-phone").value = d.contactPhone || "";
@@ -1301,7 +1312,8 @@ function saveDraft() {
     title: document.getElementById("f-title")?.value || "", date: document.getElementById("f-date")?.value || "",
     time: document.getElementById("f-time")?.value || "", endtime: document.getElementById("f-endtime")?.value || "",
     location: document.getElementById("f-location")?.value || "", desc: document.getElementById("f-desc")?.value || "",
-    host: document.getElementById("f-host")?.value || "", hostlink: document.getElementById("f-hostlink")?.value || "",
+    host: document.getElementById("f-host")?.value || "",
+    hostEmail: document.getElementById("f-host-email")?.value.trim() || "", hostlink: document.getElementById("f-hostlink")?.value || "",
     contactEmail: document.getElementById("f-contact-email")?.value || "", contactPhone: document.getElementById("f-contact-phone")?.value || "",
     cooplink: document.getElementById("f-cooplink")?.value || "", passcode: document.getElementById("f-passcode")?.value || "",
     paymentlink: document.getElementById("f-paymentlink")?.value || "", exchangeType: [...selectedExchangeTypes].join(",") || "", otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
@@ -1324,6 +1336,7 @@ function restoreDraft() {
     document.getElementById("f-location").value = d.location || "";
     document.getElementById("f-desc").value     = d.desc || "";
     document.getElementById("f-host").value     = d.host || "";
+    const heEl = document.getElementById("f-host-email"); if(heEl) heEl.value = d.hostEmail || "";
     document.getElementById("f-hostlink").value = d.hostlink || "";
     document.getElementById("f-contact-email").value = d.contactEmail || "";
     document.getElementById("f-contact-phone").value = d.contactPhone || "";
@@ -1376,11 +1389,14 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
-  selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
+  selectedExchangeTypes = new Set(); ["spread","time","connections","feedback","skills","stuff","space","money","care","other","noask","free","testimonial","share"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   selectedExperiences = new Set(); ["connected","expressed","nourished","energized","playful","rested"].forEach(t => { const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected"); });
   const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = "";
   const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = "";
   setVisibility("public");
+  const heResetEl = document.getElementById("f-host-email"); if(heResetEl) heResetEl.value = "";
+  const lsEl = document.getElementById("f-life-stage"); if(lsEl) lsEl.value = "";
+  const kwEl = document.getElementById("f-keywords"); if(kwEl) kwEl.value = "";
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1604,7 +1620,7 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
       const dy = e.touches[0].clientY - startY;
       const dx = e.touches[0].clientX - startX;
       if (window.innerWidth > 768) return;
-      if (Math.abs(dx) > Math.abs(dy)) return;
+      if (Math.abs(dx) > Math.abs(dy) * 0.5) return; // ignore if horizontal component is significant
       if (dy > 10 && startScrollTop <= 2) { dragging = true; modal.style.transform = `translateY(${Math.max(0,dy*0.6)}px)`; modal.style.transition = "none"; e.preventDefault(); }
     }, { passive:false });
     modal.addEventListener("touchend", e => {
@@ -1630,6 +1646,79 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
   });
 })();
 
+
+
+let findTargetId = null;
+
+function openFindModal() {
+  document.getElementById("find-modal").classList.add("open");
+  document.getElementById("find-email").value = "";
+  document.getElementById("find-error").style.display = "none";
+  document.getElementById("find-results").style.display = "none";
+  document.getElementById("find-results-list").innerHTML = "";
+  setTimeout(() => document.getElementById("find-email").focus(), 100);
+}
+
+function closeFindModal() {
+  document.getElementById("find-modal").classList.remove("open");
+}
+
+function closeFindPinModal() {
+  document.getElementById("find-pin-modal").classList.remove("open");
+  findTargetId = null;
+}
+
+async function findMyEvents() {
+  const email = document.getElementById("find-email").value.trim().toLowerCase();
+  const errEl = document.getElementById("find-error");
+  errEl.style.display = "none";
+  if (!email) { errEl.textContent = "Please enter your email."; errEl.style.display = "block"; return; }
+
+  // Search loaded events
+  const matched = events.filter(e => (e.hostEmail||"").toLowerCase() === email);
+
+  if (matched.length === 0) {
+    errEl.textContent = "No events found for that email.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  const list = document.getElementById("find-results-list");
+  list.innerHTML = matched.map(ev => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px;border:1px solid var(--border);">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--dark);">${esc(ev.title)}</div>
+        <div style="font-size:12px;color:var(--muted);">${esc(fmtDateShort(ev.date))}${ev.isPrivate ? " · 🔒 Private" : ""}</div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="promptFindPin('${ev.id}')" style="padding:6px 12px;font-size:13px;">Edit</button>
+    </div>
+  `).join("");
+  document.getElementById("find-results").style.display = "block";
+}
+
+function promptFindPin(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  findTargetId = id;
+  document.getElementById("find-pin-event-name").textContent = ev.title;
+  document.getElementById("find-pin-input").value = "";
+  document.getElementById("find-pin-error").style.display = "none";
+  document.getElementById("find-pin-modal").classList.add("open");
+  setTimeout(() => document.getElementById("find-pin-input").focus(), 100);
+}
+
+function confirmFindPin() {
+  const pin = document.getElementById("find-pin-input").value;
+  const ev = events.find(e => e.id === findTargetId);
+  if (!ev) return;
+  if (pin !== String(ev.passcode)) {
+    document.getElementById("find-pin-error").style.display = "block";
+    return;
+  }
+  closeFindPinModal();
+  closeFindModal();
+  openEdit(findTargetId);
+}
 
 function shareEvent(id) {
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
@@ -1838,6 +1927,8 @@ async function submitEvent() {
     imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
     detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
     isPrivate: currentVisibility === "private",
+    lifeStage: document.getElementById("f-life-stage")?.value || "",
+    keywords: document.getElementById("f-keywords")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
     recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
@@ -1879,7 +1970,8 @@ function fmtDate(date, time, endtime) {
   const d  = new Date(date + "T" + (time||"00:00"));
   const ds = d.toLocaleDateString("en-US", {weekday:"short",month:"short",day:"numeric"});
   if (!time) return ds;
-  const tz = d.toLocaleTimeString("en-US", {timeZoneName:"short"}).split(" ").pop();
+  const tzParts = d.toLocaleTimeString("en-US", {timeZoneName:"short"}).split(" ");
+  const tz = tzParts[tzParts.length - 1]; // e.g. PDT, PST, EST
   const ts = d.toLocaleTimeString("en-US", {hour:"numeric",minute:"2-digit"});
   if (!endtime) return ds + " · " + ts + " " + tz;
   const te = new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
@@ -2285,6 +2377,40 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.91 -->
+
+<div class="modal-overlay" id="find-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Find my event</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Enter the email you used when posting your event.</p>
+    <div class="field">
+      <label class="field-label">Host email</label>
+      <input class="input" id="find-email" type="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <p class="error-msg" id="find-error" style="display:none;margin-bottom:12px;"></p>
+    <div id="find-results" style="display:none;margin-bottom:16px;">
+      <p style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:10px;">Your events:</p>
+      <div id="find-results-list"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="findMyEvents()">Find events</button>
+      <button class="btn btn-outline" onclick="closeFindModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="find-pin-modal">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div class="modal-title">Enter your PIN</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;" id="find-pin-event-name"></p>
+    <input class="input" id="find-pin-input" type="password" maxlength="4" placeholder="4-digit PIN" style="letter-spacing:0.3em;font-size:20px;text-align:center;margin-bottom:12px;" autocomplete="off">
+    <p class="error-msg" id="find-pin-error" style="display:none;margin-bottom:12px;">Incorrect PIN. Please try again.</p>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="flex:1;" onclick="confirmFindPin()">Edit event</button>
+      <button class="btn btn-outline" onclick="closeFindPinModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- v6.93 -->
 </body>
 </html>
