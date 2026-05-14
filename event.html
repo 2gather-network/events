@@ -3,10 +3,11 @@
 <head>
   <!--
   event.html
-  Version 1.6
+  Version 1.8
   v1.3 - Fixed recurring event ID parsing (dynamic slugs with date suffix)
   -->
   <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Event</title>
   <style>
@@ -256,14 +257,23 @@ function render(ev) {
       ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
       <hr class="divider">
       <div class="actions">
-        <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/><polyline points="20 7 12 3 4 7"/></svg> Share</button>
+        <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
+        ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
+        <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
         <a class="btn btn-outline" href="calendar.html">← All events</a>
       </div>
     </div>`;
 
   document.title = ev.title || "Event";
+  _currentEv = ev;
 }
 
+
+let _currentEv = null; // store rendered event for calendar lookup
+
+function addToCalendarById(id) {
+  if (_currentEv && _currentEv.id === id) addToCalendar(_currentEv);
+}
 
 function addToCalendar(ev) {
   if (!ev.date) return;
@@ -280,6 +290,14 @@ function addToCalendar(ev) {
   window.open(url, "_blank");
 }
 
+function copyLink() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById("copy-btn");
+    if (btn) { const orig = btn.textContent; btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = orig, 2000); }
+  }).catch(() => prompt("Copy this link:", url));
+}
+
 function share() {
   const url = window.location.href;
   if (navigator.share) { navigator.share({ title: document.title, url }).catch(()=>{}); }
@@ -292,7 +310,7 @@ function showError(msg) {
 
 async function init() {
   const id = new URLSearchParams(window.location.search).get("id");
-  if (!id) { showError("No event specified."); return; }
+  if (!id) { render(PREVIEW_EVENT); return; }
   // Check recurring events (IDs are dynamic: recurring-{slug}-{YYYY-MM-DD})
   if (id.startsWith("recurring-")) {
     const dateStr = id.slice(-10); // last 10 chars = YYYY-MM-DD
@@ -319,8 +337,23 @@ async function init() {
   }
 }
 
+
+const PREVIEW_EVENT = {
+  id: "preview", title: "Kick off Mondays for indies",
+  date: new Date().toISOString().slice(0,10),
+  time: "09:00", endtime: "10:00",
+  format: "virtual", room: "The Commons",
+  host: "Jessie Upp", hostlink: "https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
+  description: "Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.",
+  experience: "connected,energized", recurFreq: "weekly",
+  imageUrl: "https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
+  detailImageUrl: "", categories: ["learning"], exchangeType: "", showLinks: "",
+  contactEmail: "", contactPhone: "", cooplink: "", paymentlink: "", meetinglink: "",
+  lifeStage: "", keywords: "", isPrivate: false, otherExchange: "",
+};
+
 init();
 </script>
-<!-- v1.6 -->
+<!-- v1.8 -->
 </body>
 </html>
