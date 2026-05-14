@@ -3,8 +3,8 @@
 <head>
   <!--
   event.html
-  Version 2.0
-  v2.0 - Interest registration + shared notes on event page
+  Version 2.2
+  v2.2 - Sync Kick off Mondays recurring event and preview to match events.html
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -143,7 +143,7 @@ const RECURRING_EVENTS = [
   { id:"ikigai-001", title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00", format:"virtual", room:"Ikigai room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.", experience:"connected,expressed,rested", recurFreq:"weekly" },
   { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss anything wellness. Weekly on Wednesdays.", experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", recurFreq:"weekly" },
   { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", recurFreq:"weekly" },
-  { id:"kickoff-001", title:"Kick off Mondays for indies", dayOfWeek:1, time:"09:00", endtime:"10:00", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.", experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly" },
+  { id:"kickoff-001", title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00", format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"jessie@appear.network", categories:["arts","learning","professional","creative","resources","care","social","wealth"], description:"Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local.", experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact", imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", recurFreq:"weekly" },
   { id:"getstarted-001", title:"Get started with Appear Network", dayOfWeek:1, time:"12:00", endtime:"12:30", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Join us every Monday for a live Q&A session. We'll walk you through the platform and help you get connected to community.", experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly" },
   { id:"shinelight-001", title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", recurFreq:"weekly" },
 ];
@@ -323,7 +323,6 @@ function render(ev) {
         <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
-        <a class="btn btn-outline" href="calendar.html">← All events</a>
       </div>
     </div>`;
 
@@ -468,22 +467,23 @@ async function init() {
 
 
 const PREVIEW_EVENT = {
-  id: "preview", title: "Kick off Mondays for indies",
+  id: "preview", title: "Kick off Mondays for Independents",
   date: new Date().toISOString().slice(0,10),
-  time: "09:00", endtime: "10:00",
-  format: "virtual", room: "The Commons",
+  time: "09:00", endtime: "12:00",
+  format: "both", room: "The Commons", location: "23000 Lakeview Dr, Mountlake Terrace, WA 98043",
   host: "Jessie Upp", hostlink: "https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-  description: "Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking.",
-  experience: "connected,energized", recurFreq: "weekly",
-  imageUrl: "https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
-  detailImageUrl: "", categories: ["learning"], exchangeType: "", showLinks: "",
-  contactEmail: "", contactPhone: "", cooplink: "", paymentlink: "", meetinglink: "",
-  lifeStage: "", keywords: "", isPrivate: false, otherExchange: "",
+  contactEmail: "jessie@appear.network",
+  description: "Creators create. Start your week with other independents. Share what you're working on, what you need, and what you're offering. Stay for open coworking. Login virtually or join in at this space if you're local.",
+  experience: "connected,expressed,energized", exchangeType: "spread,feedback", showLinks: "contact", recurFreq: "weekly",
+  imageUrl: "https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
+  detailImageUrl: "", categories: ["arts","learning","professional","creative","resources","care","social","wealth"], otherExchange: "",
+  contactPhone: "", cooplink: "", paymentlink: "", meetinglink: "",
+  lifeStage: "", keywords: "", isPrivate: false,
   interestedEnabled: "off", interested: "", sharedNotesEnabled: false, sharedNotes: "",
 };
 
 init();
 </script>
-<!-- v2.0 -->
+<!-- v2.2 -->
 </body>
 </html>
