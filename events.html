@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Version 6.89
+  Version 6.90
   
   v6.72 Changes:
   - Added AI parse feature: paste event text and Claude extracts fields
@@ -436,8 +436,13 @@ Start your week with other independents. Share what you're working on, what you 
     </div>
 
     <div class="field">
-      <label class="field-label">Event image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL</span></label>
+      <label class="field-label">Cover image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows on the event card</span></label>
       <input type="url" id="f-image-url" class="input" placeholder="https://..." style="width:100%;">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Detail image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows inside the event page</span></label>
+      <input type="url" id="f-detail-image-url" class="input" placeholder="https://..." style="width:100%;">
     </div>
 
     <div class="field">
@@ -491,6 +496,15 @@ Start your week with other independents. Share what you're working on, what you 
 
     <p class="error-msg" id="post-error"></p>
     <div class="conflict-warning" id="conflict-warning"></div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label class="field-label" style="margin-bottom:8px;">Visibility</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="format-chip selected" id="vis-public" onclick="setVisibility('public')" style="flex:1;">🌐 Public</button>
+        <button type="button" class="format-chip" id="vis-private" onclick="setVisibility('private')" style="flex:1;">🔒 Private</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;" id="vis-hint">Visible to everyone on the events calendar.</p>
+    </div>
 
     <div class="modal-actions">
       <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
@@ -853,7 +867,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false,
   };
 }
 
@@ -887,7 +901,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false,
   };
 }
 
@@ -1087,7 +1101,7 @@ function renderEvents() {
   const publicRec = getPublicRecurring(2);
   const allEvents = [...events, ...publicRec];
 
-  let list = allEvents.filter(e => {
+  let list = allEvents.filter(e => !e.isPrivate).filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
     cats = cats.map(c => {
       const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
@@ -1220,6 +1234,8 @@ function saveEditDraft() {
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     experience: [...selectedExperiences].join(",") || "",
     imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
+    detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
+    isPrivate: currentVisibility === "private",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
   };
@@ -1347,6 +1363,8 @@ function openModal(skipDraft = false) {
   selectedExchangeTypes = new Set(); ["free","feedback","testimonial","money","time","share","noask","other"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
   selectedExperiences = new Set(); ["connected","expressed","nourished","energized","playful","rested"].forEach(t => { const b = document.getElementById("exp-"+t); if(b) b.classList.remove("selected"); });
   const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = "";
+  const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = "";
+  setVisibility("public");
   document.getElementById("f-time").value = "12:00";
   document.getElementById("f-endtime").value = "13:00";
   buildFormChips();
@@ -1507,6 +1525,19 @@ function toggleExchange(type) {
   if (label) label.textContent = selectedExchangeTypes.has("money") ? "- required" : "- optional";
   const cb = document.getElementById("show-paymentlink");
   if (cb && selectedExchangeTypes.has("money")) { cb.checked = true; toggleLinkFields(); }
+}
+
+let currentVisibility = "public";
+function setVisibility(v) {
+  currentVisibility = v;
+  const pub = document.getElementById("vis-public");
+  const priv = document.getElementById("vis-private");
+  const hint = document.getElementById("vis-hint");
+  if (pub) pub.classList.toggle("selected", v === "public");
+  if (priv) priv.classList.toggle("selected", v === "private");
+  if (hint) hint.textContent = v === "private"
+    ? "Only visible to people with a direct link - won\'t appear on the events calendar."
+    : "Visible to everyone on the events calendar.";
 }
 
 let selectedExperiences = new Set();
@@ -1789,6 +1820,8 @@ async function submitEvent() {
     otherExchange: document.getElementById("f-exch-other")?.value.trim() || "",
     experience: [...selectedExperiences].join(",") || "",
     imageUrl: document.getElementById("f-image-url")?.value.trim() || "",
+    detailImageUrl: document.getElementById("f-detail-image-url")?.value.trim() || "",
+    isPrivate: currentVisibility === "private",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
     recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
@@ -2236,6 +2269,6 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- v6.89 -->
+<!-- v6.90 -->
 </body>
 </html>
