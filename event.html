@@ -3,8 +3,8 @@
 <head>
   <!--
   event.html
-  Version 1.8
-  v1.3 - Fixed recurring event ID parsing (dynamic slugs with date suffix)
+  Version 2.0
+  v2.0 - Interest registration + shared notes on event page
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -84,12 +84,48 @@
       letter-spacing: 0.07em; padding: 5px 18px; border-bottom: 1px solid var(--border);
     }
     .loading, .error { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 15px; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; padding:28px; max-width:400px; width:100%; max-height:92vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+    .modal-title { font-size:18px; font-weight:700; margin-bottom:18px; color:var(--dark); }
+    .modal-field { margin-bottom:14px; }
+    .modal-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+    .modal-input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:10px 14px; font-size:15px; font-family:inherit; color:var(--dark); outline:none; }
+    .modal-input:focus { border-color:var(--primary); }
+    .modal-actions { display:flex; gap:10px; margin-top:6px; }
+    .error-msg { color:#c0392b; font-size:13px; margin-bottom:10px; display:none; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    @media(max-width:768px) {
+      .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
+      .modal { border-radius:20px 20px 0 0; max-width:100%; max-height:90vh; padding:8px 20px 32px; }
+      .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
+    }
   </style>
 </head>
 <body>
 <div class="card" id="card">
   <div class="loading">Loading event...</div>
 </div>
+<div class="modal-overlay" id="interest-modal">
+  <div class="modal">
+    <div class="modal-title">I'm interested</div>
+    <div class="modal-field">
+      <label class="modal-label" id="int-name-label">Name</label>
+      <input class="modal-input" id="int-name" type="text" placeholder="Your name" autocomplete="name">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" id="int-email-label">Email</label>
+      <input class="modal-input" id="int-email" type="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+    <p class="error-msg" id="int-error"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1;" onclick="submitInterest()">Submit</button>
+      <button class="btn btn-outline" onclick="closeInterestModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 <script>
 
 const ROOMS = {
@@ -135,6 +171,8 @@ function recurToEv(r) {
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
+    sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
   };
 }
 
@@ -161,9 +199,12 @@ function jsonp(params) {
 
 function parseDate(v) {
   if (!v) return "";
-  const m = String(v).trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (s.includes("T")) return s.split("T")[0];
+  const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (m) return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");
-  return String(v).trim();
+  return s;
 }
 
 function parseTime(v) {
@@ -199,6 +240,8 @@ function toEv(r) {
     showLinks: r.showLinks||"", otherExchange: r.otherExchange||"",
     exchangeType: r.exchangeType||"", recurFreq: r.recurFreq||"",
     experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
+    sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
   };
 }
 
@@ -208,7 +251,7 @@ function render(ev) {
     : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000<Date.now());
 
   const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
-  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"📣 Spread the word",free:"💬 Feedback",testimonial:"⏰ Time",share:"💵 Money"};
+  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"📣 Spread the word",free:"💬 Feedback",testimonial:"⏰ Time",share:"💵 Money"};
 
   const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
     : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
@@ -216,7 +259,7 @@ function render(ev) {
 
   const recurBadge = ev.recurFreq ? `<span class="format-badge badge-recurring">🔁 ${ev.recurFreq==="monthly"?"Monthly":"Weekly"}</span>` : "";
 
-  const roomUrl = "https://gather.daybalancer.com/events/yvrgej/zkxbzq";
+  const roomUrl = ROOMS[ev.room] || "https://gather.daybalancer.com/events/yvrgej/zkxbzq";
   const vLink = ev.meetinglink ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener">Join virtual meeting</a>`
     : ev.room ? `<a href="${esc(roomUrl)}" target="_blank" rel="noopener">${esc(ev.room)}</a>` : "Virtual";
 
@@ -242,7 +285,25 @@ function render(ev) {
   ].filter(Boolean).join("");
 
   const exchange = ev.exchangeType
-    ? `<div class="contributions">What ${esc(firstName)} welcomes: ${ev.exchangeType.split(",").filter(Boolean).map(t=>typeMap[t]||(t==="other"?"✏️ "+(ev.otherExchange||"Other"):t)).join(" · ")}</div>` : "";
+    ? `<div style="margin-bottom:18px;">
+        <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:0 0 8px;">What ${esc(firstName)} invites</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">${ev.exchangeType.split(",").filter(Boolean).map(t=>`<span style="font-size:13px;font-weight:600;padding:5px 12px;border-radius:20px;background:#f9fafb;border:1px solid var(--border);color:var(--dark);">${typeMap[t]||(t==="other"?"✏️ "+(ev.otherExchange||"Other"):t)}</span>`).join("")}</div>
+       </div>` : "";
+
+  const interestedSection = (ev.interestedEnabled && ev.interestedEnabled !== "off") ? `
+    <div style="margin:0 0 18px;">
+      <button class="btn btn-primary" onclick="openInterestModal()" id="interest-btn" style="margin-bottom:10px;">+1 I'm interested</button>
+      <p style="font-size:13px;color:var(--muted);">Can't make it? Please contact the host.</p>
+    </div>` : "";
+
+  const sharedNotesSection = ev.sharedNotesEnabled ? `
+    <div style="margin:0 0 18px;">
+      <textarea id="shared-notes-area" style="width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;">${esc(ev.sharedNotes||"")}</textarea>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+        <button class="btn btn-outline" onclick="saveSharedNotes()" id="save-notes-btn" style="font-size:13px;padding:8px 16px;">Save</button>
+        <span id="notes-saved-msg" style="display:none;font-size:13px;color:#4CAF7D;font-weight:700;">✓ Saved</span>
+      </div>
+    </div>` : "";
 
   document.getElementById("card").innerHTML = `
     <a class="back-link" href="calendar.html">← All events</a>
@@ -255,6 +316,8 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
+      ${interestedSection}
+      ${sharedNotesSection}
       <hr class="divider">
       <div class="actions">
         <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
@@ -266,6 +329,16 @@ function render(ev) {
 
   document.title = ev.title || "Event";
   _currentEv = ev;
+
+  // mark interest btn if already registered
+  if (ev.interestedEnabled && ev.interestedEnabled !== "off") {
+    try {
+      if (localStorage.getItem("db-interested-" + ev.id) === "1") {
+        const btn = document.getElementById("interest-btn");
+        if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
+      }
+    } catch(e) {}
+  }
 }
 
 
@@ -306,6 +379,62 @@ function share() {
 
 function showError(msg) {
   document.getElementById("card").innerHTML = `<div class="error">${esc(msg)}</div>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function openInterestModal() {
+  if (!_currentEv) return;
+  const required = _currentEv.interestedEnabled === "required";
+  document.getElementById("int-name-label").textContent = required ? "Name *" : "Name";
+  document.getElementById("int-email-label").textContent = required ? "Email *" : "Email";
+  document.getElementById("int-error").style.display = "none";
+  document.getElementById("int-name").value = "";
+  document.getElementById("int-email").value = "";
+  document.getElementById("interest-modal").classList.add("open");
+  setTimeout(() => document.getElementById("int-name").focus(), 100);
+}
+
+function closeInterestModal() {
+  document.getElementById("interest-modal").classList.remove("open");
+}
+
+async function submitInterest() {
+  const name = document.getElementById("int-name").value.trim();
+  const email = document.getElementById("int-email").value.trim();
+  const required = _currentEv && _currentEv.interestedEnabled === "required";
+  const errEl = document.getElementById("int-error");
+  if (required && (!name || !email)) {
+    errEl.textContent = "Please fill in both fields to register.";
+    errEl.style.display = "block"; return;
+  }
+  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
+  try { await jsonp({ action:"interest", id:_currentEv.id, entry }); } catch(e) { console.warn("Interest save failed", e); }
+  closeInterestModal();
+  const btn = document.getElementById("interest-btn");
+  if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
+  try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
+  showToast("Registered!");
+}
+
+async function saveSharedNotes() {
+  const area = document.getElementById("shared-notes-area");
+  if (!area || !_currentEv) return;
+  const notes = area.value;
+  const btn = document.getElementById("save-notes-btn");
+  if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+  try {
+    await jsonp({ action:"sharedNotes", id:_currentEv.id, notes });
+    _currentEv.sharedNotes = notes;
+    const msg = document.getElementById("notes-saved-msg");
+    if (msg) { msg.style.display = "inline"; setTimeout(() => msg.style.display = "none", 2500); }
+  } catch(e) { console.warn("Notes save failed", e); showToast("Could not save. Try again."); }
+  if (btn) { btn.disabled = false; btn.textContent = "Save"; }
 }
 
 async function init() {
@@ -350,10 +479,11 @@ const PREVIEW_EVENT = {
   detailImageUrl: "", categories: ["learning"], exchangeType: "", showLinks: "",
   contactEmail: "", contactPhone: "", cooplink: "", paymentlink: "", meetinglink: "",
   lifeStage: "", keywords: "", isPrivate: false, otherExchange: "",
+  interestedEnabled: "off", interested: "", sharedNotesEnabled: false, sharedNotes: "",
 };
 
 init();
 </script>
-<!-- v1.8 -->
+<!-- v2.0 -->
 </body>
 </html>
