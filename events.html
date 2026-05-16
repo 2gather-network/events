@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 7.7
-  v7.7 - Modal scroll fix: passive touchmove so iOS never blocks native scroll in embed
+  Events.html Version 8.1
+  v8.1 - findMyEvents: fresh fetch + trim hostEmail to fix private event lookup
 -->
 <html lang="en">
 <head>
@@ -88,7 +88,10 @@
 
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; touch-action:pan-y; }
   .modal-overlay.open { display:flex; }
-  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:95vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
+  .modal { background:var(--white); border-radius:16px; max-width:560px; width:100%; max-height:92vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal-header { padding:28px 32px 16px; flex-shrink:0; }
+  .modal-scroll-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 32px; min-height:0; overscroll-behavior:contain; }
+  .modal-footer { padding:16px 32px 28px; flex-shrink:0; border-top:1px solid var(--border); }
   .modal input, .modal textarea, .modal select, .modal button { touch-action:manipulation; }
   .modal-title { font-size:22px; font-weight:800; margin-bottom:24px; }
   .modal-actions { display:flex; gap:10px; margin-top:8px; }
@@ -96,9 +99,12 @@
 
   @media(max-width:768px) {
     .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
-    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:98vh; padding:8px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
+    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:94vh; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
     .modal-overlay.open .modal { transform:translateY(0); }
-    .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
+    .modal-header { padding:8px 20px 12px; }
+    .modal-header::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 16px; }
+    .modal-scroll-body { padding:0 20px; }
+    .modal-footer { padding:12px 20px 32px; }
     .modal-title { font-size:20px; }
   }
 
@@ -304,11 +310,15 @@ Start your week with other independents. Share what you're working on, what you 
 <!-- POST MODAL -->
 <div class="modal-overlay" id="post-modal">
   <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;">
-      <div class="modal-title" id="modal-title" style="margin-bottom:0;">Post an event</div>
-      <button type="button" onclick="clearForm()" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;padding:4px 0;white-space:nowrap;flex-shrink:0;margin-top:4px;">↺ Clear form</button>
+    <div class="modal-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;">
+        <div class="modal-title" id="modal-title" style="margin-bottom:0;">Post an event</div>
+        <button type="button" onclick="clearForm()" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;padding:4px 0;white-space:nowrap;flex-shrink:0;margin-top:4px;">↺ Clear form</button>
+      </div>
+      <div id="draft-notice" style="display:none; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:8px 12px; font-size:13px;">✏️ Your draft was restored - pick up where you left off!</div>
     </div>
-    <div id="draft-notice" style="display:none; background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:8px 12px; font-size:13px; margin-bottom:16px;">✏️ Your draft was restored - pick up where you left off!</div>
+
+    <div class="modal-scroll-body">
 
     <div class="field">
       <label class="field-label">Host email <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- for finding and editing your event later</span></label>
@@ -561,21 +571,26 @@ Start your week with other independents. Share what you're working on, what you 
     <p class="error-msg" id="post-error"></p>
     <div class="conflict-warning" id="conflict-warning"></div>
 
-    <div class="modal-actions">
-      <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
-      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="onCloneBtnClick()" title="Clone this event">⧉ Clone</button>
-      <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
-        <label for="clone-count" style="white-space:nowrap;">× how many?</label>
-        <select id="clone-count" class="input" style="width:60px;padding:6px 8px;font-size:13px;">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-      </span>
-      <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
+    </div><!-- end modal-scroll-body -->
+
+    <div class="modal-footer">
+      <div class="modal-actions">
+        <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-outline" id="clone-btn" style="display:none;" onclick="onCloneBtnClick()" title="Clone this event">⧉ Clone</button>
+        <span id="clone-count-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted);">
+          <label for="clone-count" style="white-space:nowrap;">× how many?</label>
+          <select id="clone-count" class="input" style="width:60px;padding:6px 8px;font-size:13px;">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </span>
+        <button class="btn" id="delete-btn" style="display:none;background:#c0392b;" onclick="deleteEvent()">🗑 Delete</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -960,7 +975,7 @@ function sheetToEv(row) {
     format: row.format || "", location: row.location || "", lat: row.lat || "", lng: row.lng || "",
     room: row.room || "", description: row.description || "", host: row.host || "",
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
-    passcode: row.passcode || "", hostEmail: row.hostEmail || "", cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
+    passcode: row.passcode || "", hostEmail: (row.hostEmail || "").trim(), cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
     paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.lifeStage || "", keywords: row.keywords || "",
     interestedEnabled: row.interestedEnabled || "off", interested: row.interested || "",
@@ -1237,6 +1252,8 @@ function renderEvents() {
       : ev.format === "both"
       ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#FFF7ED;color:#9a3412;padding:3px 9px;border-radius:20px;white-space:nowrap;">🔀 Hybrid</span>`
       : "";
+    const cityState = (ev.format === "inperson" || ev.format === "both") ? parseCityState(ev.location) : "";
+    const locationLine = (cityState || formatBadge) ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;"><span style="font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cityState ? "📍 "+esc(cityState) : ""}</span>${formatBadge}</div>` : "";
     const recurringBadge = ev.recurring
       ? `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:3px 9px;border-radius:20px;white-space:nowrap;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
       : "";
@@ -1251,10 +1268,11 @@ function renderEvents() {
     card.innerHTML = `
       <div class="event-card-top">
         <div class="event-title">${esc(ev.title)}</div>
-        ${formatBadge ? `<div style="text-align:right;margin-top:6px;">${formatBadge}</div>` : ""}
+        ${locationLine}
       </div>
       ${ev.imageUrl ? `<div class="event-card-img" id="img-wrap-${ev.id}"><img src="${esc(ev.imageUrl)}" alt="" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ""}
       <div class="event-card-body">
+        ${ev.date ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}</div>` : ""}
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
         ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
       </div>
@@ -1729,21 +1747,20 @@ function closeModal() { document.getElementById("post-modal").classList.remove("
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
     const modal = overlay.querySelector(".modal");
+    const header = overlay.querySelector(".modal-header");
     if (!modal) return;
-    let startY = 0, startX = 0, isDragHandle = false;
-    modal.addEventListener("touchstart", e => {
-      const rect = modal.getBoundingClientRect();
+    let startY = 0, startX = 0;
+    // dismiss gesture only from header
+    const dragTarget = header || modal;
+    dragTarget.addEventListener("touchstart", e => {
       startY = e.touches[0].clientY;
       startX = e.touches[0].clientX;
-      isDragHandle = (startY - rect.top) < 64;
     }, { passive:true });
-    // passive:true so iOS never blocks native scroll
-    modal.addEventListener("touchmove", e => {}, { passive:true });
-    modal.addEventListener("touchend", e => {
+    dragTarget.addEventListener("touchend", e => {
       if (window.innerWidth > 768) return;
       const dy = e.changedTouches[0].clientY - startY;
       const dx = e.changedTouches[0].clientX - startX;
-      if (isDragHandle && dy > 140 && Math.abs(dy) > Math.abs(dx) * 2 && modal.scrollTop <= 2) {
+      if (dy > 140 && Math.abs(dy) > Math.abs(dx) * 2) {
         const id = overlay.id;
         if (id === "post-modal") {
           if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
@@ -1790,8 +1807,16 @@ async function findMyEvents() {
   errEl.style.display = "none";
   if (!email) { errEl.textContent = "Please enter your email."; errEl.style.display = "block"; return; }
 
-  // Search loaded events
-  const matched = events.filter(e => (e.hostEmail||"").toLowerCase() === email);
+  // Fresh fetch so manually-added emails and recently posted events are included
+  const findBtn = document.querySelector("#find-modal .btn-green");
+  if (findBtn) { findBtn.disabled = true; findBtn.textContent = "Searching..."; }
+  try {
+    const data = await jsonp({ t: Date.now() });
+    if (data.events) events = data.events.filter(r => r.id).map(sheetToEv);
+  } catch(e) { /* fall back to cached events */ }
+  if (findBtn) { findBtn.disabled = false; findBtn.textContent = "Find events"; }
+
+  const matched = events.filter(e => (e.hostEmail||"").trim().toLowerCase() === email);
 
   if (matched.length === 0) {
     errEl.textContent = "No events found for that email.";
@@ -2169,6 +2194,15 @@ function fmtDate(date, time, endtime) {
 function escNl(s) { return esc(s).replace(/\n/g, "<br>"); }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function trunc(s,n) { return s.length > n ? s.slice(0,n)+"…" : s; }
+function parseCityState(location) {
+  if (!location) return "";
+  const parts = location.split(",").map(s => s.trim()).filter(Boolean);
+  if (parts.length < 2) return "";
+  const lastPart = parts[parts.length - 1];
+  const city = parts[parts.length - 2];
+  const stateMatch = lastPart.match(/^([A-Z]{2})\b/);
+  return stateMatch ? city + ", " + stateMatch[1] : "";
+}
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
@@ -2616,6 +2650,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- Events.html v7.7 -->
+<!-- Events.html v8.1 -->
 </body>
 </html>
