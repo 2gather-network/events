@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 8.1
-  v8.1 - findMyEvents: fresh fetch + trim hostEmail to fix private event lookup
+  Events.html Version 8.2
+  v8.2 - Fix modal padding (scope flex to modal-form only); fix double PIN prompt in Find my event
 -->
 <html lang="en">
 <head>
@@ -88,7 +88,8 @@
 
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; touch-action:pan-y; }
   .modal-overlay.open { display:flex; }
-  .modal { background:var(--white); border-radius:16px; max-width:560px; width:100%; max-height:92vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:92vh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal-form { padding:0; overflow:hidden; display:flex; flex-direction:column; }
   .modal-header { padding:28px 32px 16px; flex-shrink:0; }
   .modal-scroll-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 32px; min-height:0; overscroll-behavior:contain; }
   .modal-footer { padding:16px 32px 28px; flex-shrink:0; border-top:1px solid var(--border); }
@@ -99,12 +100,15 @@
 
   @media(max-width:768px) {
     .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
-    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:94vh; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
-    .modal-overlay.open .modal { transform:translateY(0); }
+    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:94vh; padding:28px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
+    .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:-16px auto 20px; }
+    .modal-form { padding:0; }
+    .modal-form::before { display:none; }
     .modal-header { padding:8px 20px 12px; }
     .modal-header::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 16px; }
     .modal-scroll-body { padding:0 20px; }
     .modal-footer { padding:12px 20px 32px; }
+    .modal-overlay.open .modal { transform:translateY(0); }
     .modal-title { font-size:20px; }
   }
 
@@ -309,7 +313,7 @@ Start your week with other independents. Share what you're working on, what you 
 
 <!-- POST MODAL -->
 <div class="modal-overlay" id="post-modal">
-  <div class="modal">
+  <div class="modal modal-form">
     <div class="modal-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;">
         <div class="modal-title" id="modal-title" style="margin-bottom:0;">Post an event</div>
@@ -1849,16 +1853,21 @@ function promptFindPin(id) {
 }
 
 function confirmFindPin() {
-  const pin = document.getElementById("find-pin-input").value;
+  const pin = document.getElementById("find-pin-input").value.trim();
   const ev = events.find(e => e.id === findTargetId);
   if (!ev) return;
-  if (pin !== String(ev.passcode)) {
-    document.getElementById("find-pin-error").style.display = "block";
+  const errEl = document.getElementById("find-pin-error");
+  if (pin !== String(ev.passcode) && pin !== MASTER_PASSCODE) {
+    errEl.textContent = "Incorrect PIN. Please try again.";
+    errEl.style.display = "block";
+    document.getElementById("find-pin-input").value = "";
+    document.getElementById("find-pin-input").focus();
     return;
   }
+  isMasterUser = pin === MASTER_PASSCODE && (ev.host||"").trim().toLowerCase() === MASTER_HOST;
   closeFindPinModal();
   closeFindModal();
-  openEdit(findTargetId);
+  loadEditForm(findTargetId);
 }
 
 
@@ -2650,6 +2659,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- Events.html v8.1 -->
+<!-- Events.html v8.2 -->
 </body>
 </html>
