@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 2.9
-  v2.9 - Optimistic interest submit; fix text; contact info moves to post-submit
+  event.html Version 3.0
+  v3.0 - Private event amber banner; past event banner still shows when applicable
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -359,6 +359,7 @@ function render(ev) {
   document.getElementById("card").innerHTML = `
     ${ev.imageUrl ? `<img class="cover-img" src="${esc(ev.imageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
     ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
+    ${ev.isPrivate ? `<div style="background:#FFF8E7;border-bottom:1px solid #F0B429;padding:8px 24px;font-size:12px;font-weight:700;color:#7B5800;letter-spacing:0.05em;">🔒 PRIVATE EVENT - Share this link only with your guests</div>` : ""}
     <div class="card-body">
       <h1>${esc(ev.title)}</h1>
       <div class="meta">${lines}</div>
@@ -585,6 +586,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v2.9 -->
+<!-- event.html v3.0 -->
 </body>
 </html>
