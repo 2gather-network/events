@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 9.0
-  v9.0 - After edit save, redirect to event.html to see changes
+  Events.html Version 9.1
+  v9.1 - Event view popup (iframe modal); View/read more open in-page; appear.network CTA in event
 -->
 <html lang="en">
 <head>
@@ -1272,7 +1272,7 @@ function renderEvents() {
       : "";
     const descHtml = ev.description
       ? (ev.description.length > 200
-        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        ? escNl(trunc(ev.description, 200)) + ` <a href="javascript:void(0)" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
         : escNl(ev.description))
       : "";
     const card = document.createElement("div");
@@ -1292,7 +1292,7 @@ function renderEvents() {
       <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
         ${recurringBadge ? `<div>${recurringBadge}</div>` : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
-          <a class="btn btn-sm" href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
+          <button class="btn btn-sm" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
           ${ev.sharedNotesEnabled ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
@@ -1883,8 +1883,22 @@ async function findMyEvents() {
   document.getElementById("find-results").style.display = "block";
 }
 
+function openEventView(id, title) {
+  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+  const url = base + "event.html?id=" + id;
+  document.getElementById("event-view-frame").src = url;
+  document.getElementById("event-view-full-link").href = url;
+  document.getElementById("event-view-title").textContent = title || "";
+  document.getElementById("event-view-modal").classList.add("open");
+}
+
+function closeEventView() {
+  document.getElementById("event-view-modal").classList.remove("open");
+  setTimeout(() => { document.getElementById("event-view-frame").src = "about:blank"; }, 300);
+}
+
 function copyEventLink(id) {
-  const base = window.location.href.replace(/\/[^/]*$/, "/");
+  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
   const url = base + "event.html?id=" + id;
   navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => {
     prompt("Copy this link:", url);
@@ -2047,6 +2061,7 @@ safeOn("f-time",        "change", checkAndWarnConflict);
 safeOn("f-endtime",     "change", checkAndWarnConflict);
 safeOn("p-code",        "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
 safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
+safeOn("event-view-modal","click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
 safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   closeNotesModal(); });
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
@@ -2732,6 +2747,20 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v9.0 -->
+<!-- Event view modal (iframe) -->
+<div class="modal-overlay" id="event-view-modal" style="z-index:200;padding:0;">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);margin-top:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <a id="event-view-full-link" href="" target="_blank" class="btn btn-sm btn-outline" style="font-size:12px;padding:6px 10px;">↗ Share</a>
+        <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
+      </div>
+    </div>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;height:80vh;" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- Events.html v9.1 -->
 </body>
 </html>
