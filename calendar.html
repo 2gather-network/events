@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.53
-  v2.53 - Date/time shown below photo above tags on cards
+  calendar.html Version 2.54
+  v2.54 - Event view popup (iframe modal)
 -->
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@ function renderEvents() {
       : "";
     const descHtml = ev.description
       ? (ev.description.length > 200
-        ? escNl(trunc(ev.description, 200)) + ` <a href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        ? escNl(trunc(ev.description, 200)) + ` <a href="javascript:void(0)" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
         : escNl(ev.description))
       : "";
     const card = document.createElement("div");
@@ -536,7 +536,7 @@ function renderEvents() {
       </div>
       <div class="event-card-footer">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
-          <a class="btn btn-sm" href="event.html?id=${ev.id}" target="_blank" rel="noopener" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;text-decoration:none;border-radius:8px;">View</a>
+          <button class="btn btn-sm" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:14px;">View</button>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
         </div>
       </div>`;
@@ -545,7 +545,20 @@ function renderEvents() {
 }
 
 
-function shareEvent(id) {
+function openEventView(id, title) {
+  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+  const url = base + "event.html?id=" + id;
+  document.getElementById("event-view-frame").src = url;
+  document.getElementById("event-view-full-link").href = url;
+  document.getElementById("event-view-title").textContent = title || "";
+  const m = document.getElementById("event-view-modal");
+  m.style.display = "flex";
+}
+function closeEventView() {
+  document.getElementById("event-view-modal").style.display = "none";
+  setTimeout(() => { document.getElementById("event-view-frame").src = "about:blank"; }, 300);
+}
+document.getElementById("event-view-modal").addEventListener("click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
@@ -803,6 +816,20 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
 </script>
-<!-- calendar.html v2.53 -->
+<!-- Event view modal (iframe) -->
+<div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;" id="event-view-modal">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+      <span id="event-view-title" style="font-size:14px;font-weight:700;color:#1a1a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <a id="event-view-full-link" href="" target="_blank" style="font-size:12px;padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;text-decoration:none;color:#1a1a2e;font-weight:600;">↗ Share</a>
+        <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:#6b7280;cursor:pointer;padding:4px;line-height:1;">×</button>
+      </div>
+    </div>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;height:80vh;" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- calendar.html v2.54 -->
 </body>
 </html>
