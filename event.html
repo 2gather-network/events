@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 2.5
-  v2.5 - interestedEnabled optional on all recurring events; Kick off Mondays description updated
+  event.html Version 2.8
+  v2.8 - Inline engagement section: interest form expands in place; notes hidden until after interest expressed
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -125,6 +125,21 @@
     <div class="modal-actions">
       <button class="btn btn-primary" style="flex:1;" onclick="submitInterest()">Submit</button>
       <button class="btn btn-outline" onclick="closeInterestModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="edit-pin-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">✏️ Edit this event</div>
+      <button onclick="closeEditPin()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
+    </div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Enter the 4-digit PIN you set when posting this event.</p>
+    <input class="modal-input" id="edit-pin-input" type="password" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;text-align:center;font-size:20px;margin-bottom:8px;" autocomplete="off">
+    <p class="error-msg" id="edit-pin-error" style="margin-bottom:12px;">Incorrect PIN. Please try again.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1;" onclick="submitEditPin()">Unlock</button>
+      <button class="btn btn-outline" onclick="closeEditPin()">Cancel</button>
     </div>
   </div>
 </div>
@@ -254,6 +269,7 @@ function toEv(r) {
     experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
+    passcode: r.passcode||"",
   };
 }
 
@@ -302,51 +318,77 @@ function render(ev) {
         <div style="display:flex;flex-wrap:wrap;gap:8px;">${ev.exchangeType.split(",").filter(Boolean).map(t=>`<span style="font-size:13px;font-weight:600;padding:5px 12px;border-radius:20px;background:#f9fafb;border:1px solid var(--border);color:var(--dark);">${typeMap[t]||(t==="other"?"✏️ "+(ev.otherExchange||"Other"):t)}</span>`).join("")}</div>
        </div>` : "";
 
-  const interestedSection = (ev.interestedEnabled && ev.interestedEnabled !== "off") ? `
-    <div style="margin:0 0 18px;">
-      <button class="btn btn-primary" onclick="openInterestModal()" id="interest-btn" style="margin-bottom:10px;">+1 I'm interested</button>
-      <p style="font-size:13px;color:var(--muted);">Can't make it? Please contact the host.</p>
-    </div>` : "";
+  const hasInterest = ev.interestedEnabled && ev.interestedEnabled !== "off";
+  const hasNotes = ev.sharedNotesEnabled;
+  const contactDisplay = (ev.contactEmail && sl.includes("contact")) ? ev.contactEmail
+    : (ev.contactPhone && sl.includes("contact")) ? ev.contactPhone : "";
+  const contactLink = contactDisplay
+    ? `<a href="${contactDisplay.includes("@") ? "mailto:" : "tel:"}${esc(contactDisplay)}" style="color:var(--primary);font-weight:600;">${esc(contactDisplay)}</a>`
+    : "the host directly";
 
-  const sharedNotesSection = ev.sharedNotesEnabled ? `
-    <div style="margin:0 0 18px;">
-      <textarea id="shared-notes-area" style="width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;">${esc(ev.sharedNotes||"")}</textarea>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-        <button class="btn btn-outline" onclick="saveSharedNotes()" id="save-notes-btn" style="font-size:13px;padding:8px 16px;">Save</button>
-        <span id="notes-saved-msg" style="display:none;font-size:13px;color:#4CAF7D;font-weight:700;">✓ Saved</span>
-      </div>
+  const engagementSection = (hasInterest || hasNotes) ? `
+    <div id="engagement-section" style="margin:0 0 18px;">
+      ${hasInterest ? `
+        <div id="interest-area">
+          <button class="btn btn-primary" onclick="showInterestForm()" id="interest-btn">+1 I'm interested</button>
+        </div>
+        <div id="interest-form" style="display:none;margin-top:14px;padding:18px;background:#f9fafb;border-radius:12px;border:1px solid var(--border);">
+          <p style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:6px;">The host sees you expressed interest!</p>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Want to share who is coming? Please enter it below. If you end up not being able to make it, please reach out to ${contactLink}.</p>
+          <input id="int-name-inline" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:8px;" type="text" placeholder="Your name" autocomplete="name">
+          <input id="int-email-inline" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:10px;" type="email" placeholder="your@email.com" autocomplete="email">
+          <p class="error-msg" id="int-inline-error"></p>
+          <button class="btn btn-primary" onclick="submitInterestInline()" id="int-submit-btn">Submit</button>
+        </div>
+        <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+          ✓ The host knows you're interested. If you can't make it, reach out to ${contactLink}.
+        </div>
+      ` : ""}
+      ${hasNotes ? `
+        <div id="notes-section" style="${hasInterest ? "display:none;" : ""}margin-top:${hasInterest ? "16" : "0"}px;">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">📋 This is a shared notes board - anything you add is seen by the host and all participants.</p>
+          <textarea id="shared-notes-area" style="width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;">${esc(ev.sharedNotes||"")}</textarea>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+            <button class="btn btn-outline" onclick="saveSharedNotes()" id="save-notes-btn" style="font-size:13px;padding:8px 16px;">Save</button>
+            <span id="notes-saved-msg" style="display:none;font-size:13px;color:#4CAF7D;font-weight:700;">✓ Saved</span>
+          </div>
+        </div>
+      ` : ""}
     </div>` : "";
 
   document.getElementById("card").innerHTML = `
     ${ev.imageUrl ? `<img class="cover-img" src="${esc(ev.imageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
     ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
     <div class="card-body">
-      <div class="top-row">${fmtBadge}${recurBadge}</div>
       <h1>${esc(ev.title)}</h1>
       <div class="meta">${lines}</div>
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
-      ${interestedSection}
-      ${sharedNotesSection}
+      ${engagementSection}
       <hr class="divider">
       <div class="actions">
         <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
-        ${ev.sharedNotes ? `<button class="btn btn-outline" onclick="openReadNotes()" style="gap:6px;">📝 Notes</button>` : ""}
+        ${!ev.recurring ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
       </div>
+      ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>`;
 
   document.title = ev.title || "Event";
   _currentEv = ev;
 
-  // mark interest btn if already registered
+  // if already registered, show confirmed state
   if (ev.interestedEnabled && ev.interestedEnabled !== "off") {
     try {
       if (localStorage.getItem("db-interested-" + ev.id) === "1") {
         const btn = document.getElementById("interest-btn");
         if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
+        const confirmed = document.getElementById("interest-confirmed");
+        if (confirmed) confirmed.style.display = "block";
+        const notes = document.getElementById("notes-section");
+        if (notes) notes.style.display = "block";
       }
     } catch(e) {}
   }
@@ -366,12 +408,19 @@ function addToCalendar(ev) {
   const start = toGCal(ev.date, ev.time);
   const end   = ev.endtime ? toGCal(ev.date, ev.endtime) : toGCal(ev.date, ev.time);
   const loc   = ev.location || ev.meetinglink || "";
-  const url   = "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-    "&text=" + encodeURIComponent(ev.title) +
-    "&dates=" + start + "/" + end +
-    "&details=" + encodeURIComponent((ev.description||"").slice(0,500)) +
-    "&location=" + encodeURIComponent(loc);
-  window.open(url, "_blank");
+  const params = new URLSearchParams({
+    text: ev.title,
+    dates: start + "/" + end,
+    details: (ev.description||"").slice(0,500),
+    location: loc,
+  });
+  if (ev.recurFreq === "weekly") {
+    const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
+    params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
+  } else if (ev.recurFreq === "monthly") {
+    params.append("recur", "RRULE:FREQ=MONTHLY");
+  }
+  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
 function copyLink() {
@@ -399,38 +448,35 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-function openInterestModal() {
-  if (!_currentEv) return;
-  const required = _currentEv.interestedEnabled === "required";
-  document.getElementById("int-name-label").textContent = required ? "Name *" : "Name";
-  document.getElementById("int-email-label").textContent = required ? "Email *" : "Email";
-  document.getElementById("int-error").style.display = "none";
-  document.getElementById("int-name").value = "";
-  document.getElementById("int-email").value = "";
-  document.getElementById("interest-modal").classList.add("open");
-  setTimeout(() => document.getElementById("int-name").focus(), 100);
-}
-
-function closeInterestModal() {
-  document.getElementById("interest-modal").classList.remove("open");
-}
-
-async function submitInterest() {
-  const name = document.getElementById("int-name").value.trim();
-  const email = document.getElementById("int-email").value.trim();
-  const required = _currentEv && _currentEv.interestedEnabled === "required";
-  const errEl = document.getElementById("int-error");
-  if (required && (!name || !email)) {
-    errEl.textContent = "Please fill in both fields to register.";
-    errEl.style.display = "block"; return;
-  }
-  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
-  try { await jsonp({ action:"interest", id:_currentEv.id, entry }); } catch(e) { console.warn("Interest save failed", e); }
-  closeInterestModal();
+function showInterestForm() {
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
+  const form = document.getElementById("interest-form");
+  if (form) form.style.display = "block";
+}
+
+async function submitInterestInline() {
+  if (!_currentEv) return;
+  const name = (document.getElementById("int-name-inline")?.value || "").trim();
+  const email = (document.getElementById("int-email-inline")?.value || "").trim();
+  const required = _currentEv.interestedEnabled === "required";
+  const errEl = document.getElementById("int-inline-error");
+  if (required && (!name || !email)) {
+    if (errEl) { errEl.textContent = "Please fill in both fields to register."; errEl.style.display = "block"; }
+    return;
+  }
+  const submitBtn = document.getElementById("int-submit-btn");
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Submitting..."; }
+  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
+  try { await jsonp({ action:"interest", id:_currentEv.id, entry }); } catch(e) { console.warn("Interest save failed", e); }
+  // hide form, show confirmed message, reveal notes if enabled
+  const form = document.getElementById("interest-form");
+  if (form) form.style.display = "none";
+  const confirmed = document.getElementById("interest-confirmed");
+  if (confirmed) confirmed.style.display = "block";
+  const notes = document.getElementById("notes-section");
+  if (notes) notes.style.display = "block";
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
-  showToast("Registered!");
 }
 
 async function saveSharedNotes() {
@@ -446,6 +492,39 @@ async function saveSharedNotes() {
     if (msg) { msg.style.display = "inline"; setTimeout(() => msg.style.display = "none", 2500); }
   } catch(e) { console.warn("Notes save failed", e); showToast("Could not save. Try again."); }
   if (btn) { btn.disabled = false; btn.textContent = "Save"; }
+}
+
+const MASTER_PASSCODE = "6090";
+
+function openEditPin() {
+  if (!_currentEv) return;
+  document.getElementById("edit-pin-input").value = "";
+  document.getElementById("edit-pin-error").style.display = "none";
+  document.getElementById("edit-pin-modal").classList.add("open");
+  setTimeout(() => document.getElementById("edit-pin-input").focus(), 100);
+}
+
+function closeEditPin() {
+  document.getElementById("edit-pin-modal").classList.remove("open");
+}
+
+function submitEditPin() {
+  const pin = document.getElementById("edit-pin-input").value.trim();
+  const ev = _currentEv;
+  if (!ev) return;
+  const errEl = document.getElementById("edit-pin-error");
+  if (pin !== String(ev.passcode) && pin !== MASTER_PASSCODE) {
+    errEl.style.display = "block";
+    document.getElementById("edit-pin-input").value = "";
+    document.getElementById("edit-pin-input").focus();
+    return;
+  }
+  // store verified PIN so events.html can skip re-asking
+  try { sessionStorage.setItem("ev-edit-verified-" + ev.id, pin); } catch(e) {}
+  closeEditPin();
+  // redirect to events.html with edit param
+  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+  window.location.href = base + "events.html?edit=" + ev.id;
 }
 
 function openReadNotes() {
@@ -505,6 +584,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v2.5 -->
+<!-- event.html v2.8 -->
 </body>
 </html>
