@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 9.1
-  v9.1 - Event view popup (iframe modal); View/read more open in-page; appear.network CTA in event
+  Events.html Version 9.2
+  v9.2 - Fix event view popup height and positioning
 -->
 <html lang="en">
 <head>
@@ -2748,19 +2748,19 @@ loadEvents().then(() => {
 </div>
 
 <!-- Event view modal (iframe) -->
-<div class="modal-overlay" id="event-view-modal" style="z-index:200;padding:0;">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);margin-top:auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+<div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
         <a id="event-view-full-link" href="" target="_blank" class="btn btn-sm btn-outline" style="font-size:12px;padding:6px 10px;">↗ Share</a>
         <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
       </div>
     </div>
-    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;height:80vh;" src="about:blank"></iframe>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v9.1 -->
+<!-- Events.html v9.2 -->
 </body>
 </html>
