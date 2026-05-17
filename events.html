@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 9.3
-  v9.3 - Await apiUpdate before redirect so private/changes save correctly
+  Events.html Version 9.5
+  v9.4 - Room emojis added; DayBalancer Onboarding room removed
 -->
 <html lang="en">
 <head>
@@ -687,21 +687,20 @@ const CATEGORIES = [
 ];
 
 const ROOMS = [
-  { name:"DayBalancer Onboarding", url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq", hidden: true },
-  { name:"The Commons",            url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
-  { name:"Ikigai room",            url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
-  { name:"Wellness room",          url:"https://gather.daybalancer.com/events/336936/504368" },
-  { name:"Community Care room",    url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
-  { name:"Co-Create room",         url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
-  { name:"Coworking room",         url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
-  { name:"Abundance room",         url:"", comingSoon: true },
-  { name:"Conference room",        url:"https://gather.daybalancer.com/events/335887/502618" },
+  { name:"The Commons",         emoji:"🌳", url:"https://gather.daybalancer.com/events/yvrgej/zkxbzq" },
+  { name:"Ikigai room",         emoji:"🧭", url:"https://gather.daybalancer.com/events/eojvkq/qwmpgq" },
+  { name:"Wellness room",       emoji:"🧘", url:"https://gather.daybalancer.com/events/336936/504368" },
+  { name:"Community Care room", emoji:"💛", url:"https://gather.daybalancer.com/events/yvrgej/gypxbp" },
+  { name:"Co-Create room",      emoji:"🎨", url:"https://gather.daybalancer.com/events/yvrgej/rwbplq" },
+  { name:"Coworking room",      emoji:"💻", url:"https://gather.daybalancer.com/events/yvrgej/gpbqox" },
+  { name:"Abundance room",      emoji:"🌻", url:"", comingSoon: true },
+  { name:"Conference room",     emoji:"🎤", url:"https://gather.daybalancer.com/events/335887/502618" },
 ];
 
 const RECURRING_EVENTS = [
   {
     title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"DayBalancer Onboarding", host:"DayBalancer", hostlink:"",
+    format:"virtual", room:"The Commons", host:"DayBalancer", hostlink:"",
     cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
     categories:["learning"],
     description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
@@ -1131,13 +1130,15 @@ function renderRoomChips() {
   label.textContent = rooms.length === 1 ? "Virtual room for this event:" : "Which virtual room is best for this event?";
   roomOptions.innerHTML = "";
   rooms.forEach(room => {
+    const roomObj = ROOMS.find(r => r.name === room);
     const chip = document.createElement("button");
     chip.type = "button";
+    const label = (roomObj?.emoji || "🏠") + " " + room;
     if (rooms.length === 1) {
-      chip.className = "room-chip selected"; chip.style.cursor = "default"; chip.textContent = room;
+      chip.className = "room-chip selected"; chip.style.cursor = "default"; chip.textContent = label;
     } else {
       chip.className = "room-chip" + (selectedRoom === room ? " selected" : "");
-      chip.textContent = room;
+      chip.textContent = label;
       chip.onclick = () => { selectedRoom = room; roomOptions.querySelectorAll(".room-chip").forEach(c => c.classList.remove("selected")); chip.classList.add("selected"); checkAndWarnConflict(); };
     }
     roomOptions.appendChild(chip);
@@ -1828,11 +1829,12 @@ let findTargetId = null;
 
 function openFindModal() {
   document.getElementById("find-modal").classList.add("open");
-  document.getElementById("find-email").value = "";
+  const pinEl = document.getElementById("find-pin-search");
+  if (pinEl) pinEl.value = "";
   document.getElementById("find-error").style.display = "none";
   document.getElementById("find-results").style.display = "none";
   document.getElementById("find-results-list").innerHTML = "";
-  setTimeout(() => document.getElementById("find-email").focus(), 100);
+  setTimeout(() => pinEl?.focus(), 100);
 }
 
 function closeFindModal() {
@@ -1845,24 +1847,24 @@ function closeFindPinModal() {
 }
 
 async function findMyEvents() {
-  const email = document.getElementById("find-email").value.trim().toLowerCase();
+  const pin = (document.getElementById("find-pin-search")?.value || "").trim();
   const errEl = document.getElementById("find-error");
   errEl.style.display = "none";
-  if (!email) { errEl.textContent = "Please enter your email."; errEl.style.display = "block"; return; }
+  if (!pin) { errEl.textContent = "Please enter your PIN."; errEl.style.display = "block"; return; }
 
-  // Fresh fetch so manually-added emails and recently posted events are included
   const findBtn = document.querySelector("#find-modal .btn-green");
   if (findBtn) { findBtn.disabled = true; findBtn.textContent = "Searching..."; }
   try {
     const data = await jsonp({ t: Date.now() });
     if (data.events) events = data.events.filter(r => r.id).map(sheetToEv);
-  } catch(e) { /* fall back to cached events */ }
+  } catch(e) { /* fall back to cached */ }
   if (findBtn) { findBtn.disabled = false; findBtn.textContent = "Find events"; }
 
-  const matched = events.filter(e => (e.hostEmail||"").trim().toLowerCase() === email);
+  const isMaster = pin === MASTER_PASSCODE;
+  const matched = isMaster ? events : events.filter(e => String(e.passcode) === pin);
 
   if (matched.length === 0) {
-    errEl.textContent = "No events found for that email.";
+    errEl.textContent = "No events found for that PIN.";
     errEl.style.display = "block";
     return;
   }
@@ -1876,11 +1878,19 @@ async function findMyEvents() {
       </div>
       <div style="display:flex;gap:6px;">
         <button class="btn btn-sm btn-outline" onclick="copyEventLink('${ev.id}')" title="Copy shareable link" style="padding:6px 10px;font-size:13px;">🔗</button>
-        <button class="btn btn-sm btn-outline" onclick="promptFindPin('${ev.id}')" style="padding:6px 12px;font-size:13px;">Edit</button>
+        <button class="btn btn-sm btn-outline" onclick="editFromFind('${ev.id}','${pin}')" style="padding:6px 12px;font-size:13px;">Edit</button>
       </div>
     </div>
   `).join("");
   document.getElementById("find-results").style.display = "block";
+}
+
+function editFromFind(id, pin) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  isMasterUser = pin === MASTER_PASSCODE && (ev.host||"").trim().toLowerCase() === MASTER_HOST;
+  closeFindModal();
+  loadEditForm(id);
 }
 
 function openEventView(id, title) {
@@ -2630,19 +2640,19 @@ function openRoomSchedule() {
   body.innerHTML = "";
   const nav = document.createElement("div");
   nav.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;";
-  ROOMS.forEach(({ name }) => {
+  ROOMS.forEach(({ name, emoji }) => {
     const slug = name.toLowerCase().replace(/\s+/g,"-");
     const pill = document.createElement("a");
     pill.href = "#room-"+slug;
     pill.style.cssText = "font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;border:1.5px solid var(--border);color:var(--primary);background:var(--white);white-space:nowrap;";
-    pill.textContent = "🏠 " + name;
+    pill.textContent = (emoji || "🏠") + " " + name;
     nav.appendChild(pill);
   });
   body.appendChild(nav);
   const allRecurring = getAllRecurring(2);
   const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
   const allEventsForSchedule = [...events, ...allRecurring.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`))];
-  ROOMS.forEach(({ name, url, comingSoon }) => {
+  ROOMS.forEach(({ name, emoji, url, comingSoon }) => {
     const slug = name.toLowerCase().replace(/\s+/g,"-");
     const upcoming = allEventsForSchedule.filter(ev => ev.room === name && getEventMs(ev) >= now - 2*60*60*1000).sort((a,b) => getEventMs(a)-getEventMs(b)).slice(0,5);
     const section = document.createElement("div");
@@ -2650,7 +2660,7 @@ function openRoomSchedule() {
     const visitBtn = comingSoon
       ? `<span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--light);padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);">Link coming soon</span>`
       : `<a href="${url}" target="_blank" rel="noopener" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:5px 12px;border-radius:6px;white-space:nowrap;">Visit room →</a>`;
-    section.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);"><span style="font-size:15px;font-weight:800;color:var(--dark);">🏠 ${name}</span>${visitBtn}</div>`;
+    section.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--primary);"><span style="font-size:15px;font-weight:800;color:var(--dark);">${emoji || "🏠"} ${name}</span>${visitBtn}</div>`;
     if (upcoming.length === 0) {
       section.innerHTML += `<div style="font-size:13px;color:var(--muted);font-style:italic;padding:8px 0 4px;">Nothing scheduled yet - wide open!</div>`;
     } else {
@@ -2704,10 +2714,10 @@ loadEvents().then(() => {
 <div class="modal-overlay" id="find-modal">
   <div class="modal" style="max-width:420px;">
     <div class="modal-title">Find my event</div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Enter the email you used when posting your event.</p>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Enter the PIN you set when posting your event.</p>
     <div class="field">
-      <label class="field-label">Host email</label>
-      <input class="input" id="find-email" type="email" placeholder="you@example.com" autocomplete="email">
+      <label class="field-label">Your event PIN</label>
+      <input class="input" id="find-pin-search" type="password" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off">
     </div>
     <p class="error-msg" id="find-error" style="display:none;margin-bottom:12px;"></p>
     <div id="find-results" style="display:none;margin-bottom:16px;">
@@ -2764,6 +2774,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v9.3 -->
+<!-- Events.html v9.5 -->
 </body>
 </html>
