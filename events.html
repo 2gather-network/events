@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 8.9
-  v8.9 - Fix promptFindPin: missing ev lookup line caused Edit button to silently fail
+  Events.html Version 9.0
+  v9.0 - After edit save, redirect to event.html to see changes
 -->
 <html lang="en">
 <head>
@@ -2223,8 +2223,12 @@ async function submitEvent() {
       closeModal(); renderEvents(); showToast("🔁 Recurring event updated for all future occurrences!");
     } else {
       const idx = events.findIndex(e => e.id === editingId);
-      if (idx > -1) { events[idx] = { ...events[idx], ...eventData }; closeModal(); renderEvents(); showToast("✓ Event updated!"); apiUpdate(events[idx]).catch(e => console.warn("Update save failed",e)); }
-      else { closeModal(); renderEvents(); showToast("✓ Event updated!"); }
+      const savedId = editingId;
+      if (idx > -1) { events[idx] = { ...events[idx], ...eventData }; apiUpdate(events[idx]).catch(e => console.warn("Update save failed",e)); }
+      closeModal(); renderEvents();
+      // redirect to event page so host sees their changes
+      const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+      window.location.href = base + "event.html?id=" + savedId;
     }
   } else {
     const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -2728,6 +2732,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v8.9 -->
+<!-- Events.html v9.0 -->
 </body>
 </html>
