@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.2
-  v3.2 - Updated interest form text; hybrid attendance chips (online/in-person)
+  event.html Version 3.3
+  v3.3 - Notes always hidden until interest expressed or already registered
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -351,7 +351,7 @@ function render(ev) {
         </div>
       ` : ""}
       ${hasNotes ? `
-        <div id="notes-section" style="${hasInterest ? "display:none;" : ""}margin-top:${hasInterest ? "16" : "0"}px;">
+        <div id="notes-section" style="display:none;margin-top:16px;">
           <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">📋 This is a shared notes board - anything you add is seen by the host and all participants.</p>
           <textarea id="shared-notes-area" style="width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;">${esc(ev.sharedNotes||"")}</textarea>
           <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
@@ -613,6 +613,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.2 -->
+<!-- event.html v3.3 -->
 </body>
 </html>
