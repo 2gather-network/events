@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 9.2
-  v9.2 - Fix event view popup height and positioning
+  Events.html Version 9.3
+  v9.3 - Await apiUpdate before redirect so private/changes save correctly
 -->
 <html lang="en">
 <head>
@@ -2239,9 +2239,12 @@ async function submitEvent() {
     } else {
       const idx = events.findIndex(e => e.id === editingId);
       const savedId = editingId;
-      if (idx > -1) { events[idx] = { ...events[idx], ...eventData }; apiUpdate(events[idx]).catch(e => console.warn("Update save failed",e)); }
+      const updatedEv = idx > -1 ? { ...events[idx], ...eventData } : null;
+      if (updatedEv) events[idx] = updatedEv;
       closeModal(); renderEvents();
-      // redirect to event page so host sees their changes
+      if (updatedEv) {
+        try { await apiUpdate(updatedEv); } catch(e) { console.warn("Update save failed", e); }
+      }
       const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
       window.location.href = base + "event.html?id=" + savedId;
     }
@@ -2761,6 +2764,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v9.2 -->
+<!-- Events.html v9.3 -->
 </body>
 </html>
