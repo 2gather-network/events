@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.0
-  v3.0 - Private event amber banner; past event banner still shows when applicable
+  event.html Version 3.1
+  v3.1 - Iframe detection; appear.network CTA footer; hide back link in iframe mode
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -375,6 +375,9 @@ function render(ev) {
         ${!ev.recurring ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
       </div>
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
+    </div>
+    <div style="padding:14px 24px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
+      Discover more events at <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">2gather.network →</a>
     </div>`;
 
   document.title = ev.title || "Event";
@@ -539,6 +542,12 @@ function closeReadNotes() {
 }
 
 async function init() {
+  const inIframe = window.self !== window.top;
+  // hide back link when in iframe - the modal provides navigation
+  if (inIframe) {
+    const backBar = document.querySelector('body > div:first-child');
+    if (backBar) backBar.style.display = "none";
+  }
   const id = new URLSearchParams(window.location.search).get("id");
   if (!id) { render(PREVIEW_EVENT); return; }
   // Check recurring events (IDs are dynamic: recurring-{slug}-{YYYY-MM-DD})
@@ -586,6 +595,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.0 -->
+<!-- event.html v3.1 -->
 </body>
 </html>
