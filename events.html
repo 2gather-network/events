@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 8.4
-  v8.4 - loadEditForm: populate imageUrl, detailImageUrl, keywords, isPrivate (were missing)
+  Events.html Version 8.6
+  v8.6 - loadEditForm: add hostEmail field; find results: add copy link button for private events
 -->
 <html lang="en">
 <head>
@@ -523,6 +523,7 @@ Start your week with other independents. Share what you're working on, what you 
     <div class="field">
       <label class="field-label">Who is this event serving? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, select all that apply</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <button type="button" class="format-chip" id="ls-community" onclick="toggleLifeStage('community')">🌐 Community</button>
         <button type="button" class="format-chip" id="ls-students" onclick="toggleLifeStage('students')">Students</button>
         <button type="button" class="format-chip" id="ls-early-career" onclick="toggleLifeStage('early-career')">Early career</button>
         <button type="button" class="format-chip" id="ls-mid-career" onclick="toggleLifeStage('mid-career')">Mid-career</button>
@@ -1577,6 +1578,7 @@ function loadEditForm(id) {
   document.getElementById("f-desc").value  = ev.description || "";
   document.getElementById("f-host").value  = ev.host || "";
   document.getElementById("f-hostlink").value = ev.hostlink || "";
+  const heEl = document.getElementById("f-host-email"); if (heEl) heEl.value = ev.hostEmail || "";
   document.getElementById("f-contact-email").value = ev.contactEmail || "";
   document.getElementById("f-contact-phone").value = ev.contactPhone || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
@@ -1591,7 +1593,6 @@ function loadEditForm(id) {
   const imgEl = document.getElementById("f-image-url"); if (imgEl) imgEl.value = ev.imageUrl || "";
   const dImgEl = document.getElementById("f-detail-image-url"); if (dImgEl) dImgEl.value = ev.detailImageUrl || "";
   const kwEl = document.getElementById("f-keywords"); if (kwEl) kwEl.value = ev.keywords || "";
-  setVisibility(ev.isPrivate ? "private" : "public");
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
   setExperience(ev.experience || "");
@@ -1609,6 +1610,8 @@ function loadEditForm(id) {
   if (restoreEditDraft(id)) {
     showToast("✏️ Restored your unsaved edits - review before saving.");
   }
+  // set visibility last so draft or earlier resets don't override the event's actual value
+  setVisibility(ev.isPrivate ? "private" : "public");
   if (ev.meetinglink) {
     hostingOption = "own";
     setHostingOption("own");
@@ -1648,19 +1651,24 @@ function setSharedNotesEnabled(val) {
   document.getElementById("snotes-on")?.classList.toggle("selected", !!val);
 }
 
+const LIFE_STAGE_KEYS = ["community","students","early-career","mid-career","senior","late-career","retired"];
+
 function toggleLifeStage(val) {
-  if (selectedLifeStages.has(val)) selectedLifeStages.delete(val);
-  else selectedLifeStages.add(val);
-  ["students","early-career","mid-career","senior","late-career","retired"].forEach(k => {
-    document.getElementById("ls-"+k)?.classList.toggle("selected", selectedLifeStages.has(k));
-  });
+  if (val === "community") {
+    // community = clear all specifics
+    selectedLifeStages = selectedLifeStages.has("community") ? new Set() : new Set(["community"]);
+  } else {
+    // selecting a specific stage clears community
+    selectedLifeStages.delete("community");
+    if (selectedLifeStages.has(val)) selectedLifeStages.delete(val);
+    else selectedLifeStages.add(val);
+  }
+  LIFE_STAGE_KEYS.forEach(k => document.getElementById("ls-"+k)?.classList.toggle("selected", selectedLifeStages.has(k)));
 }
 
 function setLifeStages(val) {
   selectedLifeStages = new Set(val ? String(val).split(",").filter(Boolean) : []);
-  ["students","early-career","mid-career","senior","late-career","retired"].forEach(k => {
-    document.getElementById("ls-"+k)?.classList.toggle("selected", selectedLifeStages.has(k));
-  });
+  LIFE_STAGE_KEYS.forEach(k => document.getElementById("ls-"+k)?.classList.toggle("selected", selectedLifeStages.has(k)));
 }
 
 function toggleMoreOptions() {
@@ -1839,14 +1847,24 @@ async function findMyEvents() {
         <div style="font-size:14px;font-weight:600;color:var(--dark);">${esc(ev.title)}</div>
         <div style="font-size:12px;color:var(--muted);">${esc(fmtDateShort(ev.date))}${ev.isPrivate ? " · 🔒 Private" : ""}</div>
       </div>
-      <button class="btn btn-sm btn-outline" onclick="promptFindPin('${ev.id}')" style="padding:6px 12px;font-size:13px;">Edit</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-outline" onclick="copyEventLink('${ev.id}')" title="Copy shareable link" style="padding:6px 10px;font-size:13px;">🔗</button>
+        <button class="btn btn-sm btn-outline" onclick="promptFindPin('${ev.id}')" style="padding:6px 12px;font-size:13px;">Edit</button>
+      </div>
     </div>
   `).join("");
   document.getElementById("find-results").style.display = "block";
 }
 
+function copyEventLink(id) {
+  const base = window.location.href.replace(/\/[^/]*$/, "/");
+  const url = base + "event.html?id=" + id;
+  navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => {
+    prompt("Copy this link:", url);
+  });
+}
+
 function promptFindPin(id) {
-  const ev = events.find(e => e.id === id);
   if (!ev) return;
   findTargetId = id;
   document.getElementById("find-pin-event-name").textContent = ev.title;
@@ -2664,6 +2682,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- Events.html v8.4 -->
+<!-- Events.html v8.6 -->
 </body>
 </html>
