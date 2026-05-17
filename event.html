@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.3
-  v3.3 - Notes always hidden until interest expressed or already registered
+  event.html Version 3.4
+  v3.4 - Simplify CTA text to Discover more events
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -383,7 +383,7 @@ function render(ev) {
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>
     <div style="padding:14px 24px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
-      Discover more events at <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">2gather.network →</a>
+      <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
     </div>`;
 
   document.title = ev.title || "Event";
@@ -613,6 +613,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.3 -->
+<!-- event.html v3.4 -->
 </body>
 </html>
