@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 8.8
-  v8.8 - Registrations panel in edit form showing who expressed interest
+  Events.html Version 8.9
+  v8.9 - Fix promptFindPin: missing ev lookup line caused Edit button to silently fail
 -->
 <html lang="en">
 <head>
@@ -1892,6 +1892,7 @@ function copyEventLink(id) {
 }
 
 function promptFindPin(id) {
+  const ev = events.find(e => e.id === id);
   if (!ev) return;
   findTargetId = id;
   document.getElementById("find-pin-event-name").textContent = ev.title;
@@ -2727,6 +2728,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v8.8 -->
+<!-- Events.html v8.9 -->
 </body>
 </html>
