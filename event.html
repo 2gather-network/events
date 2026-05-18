@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.7
+  event.html Version 3.8
   v3.4 - Simplify CTA text to Discover more events
   -->
   <meta charset="UTF-8">
@@ -135,7 +135,7 @@
       <button onclick="closeEditPin()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
     </div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Enter the 4-digit PIN you set when posting this event.</p>
-    <input class="modal-input" id="edit-pin-input" type="password" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;text-align:center;font-size:20px;margin-bottom:8px;" autocomplete="off">
+    <input class="modal-input" id="edit-pin-input" type="tel" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;text-align:center;font-size:20px;margin-bottom:8px;" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
     <p class="error-msg" id="edit-pin-error" style="margin-bottom:12px;">Incorrect PIN. Please try again.</p>
     <div class="modal-actions">
       <button class="btn btn-primary" style="flex:1;" onclick="submitEditPin()">Unlock</button>
@@ -308,7 +308,7 @@ function render(ev) {
   const sl = ev.showLinks||"";
   const lines = [
     ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
-    ev.experience ? `<div class="meta-item"><span>✨</span><span><strong>Experience:</strong> ${ev.experience.split(",").filter(Boolean).map(t=>expMap[t]||t).join(" · ")}</span></div>` : "",
+    ev.experience ? `<div class="meta-item"><span>✨</span><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong>Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : "",
     (ev.format==="virtual"||ev.format==="both") ? `<div class="meta-item"><span>💻</span>${vLink}</div>` : "",
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
@@ -618,6 +618,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.7 -->
+<!-- event.html v3.8 -->
 </body>
 </html>
