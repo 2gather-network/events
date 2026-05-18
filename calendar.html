@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.62
+  calendar.html Version 2.64
   v2.62 - Monday CoWorking + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
@@ -210,14 +210,6 @@ const ROOMS = [
 ];
 
 const RECURRING_EVENTS = [
-  {
-    title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"The Commons", host:"DayBalancer", hostlink:"",
-    cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
-    categories:["learning"],
-    description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    experience:"connected,energized", adminOnly:true, interestedEnabled:"optional",
-  },
   {
     title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
     format:"virtual", room:"Ikigai room", host:"Jessie Upp",
@@ -554,7 +546,10 @@ function closeEventView() {
   document.getElementById("event-view-modal").style.display = "none";
   setTimeout(() => { document.getElementById("event-view-frame").src = "about:blank"; }, 300);
 }
-document.getElementById("event-view-modal").addEventListener("click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
+document.addEventListener("DOMContentLoaded", () => {
+  const evm = document.getElementById("event-view-modal");
+  if (evm) evm.addEventListener("click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
+});
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
@@ -825,6 +820,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.62 -->
+<!-- calendar.html v2.64 -->
 </body>
 </html>
