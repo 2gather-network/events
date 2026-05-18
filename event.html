@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.6
+  event.html Version 4.7
   v4.6 - Monday CoWorking + Tend to yourself Tuesdays; styled virtual meeting button
   -->
   <meta charset="UTF-8">
@@ -172,7 +172,6 @@ const ROOM_EMOJI = {
 };
 
 const RECURRING_EVENTS = [
-  { id:"onboarding-001", title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00", format:"virtual", room:"The Commons", host:"DayBalancer", hostlink:"", categories:["learning"], description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.", experience:"connected,energized", recurFreq:"weekly", interestedEnabled:"optional" },
   { id:"ikigai-001", title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00", format:"virtual", room:"Ikigai room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.", experience:"connected,expressed,rested", recurFreq:"weekly", interestedEnabled:"optional" },
   { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.", experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
   { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", recurFreq:"weekly", interestedEnabled:"optional" },
@@ -295,11 +294,12 @@ function render(ev) {
 
   const roomUrl = ROOMS[ev.room] || "https://gather.daybalancer.com/events/yvrgej/zkxbzq";
   const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
-  const vLink = ev.meetinglink
-    ? `<a href="${esc(ev.meetinglink)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;text-decoration:none;">💻 Join virtual meeting</a>`
-    : ev.room
-    ? `<a href="${esc(roomUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;text-decoration:none;">${roomEmoji} ${esc(ev.room)}</a>`
-    : "Virtual";
+  const joinBtn = (ev.format === "virtual" || ev.format === "both")
+    ? `<a href="${esc(ev.meetinglink || roomUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
+    : "";
+  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room
+    ? `<div class="meta-item"><span>${roomEmoji}</span><span>Meeting room: <a href="${esc(roomUrl)}" target="_blank" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
+    : "";
 
   const locLink = ev.location
     ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`
@@ -312,7 +312,7 @@ function render(ev) {
   const lines = [
     ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
     ev.experience ? `<div class="meta-item"><span>✨</span><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong>Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : "",
-    (ev.format==="virtual"||ev.format==="both") ? `<div class="meta-item"><span>💻</span>${vLink}</div>` : "",
+    meetingRoomLine,
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     ev.host ? `<div class="meta-item"><span>👤</span><span>Hosted by ${hostHtml}</span></div>` : "",
@@ -376,7 +376,10 @@ function render(ev) {
     ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
     ${ev.isPrivate ? `<div style="background:#FFF8E7;border-bottom:1px solid #F0B429;padding:8px 24px;font-size:12px;font-weight:700;color:#7B5800;letter-spacing:0.05em;">🔒 PRIVATE EVENT - Share this link only with your guests</div>` : ""}
     <div class="card-body">
-      <h1>${esc(ev.title)}</h1>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
+        <h1 style="margin:0;flex:1;">${esc(ev.title)}</h1>
+        ${joinBtn}
+      </div>
       <div class="meta">${lines}</div>
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
@@ -644,6 +647,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.6 -->
+<!-- event.html v4.7 -->
 </body>
 </html>
