@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.3
+  event.html Version 4.4
   v3.4 - Simplify CTA text to Discover more events
   -->
   <meta charset="UTF-8">
@@ -449,7 +449,25 @@ function copyLink() {
 
 function share() {
   const url = window.location.href;
-  const copyFallback = () => navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", url));
+
+  const showCopyUI = () => {
+    const existing = document.getElementById("share-url-box");
+    if (existing) { existing.remove(); return; }
+    const box = document.createElement("div");
+    box.id = "share-url-box";
+    box.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:9999;width:min(340px,92vw);";
+    box.innerHTML = `<p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Copy this link to share:</p><div style="display:flex;gap:8px;"><input id="share-url-input" value="${url}" readonly style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--dark);min-width:0;"><button id="share-copy-btn" onclick="(()=>{const i=document.getElementById('share-url-input');i.select();navigator.clipboard?.writeText(i.value).catch(()=>{});document.getElementById('share-copy-btn').textContent='✓';setTimeout(()=>document.getElementById('share-url-box')?.remove(),1200);})()" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Copy</button></div>`;
+    document.body.appendChild(box);
+    setTimeout(() => { const i = document.getElementById("share-url-input"); i?.select(); }, 60);
+    setTimeout(() => box.remove(), 8000);
+  };
+
+  const copyFallback = () => {
+    navigator.clipboard?.writeText(url)
+      .then(() => showToast("🔗 Link copied!"))
+      .catch(() => showCopyUI());
+  };
+
   if (navigator.share) {
     navigator.share({ title: document.title, url })
       .catch(err => { if (err.name !== "AbortError") copyFallback(); });
@@ -623,6 +641,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.3 -->
+<!-- event.html v4.4 -->
 </body>
 </html>
