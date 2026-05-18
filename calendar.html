@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.64
+  calendar.html Version 2.65
   v2.62 - Monday CoWorking + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
@@ -550,6 +550,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const evm = document.getElementById("event-view-modal");
   if (evm) evm.addEventListener("click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
 });
+
+function shareEvent(id) {
   const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
@@ -820,6 +822,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.64 -->
+<!-- calendar.html v2.65 -->
 </body>
 </html>
