@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.56
+  calendar.html Version 2.57
   v2.54 - Event view popup (iframe modal)
 -->
 <html lang="en">
@@ -561,13 +561,12 @@ document.getElementById("event-view-modal").addEventListener("click", e => { if 
   const ev = allEv.find(e => e.id === id);
   if (!ev) return;
   const url = window.location.origin + window.location.pathname.replace(/[^/]+$/, "") + "event.html?id=" + encodeURIComponent(id);
-  const data = { title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url };
+  const copyFallback = () => navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", url));
   if (navigator.share) {
-    navigator.share(data).catch(() => {});
+    navigator.share({ title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url })
+      .catch(err => { if (err.name !== "AbortError") copyFallback(); });
   } else {
-    navigator.clipboard.writeText(url).then(() => showToast("Link copied!")).catch(() => {
-      prompt("Copy this link:", url);
-    });
+    copyFallback();
   }
 }
 
@@ -828,6 +827,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.56 -->
+<!-- calendar.html v2.57 -->
 </body>
 </html>
