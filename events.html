@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 10.5
-  v9.4 - Room emojis added; DayBalancer Onboarding room removed
+  Events.html Version 10.7
+  v10.7 - Popup height 1000px; Monday CoWorking + Tend to yourself Tuesdays rename + detail image
 -->
 <html lang="en">
 <head>
@@ -722,14 +722,16 @@ const RECURRING_EVENTS = [
     experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false, interestedEnabled:"optional",
   },
   {
-    title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00",
+    title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00",
     format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
     description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
-    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false, recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional",
+    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
+    detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
+    adminOnly:false, recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:3, time:"09:00", endtime:"10:00",
@@ -740,13 +742,13 @@ const RECURRING_EVENTS = [
     experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
   {
-    title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
+    title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00",
     format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043",
     host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
     categories:["learning","wealth","resources","social"],
-    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
     experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
@@ -2773,7 +2775,7 @@ loadEvents().then(() => {
 
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:1000px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -2785,6 +2787,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v10.5 -->
+<!-- Events.html v10.7 -->
 </body>
 </html>
