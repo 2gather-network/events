@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.60
-  v2.54 - Event view popup (iframe modal)
+  calendar.html Version 2.62
+  v2.62 - Monday CoWorking + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
 <head>
@@ -244,14 +244,16 @@ const RECURRING_EVENTS = [
     experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false, interestedEnabled:"optional",
   },
   {
-    title:"Kick off Mondays for Independents", dayOfWeek:1, time:"09:00", endtime:"12:00",
+    title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00",
     format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
     description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
-    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
+    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
+    detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
+    adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
   },
   {
     title:"Get started with Appear Network", dayOfWeek:3, time:"09:00", endtime:"10:00",
@@ -262,13 +264,13 @@ const RECURRING_EVENTS = [
     experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
   },
   {
-    title:"Shine your light! ⭐️", dayOfWeek:2, time:"13:00", endtime:"15:00",
+    title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00",
     format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043",
     host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
     categories:["learning","wealth","resources","social"],
-    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself and your community. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake. Need to join virtually? Request to join us in the virtual DayBalancer Commons from 1:00-2:00 PM PST.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
     experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
@@ -823,6 +825,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.60 -->
+<!-- calendar.html v2.62 -->
 </body>
 </html>
