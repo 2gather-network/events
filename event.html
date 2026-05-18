@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.9
+  event.html Version 4.1
   v3.4 - Simplify CTA text to Discover more events
   -->
   <meta charset="UTF-8">
@@ -105,7 +105,7 @@
 </head>
 <body>
 <div style="width:100%;max-width:560px;">
-  <a class="back-link" href="calendar.html">← All events</a>
+  <a class="back-link" href="https://appear.network/dl/gather">← All events</a>
 </div>
 <div class="card" id="card">
   <div class="loading">Loading event...</div>
@@ -449,8 +449,13 @@ function copyLink() {
 
 function share() {
   const url = window.location.href;
-  if (navigator.share) { navigator.share({ title: document.title, url }).catch(()=>{}); }
-  else { navigator.clipboard.writeText(url).then(()=>alert("Link copied!")).catch(()=>prompt("Copy this link:",url)); }
+  const copyFallback = () => navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", url));
+  if (navigator.share) {
+    navigator.share({ title: document.title, url })
+      .catch(err => { if (err.name !== "AbortError") copyFallback(); });
+  } else {
+    copyFallback();
+  }
 }
 
 function showError(msg) {
@@ -618,6 +623,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.9 -->
+<!-- event.html v4.1 -->
 </body>
 </html>
