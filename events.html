@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 10.2
+  Events.html Version 10.4
   v9.4 - Room emojis added; DayBalancer Onboarding room removed
 -->
 <html lang="en">
@@ -192,9 +192,11 @@
 
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
-  <div style="flex:1;">
-    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;"></div>
-    <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:2px;">Gathering for the common good.</div>
+  <div style="flex:1;display:flex;align-items:center;gap:8px;">
+    <a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:rgba(255,255,255,0.7);text-decoration:none;flex-shrink:0;" title="Back to home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+    <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
@@ -2783,6 +2785,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v10.2 -->
+<!-- Events.html v10.4 -->
 </body>
 </html>
