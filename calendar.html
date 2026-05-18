@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.57
+  calendar.html Version 2.59
   v2.54 - Event view popup (iframe modal)
 -->
 <html lang="en">
@@ -116,8 +116,11 @@
 <div id="loading-bar" class="loading-bar"></div>
 
 <div class="header">
-  <div>
-
+  <div style="flex:1;display:flex;align-items:center;gap:8px;">
+    <a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:rgba(255,255,255,0.7);text-decoration:none;flex-shrink:0;" title="Back to home">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+    <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <a class="btn btn-white btn-sm" href="https://app.daybalancer.com/dl/events/s/4b6ef9" target="_blank" rel="noopener" style="font-weight:700;">🔑 Sign in to post &amp; edit</a>
@@ -125,13 +128,6 @@
 </div>
 
 <div class="page-body">
-  <div class="page-title-row">
-    <div>
-      <div class="page-title" id="page-title">What's happening</div>
-      <div class="page-sub">Events posted by members</div>
-    </div>
-  </div>
-
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
     <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
@@ -650,7 +646,7 @@ function setDateFilter(f) {
   activeTab = f.startsWith("past") ? "past" : "upcoming";
   const sel = document.getElementById("date-filter-select");
   if (sel) sel.value = f;
-  document.getElementById("page-title").textContent = activeTab === "past" ? "Past events" : "What's happening";
+  // title removed from page
   renderEvents();
 }
 
@@ -827,6 +823,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.57 -->
+<!-- calendar.html v2.59 -->
 </body>
 </html>
