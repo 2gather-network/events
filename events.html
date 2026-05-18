@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 10.9
+  Events.html Version 11.0
   v10.7 - Popup height 1000px; Monday CoWorking + Tend to yourself Tuesdays rename + detail image
 -->
 <html lang="en">
@@ -150,7 +150,7 @@
   .choice-btn-title { font-size:15px; font-weight:700; color:var(--dark); margin-bottom:2px; }
   .choice-btn-desc { font-size:13px; color:var(--muted); }
   .paste-modal { max-width:560px; }
-  .paste-textarea { width:100%; min-height:200px; border:1.5px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; resize:vertical; line-height:1.5; }
+  .paste-textarea { width:100%; min-height:320px; border:1.5px solid var(--border); border-radius:8px; padding:14px 16px; font-size:14px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; resize:vertical; line-height:1.5; }
   .paste-textarea:focus { border-color:var(--primary); }
   .paste-hint { font-size:13px; color:var(--muted); margin-top:8px; margin-bottom:16px; }
   .parse-error { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
@@ -1257,7 +1257,7 @@ function renderEvents() {
       : "";
     const descHtml = ev.description
       ? (ev.description.length > 200
-        ? escNl(trunc(ev.description, 200)) + ` <a href="javascript:void(0)" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
+        ? escNl(trunc(ev.description, 200)) + ` <a href="javascript:void(0)" onclick="openEventView('${ev.id}')" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more...]</a>`
         : escNl(ev.description))
       : "";
     const card = document.createElement("div");
@@ -1277,7 +1277,7 @@ function renderEvents() {
       <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
         ${recurringBadge ? `<div>${recurringBadge}</div>` : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
-          <button class="btn btn-sm" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
+          <button class="btn btn-sm" onclick="openEventView('${ev.id}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
           ${ev.sharedNotesEnabled && isRegistered(ev.id) ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
           ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
@@ -1438,6 +1438,7 @@ function restoreDraft() {
 function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
 
 function openModal(skipDraft = false) {
+  formDirty = false;
   editingId = null; selectedCats = new Set(); selectedRoom = null; selectedFormat = null; hostingOption = null;
   ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.remove("selected"));
   document.getElementById("hopt-db").classList.remove("selected");
@@ -1657,6 +1658,7 @@ let recurFreq = null;
 let interestedEnabled = "off";
 let sharedNotesEnabled = false;
 let selectedLifeStages = new Set();
+let formDirty = false;
 
 function toggleRecurring() {
   const checked = document.getElementById("f-recurring").checked;
@@ -1788,7 +1790,7 @@ function toggleLinkFields() {
   });
 }
 
-function closeModal() { document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; clearEditDraft(); const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
+function closeModal() { formDirty = false; document.getElementById("post-modal").classList.remove("open"); isMasterUser = false; selectedExchangeTypes = new Set(); recurFreq = null; clearEditDraft(); const rc = document.getElementById("f-recurring"); if (rc) rc.checked = false; const rw = document.getElementById("recurring-freq-wrap"); if (rw) rw.style.display = "none"; const cb = document.getElementById("clone-btn"); if (cb) cb.textContent = "⧉ Clone"; const cw = document.getElementById("clone-count-wrap"); if (cw) cw.style.display = "none"; }
 
 (function() {
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
@@ -1899,12 +1901,15 @@ function editFromFind(id, pin) {
 
 function isRegistered(id) { try { return localStorage.getItem("db-interested-"+id) === "1"; } catch(e) { return false; } }
 
-function openEventView(id, title) {
+function openEventView(id) {
+  const allEv = [...events, ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
+  const ev = allEv.find(e => e.id === id);
+  const title = ev ? ev.title : "";
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
   const url = base + "event.html?id=" + id;
   document.getElementById("event-view-frame").src = url;
   document.getElementById("event-view-full-link").href = url;
-  document.getElementById("event-view-title").textContent = title || "";
+  document.getElementById("event-view-title").textContent = title;
   document.getElementById("event-view-modal").classList.add("open");
 }
 
@@ -2068,7 +2073,11 @@ function checkEventLink() {
 }
 
 function safeOn(id, evt, fn) { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); }
-safeOn("post-modal",    "click", e => { if (e.target.id === "post-modal")    closeModal(); });
+safeOn("post-modal", "click", e => {
+  if (e.target.id !== "post-modal") return;
+  if (formDirty && !confirm("You have unsaved changes. Close anyway?")) return;
+  closeModal();
+});
 safeOn("choice-modal",  "click", e => { if (e.target.id === "choice-modal")  closeChoiceModal(); });
 safeOn("paste-modal",   "click", e => { if (e.target.id === "paste-modal")   closePasteModal(); });
 safeOn("f-date",        "change", checkAndWarnConflict);
@@ -2077,6 +2086,9 @@ safeOn("f-endtime",     "change", checkAndWarnConflict);
 safeOn("p-code",        "keydown", e => { if (e.key === "Enter") verifyPasscode(); });
 safeOn("passcode-modal","click", e => { if (e.target.id === "passcode-modal") closePasscodeModal(); });
 safeOn("event-view-modal","click", e => { if (e.target.id === "event-view-modal") closeEventView(); });
+// track unsaved changes in post form
+document.querySelector(".modal-scroll-body")?.addEventListener("input", () => { formDirty = true; });
+document.querySelector(".modal-scroll-body")?.addEventListener("change", () => { formDirty = true; });
 safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   closeNotesModal(); });
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
@@ -2779,6 +2791,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v10.9 -->
+<!-- Events.html v11.0 -->
 </body>
 </html>
