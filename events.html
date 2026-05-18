@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 9.9
+  Events.html Version 10.2
   v9.4 - Room emojis added; DayBalancer Onboarding room removed
 -->
 <html lang="en">
@@ -192,9 +192,9 @@
 
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
-  <div>
+  <div style="flex:1;">
     <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer;"></div>
-    <div class="tagline">Community events</div>
+    <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:2px;">Gathering for the common good.</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()">🏠 Room schedules</button>
@@ -204,13 +204,6 @@
 </div>
 
 <div class="page-body">
-  <div class="page-title-row">
-    <div>
-      <div class="page-title" id="page-title">What's happening</div>
-      <div class="page-sub">Events posted for the common good.</div>
-    </div>
-  </div>
-
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
     <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
@@ -2343,7 +2336,7 @@ function setDateFilter(f) {
   }
   const isPast = f.startsWith("past");
   activeTab = isPast ? "past" : "upcoming";
-  document.getElementById("page-title").textContent = isPast ? "Past events" : "What's happening";
+  // title removed from page
   renderEvents();
 }
 
@@ -2790,6 +2783,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v9.9 -->
+<!-- Events.html v10.2 -->
 </body>
 </html>
