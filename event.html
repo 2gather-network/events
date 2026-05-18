@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 3.8
+  event.html Version 3.9
   v3.4 - Simplify CTA text to Discover more events
   -->
   <meta charset="UTF-8">
@@ -280,9 +280,9 @@ function toEv(r) {
 }
 
 function render(ev) {
-  const isPast = ev.date && (ev.endtime
-    ? new Date(ev.date+"T"+ev.endtime)<Date.now()
-    : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000<Date.now());
+  const today = new Date(); today.setHours(0,0,0,0);
+  const eventDay = ev.date ? new Date(ev.date + "T00:00:00") : null;
+  const isPast = eventDay && eventDay < today;
 
   const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
   const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"📣 Spread the word",free:"💬 Feedback",testimonial:"⏰ Time",share:"💵 Money"};
@@ -618,6 +618,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v3.8 -->
+<!-- event.html v3.9 -->
 </body>
 </html>
