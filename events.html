@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 10.8
+  Events.html Version 10.9
   v10.7 - Popup height 1000px; Monday CoWorking + Tend to yourself Tuesdays rename + detail image
 -->
 <html lang="en">
@@ -689,14 +689,6 @@ const ROOMS = [
 
 const RECURRING_EVENTS = [
   {
-    title:"DayBalancer Onboarding", dayOfWeek:1, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"The Commons", host:"DayBalancer", hostlink:"",
-    cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/beYd4M39RCqGSbP4KsNqGQ",
-    categories:["learning"],
-    description:"New to DayBalancer? Join us every Monday for a live onboarding session. We'll walk you through the platform, answer your questions, and help you get connected to the community.",
-    experience:"connected,energized", adminOnly:true, interestedEnabled:"optional",
-  },
-  {
     title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
     format:"virtual", room:"Ikigai room", host:"Jessie Upp",
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
@@ -969,7 +961,7 @@ function parseSheetTime(val) {
 
 function sheetToEv(row) {
   const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays"];
-  const RECURRING_IDS    = ["kickoff-001","onboarding-001","ikigai-001"];
+  const RECURRING_IDS    = ["kickoff-001","ikigai-001"];
   const titleKey = (row.title || "").toLowerCase().trim();
   const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
   return {
@@ -2787,6 +2779,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v10.8 -->
+<!-- Events.html v10.9 -->
 </body>
 </html>
