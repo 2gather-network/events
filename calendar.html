@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.65
+  calendar.html Version 2.66
   v2.62 - Monday CoWorking + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
@@ -810,7 +810,7 @@ loadEvents();
 </script>
 <!-- Event view modal (iframe) -->
 <div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;" id="event-view-modal">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:#1a1a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -818,10 +818,10 @@ loadEvents();
         <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:#6b7280;cursor:pointer;padding:4px;line-height:1;">×</button>
       </div>
     </div>
-    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;height:80vh;" src="about:blank"></iframe>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;height:100%;min-height:0;overflow-y:auto;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- calendar.html v2.65 -->
+<!-- calendar.html v2.66 -->
 </body>
 </html>
