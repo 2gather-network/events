@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.0
+  Events.html Version 11.3
   v10.7 - Popup height 1000px; Monday CoWorking + Tend to yourself Tuesdays rename + detail image
 -->
 <html lang="en">
@@ -649,7 +649,7 @@ Start your week with other independents. Share what you're working on, what you 
     <div class="modal-title" style="font-size:18px;">Enter your private edit PIN</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">This is the 4-digit code you set when you posted the event.</p>
     <div class="field">
-      <input class="input" id="p-code" type="password" maxlength="4" placeholder="4-digit passcode" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off">
+      <input class="input" id="p-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off" autocorrect="off">
     </div>
     <p class="error-msg" id="passcode-error">Incorrect passcode. Please try again.</p>
     <div class="modal-actions">
@@ -1507,27 +1507,33 @@ const MASTER_HOST     = "jessie upp";
 let   isMasterUser    = false;
 
 function verifyPasscode() {
+  document.getElementById("p-code").blur(); // dismiss keyboard on mobile
   const entered  = document.getElementById("p-code").value.trim();
   const idToEdit = pendingEditId;
+  const errEl    = document.getElementById("passcode-error");
+  if (!entered) { errEl.textContent = "Please enter your PIN."; errEl.style.display = "block"; return; }
   if (entered === MASTER_PASSCODE) {
     const found = findEvById(idToEdit);
     isMasterUser = !!(found && (found.ev.host || "").trim().toLowerCase() === MASTER_HOST);
-    closePasscodeModal(); loadEditForm(idToEdit); return;
+    closePasscodeModal();
+    try { loadEditForm(idToEdit); } catch(e) { console.warn("loadEditForm failed", e); }
+    return;
   }
   const found = findEvById(idToEdit);
-  if (!found) return;
+  if (!found) { errEl.textContent = "Event not found. Please try again."; errEl.style.display = "block"; return; }
   const ev = found.ev;
   if (found.isRecurring || !ev.passcode) {
-    document.getElementById("passcode-error").style.display = "block";
-    document.getElementById("passcode-error").textContent = "Recurring events require the master passcode.";
+    errEl.textContent = "Use your master PIN to edit this event.";
+    errEl.style.display = "block";
     document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
   }
-  if (entered !== ev.passcode) {
-    document.getElementById("passcode-error").style.display = "block";
-    document.getElementById("passcode-error").textContent = "Incorrect passcode. Please try again.";
+  if (String(entered) !== String(ev.passcode)) {
+    errEl.textContent = "Incorrect PIN. Please try again.";
+    errEl.style.display = "block";
     document.getElementById("p-code").value = ""; document.getElementById("p-code").focus(); return;
   }
-  closePasscodeModal(); loadEditForm(idToEdit);
+  closePasscodeModal();
+  try { loadEditForm(idToEdit); } catch(e) { console.warn("loadEditForm failed", e); }
 }
 
 function findRecurringBase(id) {
@@ -2734,7 +2740,7 @@ loadEvents().then(() => {
     <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Enter the PIN you set when posting your event.</p>
     <div class="field">
       <label class="field-label">Your event PIN</label>
-      <input class="input" id="find-pin-search" type="tel" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+      <input class="input" id="find-pin-search" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" style="letter-spacing:0.3em;font-size:20px;text-align:center;" autocomplete="off" autocorrect="off">
     </div>
     <p class="error-msg" id="find-error" style="display:none;margin-bottom:12px;"></p>
     <div id="find-results" style="display:none;margin-bottom:16px;">
@@ -2752,7 +2758,7 @@ loadEvents().then(() => {
   <div class="modal" style="max-width:380px;text-align:center;">
     <div class="modal-title">Enter your PIN</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:20px;" id="find-pin-event-name"></p>
-    <input class="input" id="find-pin-input" type="tel" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;font-size:20px;text-align:center;margin-bottom:12px;" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+    <input class="input" id="find-pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" style="letter-spacing:0.3em;font-size:20px;text-align:center;margin-bottom:12px;" autocomplete="off" autocorrect="off">
     <p class="error-msg" id="find-pin-error" style="display:none;margin-bottom:12px;">Incorrect PIN. Please try again.</p>
     <div class="modal-actions">
       <button class="btn btn-green" style="flex:1;" onclick="confirmFindPin()">Edit event</button>
@@ -2779,7 +2785,7 @@ loadEvents().then(() => {
 
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:90vh;min-height:600px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -2787,10 +2793,10 @@ loadEvents().then(() => {
         <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
       </div>
     </div>
-    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;overflow-y:auto;" src="about:blank"></iframe>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;height:100%;min-height:0;overflow-y:auto;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v11.0 -->
+<!-- Events.html v11.3 -->
 </body>
 </html>
