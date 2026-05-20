@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  calendar.html Version 2.70
+  calendar.html Version 2.72
   v2.67 - Room domain update; share button native sheet + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
@@ -35,7 +35,7 @@
   .input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:15px; font-family:inherit; color:var(--dark); background:var(--white); outline:none; transition:border-color .15s; }
   .input:focus { border-color:var(--primary); }
 
-  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:8000px; }
+  .page-body { max-width:1200px; margin:0 auto; padding:24px 20px; width:100%; box-sizing:border-box; min-height:100vh; }
   .embed-mode .page-body { padding-top:8px; }
   .embed-mode .header { display:none; }
   .page-title-row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
@@ -525,7 +525,7 @@ function renderEvents() {
         ${recurringBadge ? `<div style="margin-top:8px;">${recurringBadge}</div>` : ""}
       </div>
       <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
-        ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); return meetUrl ? `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather</a>` : ""; })() : ""}
+        ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); if (!meetUrl || !ev.date || !ev.time) return ""; const today = new Date(); const evDay = new Date(ev.date+"T00:00:00"); if (today.toDateString() !== evDay.toDateString()) return ""; const d = new Date(ev.date+"T"+ev.time); const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); const endStr = ev.endtime ? " - "+new Date(ev.date+"T"+ev.endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""; return `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather · ${ts}${endStr} ${tz}</a>`; })() : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <button class="btn btn-sm" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:14px;">View</button>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
@@ -836,6 +836,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- calendar.html v2.70 -->
+<!-- calendar.html v2.72 -->
 </body>
 </html>
