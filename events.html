@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.3
-  v10.7 - Popup height 1000px; Monday CoWorking + Tend to yourself Tuesdays rename + detail image
+  Events.html Version 11.4
+  v11.4 - Host note field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
 <head>
@@ -319,6 +319,10 @@ Start your week with other independents. Share what you're working on, what you 
 
     <div class="modal-scroll-body">
 
+    <div style="background:#E8F2F9;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--primary);font-weight:600;">
+      Your event details help people on Appear Network find gatherings that fit what they're working on.
+    </div>
+
     <div id="registrations-panel" style="display:none;margin-bottom:20px;padding:14px 16px;background:#EFF6FF;border-radius:10px;border:1px solid #BFDBFE;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <p style="font-size:13px;font-weight:700;color:#1d4ed8;margin:0;">✋ People who expressed interest</p>
@@ -377,6 +381,7 @@ Start your week with other independents. Share what you're working on, what you 
     <div class="field">
       <label class="field-label">Description</label>
       <textarea class="textarea" id="f-desc" placeholder="Tell people what to expect..."></textarea>
+      <p style="font-size:11px;color:var(--muted);margin-top:4px;">This description is used to find keywords for your event.</p>
     </div>
 
     <div class="two-col">
@@ -403,12 +408,18 @@ Start your week with other independents. Share what you're working on, what you 
     </div>
 
     <button type="button" onclick="toggleMoreOptions()" id="more-options-btn" style="background:none;border:1.5px solid var(--border);border-radius:8px;width:100%;padding:10px 16px;font-size:13px;font-weight:700;color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:16px;">
-      <span id="more-options-arrow">＋</span> <span id="more-options-label">Add details</span>
+      <span id="more-options-arrow">＋</span> <span id="more-options-label">Add optional details</span>
     </button>
 
     <div id="more-options-section" style="display:none;">
 
     <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);">Optional event details</div>
+
+    <!-- #1 Host note -->
+    <div class="field">
+      <label class="field-label">Host note <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, visible after someone registers interest</span></label>
+      <textarea class="textarea" id="f-host-note" placeholder="Add a note for people who register interest..." style="min-height:80px;"></textarea>
+    </div>
 
     <div class="field">
       <label class="field-label">What would you like to share with participants? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, check all that apply</span></label>
@@ -417,9 +428,10 @@ Start your week with other independents. Share what you're working on, what you 
           <input type="checkbox" id="show-contact" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
           Contact info (email / phone)
         </label>
+        <!-- #3 My Appear Network page -->
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-hostlink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
-          My profile page
+          My Appear Network page
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
           <input type="checkbox" id="show-cooplink" onchange="toggleLinkFields()" style="width:16px;height:16px;accent-color:var(--primary);">
@@ -432,9 +444,11 @@ Start your week with other independents. Share what you're working on, what you 
       </div>
     </div>
 
+    <!-- #3 Updated label + validation error -->
     <div class="field" id="field-hostlink" style="display:none;">
-      <label class="field-label">Your profile page link</label>
-      <input class="input" id="f-hostlink" type="url" placeholder="https://...">
+      <label class="field-label">Your Appear Network page link</label>
+      <input class="input" id="f-hostlink" type="url" placeholder="https://appear.network/dl/page/...">
+      <p id="hostlink-error" style="display:none;font-size:12px;color:#c0392b;margin-top:4px;">This works with pages from Appear Network. <a href="https://appear.network/dl/page/" target="_blank" rel="noopener" style="color:#c0392b;font-weight:700;">Copy your page link here.</a></p>
     </div>
 
     <div class="field" id="field-cooplink" style="display:none;">
@@ -460,14 +474,35 @@ Start your week with other independents. Share what you're working on, what you 
       </div>
     </div>
 
+    <!-- #4 Cover image updated hint -->
     <div class="field">
-      <label class="field-label">Cover image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows on the event card</span></label>
+      <label class="field-label">Cover image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows on both the event card and event page</span></label>
       <input type="url" id="f-image-url" class="input" placeholder="https://..." style="width:100%;">
     </div>
 
     <div class="field">
       <label class="field-label">Detail image <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, paste a URL - shows inside the event page</span></label>
       <input type="url" id="f-detail-image-url" class="input" placeholder="https://..." style="width:100%;">
+    </div>
+
+    <!-- #5 Reordered: keywords up -->
+    <div class="field">
+      <label class="field-label">Keywords <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, separate with commas</span></label>
+      <input type="text" id="f-keywords" class="input" placeholder="e.g. networking, AI, writing" style="width:100%;">
+    </div>
+
+    <!-- #5 Reordered: who serving up -->
+    <div class="field">
+      <label class="field-label">Who is this event serving? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, select all that apply</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <button type="button" class="format-chip" id="ls-community" onclick="toggleLifeStage('community')">🌐 Community</button>
+        <button type="button" class="format-chip" id="ls-students" onclick="toggleLifeStage('students')">Students</button>
+        <button type="button" class="format-chip" id="ls-early-career" onclick="toggleLifeStage('early-career')">Early career</button>
+        <button type="button" class="format-chip" id="ls-mid-career" onclick="toggleLifeStage('mid-career')">Mid-career</button>
+        <button type="button" class="format-chip" id="ls-senior" onclick="toggleLifeStage('senior')">Senior professional</button>
+        <button type="button" class="format-chip" id="ls-late-career" onclick="toggleLifeStage('late-career')">Late career / pre-retired</button>
+        <button type="button" class="format-chip" id="ls-retired" onclick="toggleLifeStage('retired')">Retired</button>
+      </div>
     </div>
 
     <div class="field">
@@ -502,40 +537,7 @@ Start your week with other independents. Share what you're working on, what you 
       </div>
     </div>
 
-    <div class="field" id="recurring-field" style="display:none;">
-      <label class="field-label">Recurring event <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;">
-          <input type="checkbox" id="f-recurring" onchange="toggleRecurring()" style="width:16px;height:16px;accent-color:var(--primary);">
-          Make this a recurring event
-        </label>
-      </div>
-      <div id="recurring-freq-wrap" style="display:none;margin-top:10px;">
-        <div style="display:flex;gap:8px;">
-          <button type="button" class="format-chip" id="freq-weekly" onclick="setRecurFreq('weekly')">🔁 Weekly</button>
-          <button type="button" class="format-chip" id="freq-monthly" onclick="setRecurFreq('monthly')">📅 Monthly</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label">Who is this event serving? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, select all that apply</span></label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-        <button type="button" class="format-chip" id="ls-community" onclick="toggleLifeStage('community')">🌐 Community</button>
-        <button type="button" class="format-chip" id="ls-students" onclick="toggleLifeStage('students')">Students</button>
-        <button type="button" class="format-chip" id="ls-early-career" onclick="toggleLifeStage('early-career')">Early career</button>
-        <button type="button" class="format-chip" id="ls-mid-career" onclick="toggleLifeStage('mid-career')">Mid-career</button>
-        <button type="button" class="format-chip" id="ls-senior" onclick="toggleLifeStage('senior')">Senior professional</button>
-        <button type="button" class="format-chip" id="ls-late-career" onclick="toggleLifeStage('late-career')">Late career / pre-retired</button>
-        <button type="button" class="format-chip" id="ls-retired" onclick="toggleLifeStage('retired')">Retired</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label">Keywords <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, separate with commas</span></label>
-      <input type="text" id="f-keywords" class="input" placeholder="e.g. networking, AI, writing" style="width:100%;">
-    </div>
-
+    <!-- #5 Reordered: visibility -->
     <div class="field" style="margin-bottom:12px;">
       <label class="field-label" style="margin-bottom:8px;">Visibility</label>
       <div style="display:flex;gap:8px;">
@@ -562,6 +564,23 @@ Start your week with other independents. Share what you're working on, what you 
         <button type="button" class="format-chip" id="snotes-on" onclick="setSharedNotesEnabled(true)" style="flex:1;">On</button>
       </div>
       <p style="font-size:12px;color:var(--muted);margin-top:6px;">Anyone viewing the event can read and add to a shared text area. Use your description to frame it.</p>
+    </div>
+
+    <!-- Recurring moved to end -->
+    <div class="field" id="recurring-field" style="display:none;">
+      <label class="field-label">Recurring event <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="f-recurring" onchange="toggleRecurring()" style="width:16px;height:16px;accent-color:var(--primary);">
+          Make this a recurring event
+        </label>
+      </div>
+      <div id="recurring-freq-wrap" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="format-chip" id="freq-weekly" onclick="setRecurFreq('weekly')">🔁 Weekly</button>
+          <button type="button" class="format-chip" id="freq-monthly" onclick="setRecurFreq('monthly')">📅 Monthly</button>
+        </div>
+      </div>
     </div>
 
     </div><!-- end more-options-section -->
@@ -938,6 +957,7 @@ function evToSheet(ev) {
     paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, lifeStage: ev.lifeStage || "", keywords: ev.keywords || "",
     interestedEnabled: ev.interestedEnabled || "off", interested: ev.interested || "",
     sharedNotesEnabled: ev.sharedNotesEnabled || false, sharedNotes: ev.sharedNotes || "",
+    host_note: ev.host_note || "",
   };
 }
 
@@ -976,6 +996,7 @@ function sheetToEv(row) {
     paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.lifeStage || "", keywords: row.keywords || "",
     interestedEnabled: row.interestedEnabled || "off", interested: row.interested || "",
     sharedNotesEnabled: row.sharedNotesEnabled === "true" || row.sharedNotesEnabled === true || false, sharedNotes: row.sharedNotes || "",
+    host_note: row.host_note || "",
   };
 }
 
@@ -1328,6 +1349,7 @@ function saveEditDraft() {
     isPrivate: currentVisibility === "private",
     lifeStage: [...selectedLifeStages].join(","),
     keywords: document.getElementById("f-keywords")?.value.trim() || "",
+    hostNote: document.getElementById("f-host-note")?.value.trim() || "",
     showLinks: ["hostlink","cooplink","paymentlink","contact"].filter(k => document.getElementById("show-"+k)?.checked).join(","),
     cats: [...selectedCats], format: selectedFormat, room: selectedRoom,
     interestedEnabled, sharedNotesEnabled,
@@ -1356,6 +1378,7 @@ function restoreEditDraft(id) {
     document.getElementById("f-contact-phone").value = d.contactPhone || "";
     document.getElementById("f-cooplink").value = d.cooplink || "";
     document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    const hnEditEl = document.getElementById("f-host-note"); if(hnEditEl) hnEditEl.value = d.hostNote || "";
     const sl = (d.showLinks || "").split(",");
     ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
     toggleLinkFields();
@@ -1413,6 +1436,7 @@ function restoreDraft() {
     document.getElementById("f-cooplink").value = d.cooplink || "";
     document.getElementById("f-passcode").value = d.passcode || "";
     document.getElementById("f-paymentlink").value = d.paymentlink || "";
+    const hnDraftEl = document.getElementById("f-host-note"); if(hnDraftEl) hnDraftEl.value = d.hostNote || "";
     const sl = (d.showLinks || "").split(",");
     ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
       const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k);
@@ -1460,7 +1484,8 @@ function openModal(skipDraft = false) {
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
   document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
-  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink","f-host-note"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
   selectedExchangeTypes = new Set(); ["spread","time","connections","feedback","skills","stuff","space","money","care","other","noask","free","testimonial","share"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
@@ -1475,7 +1500,7 @@ function openModal(skipDraft = false) {
   const moreSection = document.getElementById("more-options-section");
   if (moreSection) moreSection.style.display = "none";
   const moreArrow = document.getElementById("more-options-arrow"); if (moreArrow) moreArrow.textContent = "＋";
-  const moreLabel = document.getElementById("more-options-label"); if (moreLabel) moreLabel.textContent = "Add details";
+  const moreLabel = document.getElementById("more-options-label"); if (moreLabel) moreLabel.textContent = "Add optional details";
   const heResetEl = document.getElementById("f-host-email"); if(heResetEl) heResetEl.value = "";
   setLifeStages("");
   const kwEl = document.getElementById("f-keywords"); if(kwEl) kwEl.value = "";
@@ -1619,7 +1644,7 @@ function loadEditForm(id) {
   document.getElementById("f-contact-email").value = ev.contactEmail || "";
   document.getElementById("f-contact-phone").value = ev.contactPhone || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
-  ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
+  const hnLoadEl = document.getElementById("f-host-note"); if(hnLoadEl) hnLoadEl.value = ev.host_note || "";
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
   const sl = (ev.showLinks || "").split(",").filter(Boolean);
   ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
@@ -1716,7 +1741,7 @@ function toggleMoreOptions() {
   const isOpen = section.style.display !== "none";
   section.style.display = isOpen ? "none" : "block";
   if (arrow) arrow.textContent = isOpen ? "＋" : "－";
-  if (label) label.textContent = isOpen ? "Add details" : "Hide details";
+  if (label) label.textContent = isOpen ? "Add optional details" : "Hide details";
 }
 
 function openMoreOptions() {
@@ -1970,7 +1995,7 @@ function clearForm() {
   // Reset all inputs
   ["f-host-email","f-title","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink",
    "f-cooplink","f-paymentlink","f-contact-email","f-contact-phone","f-passcode",
-   "f-image-url","f-detail-image-url","f-keywords","f-exch-other"].forEach(id => {
+   "f-image-url","f-detail-image-url","f-keywords","f-exch-other","f-host-note"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   ["f-date","f-time","f-endtime"].forEach(id => {
@@ -2099,7 +2124,7 @@ safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   clo
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
-["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode"].forEach(id => { safeOn(id,"input",() => { saveDraft(); saveEditDraft(); }); safeOn(id,"change",() => { saveDraft(); saveEditDraft(); }); });
+["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode","f-host-note"].forEach(id => { safeOn(id,"input",() => { saveDraft(); saveEditDraft(); }); safeOn(id,"change",() => { saveDraft(); saveEditDraft(); }); });
 
 let summaryEventId = null;
 
@@ -2200,6 +2225,13 @@ async function submitEvent() {
   const passcode = document.getElementById("f-passcode") ? document.getElementById("f-passcode").value.trim() : "";
   const errEl    = document.getElementById("post-error");
 
+  // #3 Appear Network URL validation
+  if (document.getElementById("show-hostlink")?.checked && hostlink && !hostlink.includes("appear.network")) {
+    const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "block";
+    errEl.textContent = "Your Appear Network page link must include appear.network."; errEl.style.display = "block"; return;
+  }
+  const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
+
   const missing = [];
   if (selectedExchangeTypes.has("share") && !document.getElementById("f-paymentlink")?.value.trim()) missing.push("payment/registration link (required when Paid is selected)");
   if (!title) missing.push("event title");
@@ -2254,6 +2286,7 @@ async function submitEvent() {
     recurFreq: (isMasterUser && document.getElementById("f-recurring")?.checked) ? (recurFreq || "") : "",
     recurring: !!(isMasterUser && document.getElementById("f-recurring")?.checked && recurFreq),
     interestedEnabled, sharedNotesEnabled,
+    host_note: document.getElementById("f-host-note")?.value.trim() || "",
   };
 
   if (editingId) {
@@ -2797,6 +2830,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.3 -->
+<!-- Events.html v11.4 -->
 </body>
 </html>
