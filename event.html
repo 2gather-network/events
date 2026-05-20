@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.9
-  v4.9 - Room domain update shown after interest registered
+  event.html Version 4.10
+  v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -529,7 +529,6 @@ async function submitInterestInline() {
     if (errEl) { errEl.textContent = "Please enter your name to register."; errEl.style.display = "block"; }
     return;
   }
-  // optimistic UI - confirm immediately without waiting for API
   const form = document.getElementById("interest-form");
   if (form) form.style.display = "none";
   const confirmed = document.getElementById("interest-confirmed");
@@ -541,10 +540,31 @@ async function submitInterestInline() {
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
-  // API call happens in background - user already sees confirmation
   const modeLabel = _attendanceMode === "online" ? "💻 Online" : _attendanceMode === "inperson" ? "📍 In-person" : "";
   const entry = [name, modeLabel].filter(Boolean).join(" · ") || "Anonymous";
   _attendanceMode = "";
+  // If this is a recurring event, auto-create a sheet row first so interest saves correctly
+  if (_currentEv.id && _currentEv.id.startsWith("recurring-")) {
+    const stableId = "rec-" + (_currentEv.title||"").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
+    try {
+      await jsonp({
+        action: "add",
+        event: JSON.stringify({
+          id: stableId, title: _currentEv.title||"", categories: Array.isArray(_currentEv.categories)?_currentEv.categories.join(","):"",
+          date: _currentEv.date||"", startTime: _currentEv.time||"", endTime: _currentEv.endtime||"",
+          format: _currentEv.format||"", location: _currentEv.location||"", room: _currentEv.room||"",
+          description: _currentEv.description||"", host: _currentEv.host||"", hostlink: _currentEv.hostlink||"",
+          contactEmail: _currentEv.contactEmail||"", contactPhone: _currentEv.contactPhone||"",
+          passcode: "6090", going: 0, recurFreq: _currentEv.recurFreq||"weekly",
+          interestedEnabled: _currentEv.interestedEnabled||"optional",
+          sharedNotesEnabled: _currentEv.sharedNotesEnabled||false,
+          interested: entry,
+        })
+      });
+      // Now save interest to the stable ID row
+      return;
+    } catch(e) { console.warn("Auto-create recurring row failed", e); }
+  }
   try { await jsonp({ action:"interest", id:_currentEv.id, entry }); } catch(e) { console.warn("Interest save failed", e); }
 }
 
@@ -659,6 +679,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.9 -->
+<!-- event.html v4.10 -->
 </body>
 </html>
