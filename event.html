@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.7
-  v4.6 - Monday CoWorking + Tend to yourself Tuesdays; styled virtual meeting button
+  event.html Version 4.8
+  v4.8 - Host note shown after interest registered
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -205,6 +205,7 @@ function recurToEv(r) {
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
+    host_note: r.host_note||"",
   };
 }
 
@@ -275,6 +276,7 @@ function toEv(r) {
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
     passcode: r.passcode||"",
+    host_note: r.host_note||"",
   };
 }
 
@@ -359,6 +361,12 @@ function render(ev) {
           ✓ The host knows you're interested. If you can't make it, reach out to ${contactLink}.
         </div>
       ` : ""}
+      ${ev.host_note ? `
+        <div id="host-note-section" style="display:none;margin-top:16px;padding:14px 16px;background:#E8F2F9;border-radius:10px;border:1.5px solid #1B6896;">
+          <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#1B6896;margin-bottom:8px;">Note from the host</p>
+          <p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.host_note)}</p>
+        </div>
+      ` : ""}
       ${hasNotes ? `
         <div id="notes-section" style="display:none;margin-top:16px;">
           <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">📋 This is a shared notes board - anything you add is seen by the host and all participants.</p>
@@ -411,6 +419,8 @@ function render(ev) {
         if (confirmed) confirmed.style.display = "block";
         const notes = document.getElementById("notes-section");
         if (notes) notes.style.display = "block";
+        const hostNoteEl = document.getElementById("host-note-section");
+        if (hostNoteEl) hostNoteEl.style.display = "block";
       }
     } catch(e) {}
   }
@@ -526,6 +536,8 @@ async function submitInterestInline() {
   if (confirmed) confirmed.style.display = "block";
   const notes = document.getElementById("notes-section");
   if (notes) notes.style.display = "block";
+  const hostNoteSection = document.getElementById("host-note-section");
+  if (hostNoteSection) hostNoteSection.style.display = "block";
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
@@ -647,6 +659,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.7 -->
+<!-- event.html v4.8 -->
 </body>
 </html>
