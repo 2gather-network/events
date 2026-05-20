@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.10
+  event.html Version 4.11
   v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
   -->
   <meta charset="UTF-8">
@@ -206,6 +206,7 @@ function recurToEv(r) {
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
     host_note: r.host_note||"",
+    cancelled: r.cancelled||false,
   };
 }
 
@@ -277,6 +278,7 @@ function toEv(r) {
     sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
     passcode: r.passcode||"",
     host_note: r.host_note||"",
+    cancelled: r.cancelled==="true"||r.cancelled===true||false,
   };
 }
 
@@ -381,6 +383,7 @@ function render(ev) {
 
   document.getElementById("card").innerHTML = `
     ${ev.imageUrl ? `<img class="cover-img" src="${esc(ev.imageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
+    ${ev.cancelled ? `<div style="background:#FEE2E2;color:#c0392b;font-size:13px;font-weight:700;letter-spacing:0.07em;padding:10px 24px;border-bottom:1px solid #FECACA;text-align:center;">THIS EVENT HAS BEEN CANCELLED</div>` : ""}
     ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
     ${ev.isPrivate ? `<div style="background:#FFF8E7;border-bottom:1px solid #F0B429;padding:8px 24px;font-size:12px;font-weight:700;color:#7B5800;letter-spacing:0.05em;">🔒 PRIVATE EVENT - Share this link only with your guests</div>` : ""}
     <div class="card-body">
@@ -679,6 +682,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.10 -->
+<!-- event.html v4.11 -->
 </body>
 </html>
