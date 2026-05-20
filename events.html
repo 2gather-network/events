@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.5
-  v11.5 - Room domain update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
+  Events.html Version 11.6
+  v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
 <head>
@@ -1633,7 +1633,13 @@ function loadEditForm(id) {
     recurNote.style.display = "block";
   } else if (recurNote) { recurNote.style.display = "none"; }
   document.getElementById("f-title").value = ev.title || "";
-  document.getElementById("f-date").value  = ev.date || "";
+  // Fix: for recurring events always show next occurrence date, not stale ID date
+  if (found.isRecurring && base) {
+    const nextOcc = getNextOccurrences(base, 1)[0];
+    document.getElementById("f-date").value = nextOcc ? nextOcc.date : (ev.date || "");
+  } else {
+    document.getElementById("f-date").value = ev.date || "";
+  }
   document.getElementById("f-time").value  = ev.time || "";
   document.getElementById("f-endtime").value = ev.endtime || "";
   document.getElementById("f-location").value = ev.location || "";
@@ -1645,6 +1651,27 @@ function loadEditForm(id) {
   document.getElementById("f-contact-phone").value = ev.contactPhone || "";
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   const hnLoadEl = document.getElementById("f-host-note"); if(hnLoadEl) hnLoadEl.value = ev.host_note || "";
+  // Fix: for recurring events, load optional fields from sheet row if one exists
+  if (found.isRecurring) {
+    const sheetMatch = events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-"));
+    if (sheetMatch) {
+      const kwEl = document.getElementById("f-keywords"); if(kwEl) kwEl.value = sheetMatch.keywords || "";
+      const hnEl = document.getElementById("f-host-note"); if(hnEl) hnEl.value = sheetMatch.host_note || "";
+      const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = sheetMatch.imageUrl || "";
+      const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = sheetMatch.detailImageUrl || "";
+      const plEl = document.getElementById("f-paymentlink"); if(plEl) plEl.value = sheetMatch.paymentlink || "";
+      setExchange(sheetMatch.exchangeType || "");
+      const otherEl = document.getElementById("f-exch-other"); if(otherEl) otherEl.value = sheetMatch.otherExchange || "";
+      setExperience(sheetMatch.experience || "");
+      setLifeStages(sheetMatch.lifeStage || "");
+      setInterestedEnabled(sheetMatch.interestedEnabled || "off");
+      setSharedNotesEnabled(sheetMatch.sharedNotesEnabled || false);
+      setVisibility(sheetMatch.isPrivate ? "private" : "public");
+      const sl2 = (sheetMatch.showLinks || "").split(",").filter(Boolean);
+      ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if(cb) cb.checked = sl2.includes(k); });
+      toggleLinkFields();
+    }
+  }
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
   const sl = (ev.showLinks || "").split(",").filter(Boolean);
   ["hostlink","cooplink","paymentlink","contact"].forEach(k => {
@@ -2311,7 +2338,18 @@ async function submitEvent() {
         saved[slug] = RECURRING_EVENTS[tIdx];
         localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
       }
-      closeModal(); renderEvents(); showToast("🔁 Recurring event updated for all future occurrences!");
+      // Persist optional fields to sheet so they load on future edits
+      const existingRecRow = events.find(e => e.title.toLowerCase() === title.toLowerCase() && !e.id.startsWith("recurring-"));
+      const recSheetData = { ...eventData, title, passcode: MASTER_PASSCODE, going: 0 };
+      if (existingRecRow) {
+        apiUpdate({ ...existingRecRow, ...recSheetData }).catch(() => {});
+      } else {
+        const recId = "rec-" + title.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
+        const newRecRow = { id: recId, ...recSheetData };
+        events.push(newRecRow);
+        apiAdd(newRecRow).catch(() => {});
+      }
+      closeModal(); renderEvents(); showToast("Recurring event updated for all future occurrences!");
     } else {
       const idx = events.findIndex(e => e.id === editingId);
       const savedId = editingId;
@@ -2841,6 +2879,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.5 -->
+<!-- Events.html v11.6 -->
 </body>
 </html>
