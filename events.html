@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.10
+  Events.html Version 11.12
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -88,8 +88,8 @@
 
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; overscroll-behavior:none; touch-action:pan-y; }
   .modal-overlay.open { display:flex; }
-  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:92vh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-shadow:0 20px 60px rgba(0,0,0,.2); }
-  .modal-form { padding:0; overflow:hidden; display:flex; flex-direction:column; }
+  .modal { background:var(--white); border-radius:16px; padding:32px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal-form { padding:0; overflow:hidden; display:flex; flex-direction:column; max-height:90vh; }
   .modal-header { padding:28px 32px 16px; flex-shrink:0; }
   .modal-scroll-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 32px; min-height:0; overscroll-behavior:contain; }
   .modal-footer { padding:16px 32px 28px; flex-shrink:0; border-top:1px solid var(--border); }
@@ -100,7 +100,7 @@
 
   @media(max-width:768px) {
     .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
-    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:94vh; padding:28px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); }
+    .modal { border-radius:20px 20px 0 0; max-width:100%; width:100%; max-height:92vh; padding:28px 20px 32px; margin:0; box-shadow:0 -4px 24px rgba(0,0,0,.15); transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); overflow-y:auto; }
     .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:-16px auto 20px; }
     .modal-form { padding:0; }
     .modal-form::before { display:none; }
@@ -123,7 +123,8 @@
   .format-chip.selected { background:#154F74; border-color:#154F74; color:white; }
   .format-chip.active   { background:#154F74; border-color:#154F74; color:white; }
 
-  .room-schedule-modal { max-width:640px; }
+  .room-schedule-modal { max-width:640px; display:flex; flex-direction:column; max-height:90vh; }
+  .room-schedule-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .room-section { margin-bottom:24px; }
   .room-section-title { font-size:14px; font-weight:800; color:var(--dark); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
   .room-event-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--light); gap:10px; flex-wrap:wrap; }
@@ -643,7 +644,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
   <div class="modal room-schedule-modal">
     <div class="modal-title">Room schedules</div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">Upcoming events by virtual room. Check availability before posting.</p>
-    <div id="room-schedule-body"></div>
+    <div id="room-schedule-body" class="room-schedule-body"></div>
     <div style="margin-top:8px;">
       <button class="btn btn-outline btn-full" onclick="closeRoomModal()">Close</button>
     </div>
@@ -1647,9 +1648,14 @@ function loadEditForm(id) {
   } else if (recurNote) { recurNote.style.display = "none"; }
   document.getElementById("f-title").value = ev.title || "";
   // Fix: for recurring events always show next occurrence date, not stale ID date
-  if (found.isRecurring && base) {
-    const nextOcc = getNextOccurrences(base, 1)[0];
-    document.getElementById("f-date").value = nextOcc ? nextOcc.date : (ev.date || "");
+  if (found.isRecurring) {
+    const recurBase = findRecurringBase(id);
+    if (recurBase) {
+      const nextOcc = getNextOccurrences(recurBase, 1)[0];
+      document.getElementById("f-date").value = nextOcc ? nextOcc.date : (ev.date || "");
+    } else {
+      document.getElementById("f-date").value = ev.date || "";
+    }
   } else {
     document.getElementById("f-date").value = ev.date || "";
   }
@@ -2880,7 +2886,7 @@ loadEvents().then(() => {
 </div>
 
 <!-- Event view modal (iframe) -->
-<div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;">
+<div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;overscroll-behavior:none;">
   <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
@@ -2890,10 +2896,10 @@ loadEvents().then(() => {
         <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
       </div>
     </div>
-    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;height:100%;min-height:0;overflow-y:auto;" src="about:blank"></iframe>
+    <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;overflow-y:auto;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v11.10 -->
+<!-- Events.html v11.12 -->
 </body>
 </html>
