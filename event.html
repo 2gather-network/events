@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.14
+  event.html Version 4.15
   v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
   -->
   <meta charset="UTF-8">
@@ -650,9 +650,14 @@ async function init() {
       r.title.toLowerCase().replace(/\s+/g, "-") === slug
     );
     if (recurMatch) {
-      const ev = recurToEv(recurMatch);
-      ev.date = dateStr;
-      render(ev);
+      try {
+        const ev = recurToEv(recurMatch);
+        ev.date = dateStr;
+        render(ev);
+      } catch(e) {
+        showError("Render error: " + e.message);
+        console.error(e);
+      }
       return;
     }
   }
@@ -686,6 +691,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.14 -->
+<!-- event.html v4.15 -->
 </body>
 </html>
