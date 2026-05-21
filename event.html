@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.11
+  event.html Version 4.12
   v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
   -->
   <meta charset="UTF-8">
@@ -611,12 +611,15 @@ function submitEditPin() {
     document.getElementById("edit-pin-input").focus();
     return;
   }
-  // store verified PIN so events.html can skip re-asking
   try { sessionStorage.setItem("ev-edit-verified-" + ev.id, pin); } catch(e) {}
   closeEditPin();
-  // redirect to events.html with edit param
-  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  window.location.href = base + "events.html?edit=" + ev.id;
+  // If inside iframe, message parent to handle edit - avoids triple popup
+  if (window.self !== window.top) {
+    window.parent.postMessage({ type: "openEdit", id: ev.id, pin }, "*");
+  } else {
+    const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+    window.location.href = base + "events.html?edit=" + ev.id;
+  }
 }
 
 function openReadNotes() {
@@ -682,6 +685,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.11 -->
+<!-- event.html v4.12 -->
 </body>
 </html>
