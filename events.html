@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.15
+  Events.html Version 11.17
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -793,6 +793,14 @@ let selectedCats = new Set();
 let cancelledOccurrences = new Set();
 try { const saved = JSON.parse(localStorage.getItem("db-cancelled-occurrences")||"[]"); cancelledOccurrences = new Set(saved); } catch(e) {}
 
+function syncCancelledOccurrences(eventsData) {
+  eventsData.filter(e => e.id && e.id.startsWith("cancelled-recurring-")).forEach(e => {
+    const occId = e.id.replace(/^cancelled-/, "");
+    cancelledOccurrences.add(occId);
+  });
+  localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
+}
+
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
 // v6.72: AI Parse Feature
@@ -1055,6 +1063,7 @@ async function loadEvents() {
     renderEvents();
     const data = await jsonp({ t: Date.now() });
     events = (data.events || []).filter(r => r.id).map(sheetToEv);
+    syncCancelledOccurrences(events);
   } catch(e) {
     console.warn("Events load failed, retrying...", e);
     try {
@@ -1325,7 +1334,6 @@ function renderEvents() {
           <button class="btn btn-sm" onclick="openEventView('${ev.id}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
           <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
           ${ev.sharedNotesEnabled && isRegistered(ev.id) ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
-          ${!ev.adminOnly ? `<button class="btn btn-sm btn-outline" onclick="openEdit('${ev.id}')" title="Edit event" style="padding:8px 10px;">✏️</button>` : ""}
         </div>
       </div>`;
     grid.appendChild(card);
@@ -2975,6 +2983,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.15 -->
+<!-- Events.html v11.17 -->
 </body>
 </html>
