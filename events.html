@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.14
+  Events.html Version 11.15
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -1712,7 +1712,7 @@ function loadEditForm(id) {
   const cancelOccEl = document.getElementById("f-cancel-occurrence");
   if (cancelOccField) cancelOccField.style.display = found.isRecurring ? "block" : "none";
   if (cancelOccEl) cancelOccEl.checked = cancelledOccurrences.has(editingId);
-  // Fix: for recurring events, load optional fields from sheet row if one exists
+  // Fix: for recurring events, load ONLY optional fields from sheet - never override core fields
   if (found.isRecurring) {
     const sheetMatch = events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-"));
     if (sheetMatch) {
@@ -1721,16 +1721,24 @@ function loadEditForm(id) {
       const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = sheetMatch.imageUrl || "";
       const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = sheetMatch.detailImageUrl || "";
       const plEl = document.getElementById("f-paymentlink"); if(plEl) plEl.value = sheetMatch.paymentlink || "";
-      setExchange(sheetMatch.exchangeType || "");
-      const otherEl = document.getElementById("f-exch-other"); if(otherEl) otherEl.value = sheetMatch.otherExchange || "";
-      setExperience(sheetMatch.experience || "");
-      setLifeStages(sheetMatch.lifeStage || "");
-      setInterestedEnabled(sheetMatch.interestedEnabled || "off");
-      setSharedNotesEnabled(sheetMatch.sharedNotesEnabled || false);
-      setVisibility(sheetMatch.isPrivate ? "private" : "public");
-      const sl2 = (sheetMatch.showLinks || "").split(",").filter(Boolean);
-      ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if(cb) cb.checked = sl2.includes(k); });
-      toggleLinkFields();
+      if (sheetMatch.exchangeType) setExchange(sheetMatch.exchangeType);
+      const otherEl = document.getElementById("f-exch-other"); if(otherEl && sheetMatch.otherExchange) otherEl.value = sheetMatch.otherExchange;
+      if (sheetMatch.experience) setExperience(sheetMatch.experience);
+      if (sheetMatch.lifeStage) setLifeStages(sheetMatch.lifeStage);
+      if (sheetMatch.interestedEnabled) setInterestedEnabled(sheetMatch.interestedEnabled);
+      if (sheetMatch.sharedNotesEnabled !== undefined) setSharedNotesEnabled(sheetMatch.sharedNotesEnabled);
+      // Show interest registrations from sheet match
+      const panel = document.getElementById("registrations-panel");
+      const list = document.getElementById("registrations-list");
+      const count = document.getElementById("registrations-count");
+      if (panel && list && sheetMatch.interested) {
+        const entries = sheetMatch.interested.split("|").map(s=>s.trim()).filter(Boolean);
+        if (entries.length > 0) {
+          list.innerHTML = entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
+          count.textContent = entries.length + (entries.length===1?" person":" people");
+          panel.style.display = "block";
+        }
+      }
     }
   }
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
@@ -2221,6 +2229,23 @@ document.querySelector(".modal-scroll-body")?.addEventListener("change", () => {
 safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   closeNotesModal(); });
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
+
+// Handle edit requests from event.html iframe
+window.addEventListener("message", (e) => {
+  if (e.data?.type === "openEdit") {
+    const id = e.data.id;
+    const pin = e.data.pin || sessionStorage.getItem("ev-edit-verified-" + id);
+    if (!id) return;
+    closeEventView();
+    setTimeout(() => {
+      const found = findEvById(id);
+      if (found) {
+        isMasterUser = pin === MASTER_PASSCODE && (found.ev.host||"").trim().toLowerCase() === MASTER_HOST;
+        loadEditForm(id);
+      }
+    }, 300);
+  }
+});
 
 ["f-title","f-date","f-time","f-endtime","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-passcode","f-host-note"].forEach(id => { safeOn(id,"input",() => { saveDraft(); saveEditDraft(); }); safeOn(id,"change",() => { saveDraft(); saveEditDraft(); }); });
 
@@ -2950,6 +2975,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.14 -->
+<!-- Events.html v11.15 -->
 </body>
 </html>
