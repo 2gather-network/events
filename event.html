@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.12
+  event.html Version 4.13
   v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
   -->
   <meta charset="UTF-8">
@@ -298,7 +298,10 @@ function render(ev) {
 
   const roomUrl = ROOMS[ev.room] || "https://events.2gather.network/events/yvrgej/zkxbzq";
   const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
-  const joinBtn = (ev.format === "virtual" || ev.format === "both")
+  const today = new Date(); today.setHours(0,0,0,0);
+  const evDay = ev.date ? new Date(ev.date + "T00:00:00") : null;
+  const isToday = evDay && evDay.toDateString() === today.toDateString();
+  const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday
     ? `<a href="${esc(ev.meetinglink || roomUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
     : "";
   const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room
@@ -685,6 +688,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.12 -->
+<!-- event.html v4.13 -->
 </body>
 </html>
