@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.12
+  Events.html Version 11.13
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -1575,6 +1575,30 @@ function verifyPasscode() {
   try { loadEditForm(idToEdit); } catch(e) { console.warn("loadEditForm failed", e); }
 }
 
+function recurToEv(r, dateObj) {
+  const d = dateObj || new Date();
+  const dateStr = d.toISOString().split("T")[0];
+  const roomUrl = ROOMS.find(ro => ro.name === r.room)?.url || "";
+  return {
+    id: r.id||"", title: r.title||"", date: dateStr,
+    time: r.time||"", endtime: r.endtime||"",
+    format: r.format||"", location: r.location||"", room: r.room||"",
+    description: r.description||"", host: r.host||"", hostlink: r.hostlink||"",
+    contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
+    cooplink: r.cooplink||"", paymentlink: r.paymentlink||"",
+    meetinglink: roomUrl, showLinks: r.showLinks||"",
+    otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
+    recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
+    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
+    lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
+    sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
+    host_note: r.host_note||"", cancelled: r.cancelled||false,
+    categories: r.categories||[], adminOnly: r.adminOnly||false,
+    passcode: "", going: 0, recurring: true,
+  };
+}
+
 function findRecurringBase(id) {
   for (const r of RECURRING_EVENTS) {
     const slug = "recurring-" + r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -2900,6 +2924,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.12 -->
+<!-- Events.html v11.13 -->
 </body>
 </html>
