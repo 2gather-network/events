@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.13
+  Events.html Version 11.14
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -594,6 +594,14 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
       <p style="font-size:12px;color:var(--muted);margin-top:4px;">Shows a cancelled banner on the event card and event page.</p>
     </div>
 
+    <div class="field" id="cancel-occurrence-field" style="display:none;margin:4px 0 16px;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <input type="checkbox" id="f-cancel-occurrence" style="width:18px;height:18px;accent-color:#c0392b;">
+        <span style="font-size:14px;font-weight:700;color:#c0392b;">Cancel this occurrence only</span>
+      </label>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels this date only. All other occurrences are unaffected.</p>
+    </div>
+
     <div class="field" id="passcode-field">
       <label class="field-label">Private edit PIN * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- 4 digits, only you need this to edit later. Do not share.</span></label>
       <input class="input" id="f-passcode" type="password" maxlength="4" placeholder="e.g. 1234" style="letter-spacing:0.2em;" autocomplete="off">
@@ -781,6 +789,9 @@ let activeTab    = "upcoming";
 let activeDateFilter = "upcoming";
 let activeMode   = "all";
 let selectedCats = new Set();
+
+let cancelledOccurrences = new Set();
+try { const saved = JSON.parse(localStorage.getItem("db-cancelled-occurrences")||"[]"); cancelledOccurrences = new Set(saved); } catch(e) {}
 
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 
@@ -1296,7 +1307,7 @@ function renderEvents() {
     card.className = "event-card";
     card.dataset.eventId = ev.id;
     card.innerHTML = `
-      ${ev.cancelled ? `<div style="background:#FEE2E2;color:#c0392b;font-size:11px;font-weight:700;letter-spacing:0.07em;padding:5px 18px;border-bottom:1px solid #FECACA;">CANCELLED</div>` : ""}
+      ${(ev.cancelled || cancelledOccurrences.has(ev.id)) ? `<div style="background:#FEE2E2;color:#c0392b;font-size:11px;font-weight:700;letter-spacing:0.07em;padding:5px 18px;border-bottom:1px solid #FECACA;">CANCELLED</div>` : ""}
       <div class="event-card-top">
         <div class="event-title">${esc(ev.title)}</div>
         ${locationLine}
@@ -1500,6 +1511,8 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink","f-host-note"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
   const cancelReset = document.getElementById("f-cancelled"); if(cancelReset) cancelReset.checked = false;
+  const cancelOccFieldReset = document.getElementById("cancel-occurrence-field"); if(cancelOccFieldReset) cancelOccFieldReset.style.display = "none";
+  const cancelOccReset = document.getElementById("f-cancel-occurrence"); if(cancelOccReset) cancelOccReset.checked = false;
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
   toggleLinkFields();
   selectedExchangeTypes = new Set(); ["spread","time","connections","feedback","skills","stuff","space","money","care","other","noask","free","testimonial","share"].forEach(t => { const b = document.getElementById("exch-"+t); if(b) b.classList.remove("selected"); });
@@ -1695,6 +1708,10 @@ function loadEditForm(id) {
   document.getElementById("f-cooplink").value = ev.cooplink || "";
   const hnLoadEl = document.getElementById("f-host-note"); if(hnLoadEl) hnLoadEl.value = ev.host_note || "";
   const cancelEl = document.getElementById("f-cancelled"); if(cancelEl) cancelEl.checked = ev.cancelled || false;
+  const cancelOccField = document.getElementById("cancel-occurrence-field");
+  const cancelOccEl = document.getElementById("f-cancel-occurrence");
+  if (cancelOccField) cancelOccField.style.display = found.isRecurring ? "block" : "none";
+  if (cancelOccEl) cancelOccEl.checked = cancelledOccurrences.has(editingId);
   // Fix: for recurring events, load optional fields from sheet row if one exists
   if (found.isRecurring) {
     const sheetMatch = events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-"));
@@ -2394,6 +2411,15 @@ async function submitEvent() {
         events.push(newRecRow);
         apiAdd(newRecRow).catch(() => {});
       }
+      // Handle single occurrence cancellation
+      if (document.getElementById("f-cancel-occurrence")?.checked) {
+        cancelledOccurrences.add(editingId);
+        localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
+        apiAdd({ id:"cancelled-"+editingId, title:(title||"")+" [CANCELLED]", date:ev.date||"", host:ev.host||host, passcode:MASTER_PASSCODE, going:0, cancelled:true, categories:"", format:"", description:"" }).catch(()=>{});
+      } else if (!document.getElementById("f-cancel-occurrence")?.checked && cancelledOccurrences.has(editingId)) {
+        cancelledOccurrences.delete(editingId);
+        localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
+      }
       closeModal(); renderEvents(); showToast("Recurring event updated for all future occurrences!");
     } else {
       const idx = events.findIndex(e => e.id === editingId);
@@ -2924,6 +2950,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.13 -->
+<!-- Events.html v11.14 -->
 </body>
 </html>
