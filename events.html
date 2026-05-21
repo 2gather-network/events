@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.20
+  Events.html Version 11.21
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -496,7 +496,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
     <div class="field">
       <label class="field-label">Who is this event serving? <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional, select all that apply</span></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-        <button type="button" class="format-chip" id="ls-community" onclick="toggleLifeStage('community')">🌐 Community</button>
+        <button type="button" class="format-chip" id="ls-community" onclick="toggleLifeStage('community')">🌐 Community (all)</button>
         <button type="button" class="format-chip" id="ls-students" onclick="toggleLifeStage('students')">Students</button>
         <button type="button" class="format-chip" id="ls-early-career" onclick="toggleLifeStage('early-career')">Early career</button>
         <button type="button" class="format-chip" id="ls-mid-career" onclick="toggleLifeStage('mid-career')">Mid-career</button>
@@ -589,9 +589,9 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
     <div class="field" style="margin:4px 0 16px;">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" id="f-cancelled" style="width:18px;height:18px;accent-color:#c0392b;">
-        <span style="font-size:14px;font-weight:700;color:#c0392b;">Mark as cancelled</span>
+        <span style="font-size:14px;font-weight:700;color:#c0392b;">Cancel all occurrences</span>
       </label>
-      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Shows a cancelled banner on the event card and event page.</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels this and all future occurrences. Shows a cancelled banner on the event card and event page.</p>
     </div>
 
     <div class="field" id="cancel-occurrence-field" style="display:none;margin:4px 0 16px;">
@@ -599,7 +599,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
         <input type="checkbox" id="f-cancel-occurrence" style="width:18px;height:18px;accent-color:#c0392b;">
         <span style="font-size:14px;font-weight:700;color:#c0392b;">Cancel this occurrence only</span>
       </label>
-      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels this date only. All other occurrences are unaffected.</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels only this date. All other occurrences continue as normal.</p>
     </div>
 
     <div class="field" id="passcode-field">
@@ -1723,20 +1723,21 @@ function loadEditForm(id) {
   if (cancelOccEl) cancelOccEl.checked = cancelledOccurrences.has(editingId);
   // Fix: for recurring events, load ONLY optional fields from sheet - never override core fields
   if (found.isRecurring) {
-    const sheetMatch = events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-"));
+    const stableId = "rec-" + (ev.title||"").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
+    const sheetMatch = events.find(e => e.id === stableId) || events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-") && e.id.startsWith("rec-"));
     if (sheetMatch) {
       const kwEl = document.getElementById("f-keywords"); if(kwEl) kwEl.value = sheetMatch.keywords || "";
       const hnEl = document.getElementById("f-host-note"); if(hnEl) hnEl.value = sheetMatch.host_note || "";
-      const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = sheetMatch.imageUrl || "";
-      const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = sheetMatch.detailImageUrl || "";
-      const plEl = document.getElementById("f-paymentlink"); if(plEl) plEl.value = sheetMatch.paymentlink || "";
+      if (sheetMatch.imageUrl) { const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = sheetMatch.imageUrl; }
+      if (sheetMatch.detailImageUrl) { const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = sheetMatch.detailImageUrl; }
+      if (sheetMatch.paymentlink) { const plEl = document.getElementById("f-paymentlink"); if(plEl) plEl.value = sheetMatch.paymentlink; }
       if (sheetMatch.exchangeType) setExchange(sheetMatch.exchangeType);
       const otherEl = document.getElementById("f-exch-other"); if(otherEl && sheetMatch.otherExchange) otherEl.value = sheetMatch.otherExchange;
       if (sheetMatch.experience) setExperience(sheetMatch.experience);
       if (sheetMatch.lifeStage) setLifeStages(sheetMatch.lifeStage);
       if (sheetMatch.interestedEnabled) setInterestedEnabled(sheetMatch.interestedEnabled);
       if (sheetMatch.sharedNotesEnabled !== undefined) setSharedNotesEnabled(sheetMatch.sharedNotesEnabled);
-      // Show interest registrations from sheet match
+      // Show interest registrations from stable rec- row only
       const panel = document.getElementById("registrations-panel");
       const list = document.getElementById("registrations-list");
       const count = document.getElementById("registrations-count");
@@ -2984,6 +2985,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.20 -->
+<!-- Events.html v11.21 -->
 </body>
 </html>
