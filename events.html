@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.21
+  Events.html Version 11.22
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -589,7 +589,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
     <div class="field" style="margin:4px 0 16px;">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" id="f-cancelled" style="width:18px;height:18px;accent-color:#c0392b;">
-        <span style="font-size:14px;font-weight:700;color:#c0392b;">Cancel all occurrences</span>
+        <span id="cancel-all-label" style="font-size:14px;font-weight:700;color:#c0392b;">Mark as cancelled</span>
       </label>
       <p style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels this and all future occurrences. Shows a cancelled banner on the event card and event page.</p>
     </div>
@@ -1520,6 +1520,8 @@ function openModal(skipDraft = false) {
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink","f-host-note"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
   const cancelReset = document.getElementById("f-cancelled"); if(cancelReset) cancelReset.checked = false;
+  // v11.22: reset cancel label to default
+  const cancelLblReset = document.getElementById("cancel-all-label"); if(cancelLblReset) cancelLblReset.textContent = "Mark as cancelled";
   const cancelOccFieldReset = document.getElementById("cancel-occurrence-field"); if(cancelOccFieldReset) cancelOccFieldReset.style.display = "none";
   const cancelOccReset = document.getElementById("f-cancel-occurrence"); if(cancelOccReset) cancelOccReset.checked = false;
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
@@ -1662,7 +1664,7 @@ function loadEditForm(id) {
   const panel = document.getElementById("registrations-panel");
   const list = document.getElementById("registrations-list");
   const count = document.getElementById("registrations-count");
-  if (panel && list) {
+  if (panel && list && !found.isRecurring) {
     const entries = (ev.interested || "").split("|").map(s => s.trim()).filter(Boolean);
     if (entries.length > 0) {
       list.innerHTML = entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
@@ -1721,6 +1723,9 @@ function loadEditForm(id) {
   const cancelOccEl = document.getElementById("f-cancel-occurrence");
   if (cancelOccField) cancelOccField.style.display = found.isRecurring ? "block" : "none";
   if (cancelOccEl) cancelOccEl.checked = cancelledOccurrences.has(editingId);
+  // v11.22: dynamic cancel label
+  const cancelLbl = document.getElementById("cancel-all-label");
+  if (cancelLbl) cancelLbl.textContent = found.isRecurring ? "Cancel all occurrences" : "Mark as cancelled";
   // Fix: for recurring events, load ONLY optional fields from sheet - never override core fields
   if (found.isRecurring) {
     const stableId = "rec-" + (ev.title||"").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
@@ -1728,8 +1733,9 @@ function loadEditForm(id) {
     if (sheetMatch) {
       const kwEl = document.getElementById("f-keywords"); if(kwEl) kwEl.value = sheetMatch.keywords || "";
       const hnEl = document.getElementById("f-host-note"); if(hnEl) hnEl.value = sheetMatch.host_note || "";
-      if (sheetMatch.imageUrl) { const imgEl = document.getElementById("f-image-url"); if(imgEl) imgEl.value = sheetMatch.imageUrl; }
-      if (sheetMatch.detailImageUrl) { const dImgEl = document.getElementById("f-detail-image-url"); if(dImgEl) dImgEl.value = sheetMatch.detailImageUrl; }
+      // v11.22: load images from sheetMatch, fall back to template values
+      const imgElRec = document.getElementById("f-image-url"); if(imgElRec) imgElRec.value = sheetMatch.imageUrl || ev.imageUrl || "";
+      const dImgElRec = document.getElementById("f-detail-image-url"); if(dImgElRec) dImgElRec.value = sheetMatch.detailImageUrl || ev.detailImageUrl || "";
       if (sheetMatch.paymentlink) { const plEl = document.getElementById("f-paymentlink"); if(plEl) plEl.value = sheetMatch.paymentlink; }
       if (sheetMatch.exchangeType) setExchange(sheetMatch.exchangeType);
       const otherEl = document.getElementById("f-exch-other"); if(otherEl && sheetMatch.otherExchange) otherEl.value = sheetMatch.otherExchange;
@@ -1745,7 +1751,7 @@ function loadEditForm(id) {
         const entries = sheetMatch.interested.split("|").map(s=>s.trim()).filter(Boolean);
         if (entries.length > 0) {
           list.innerHTML = entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
-          count.textContent = entries.length + (entries.length===1?" person":" people");
+          count.textContent = entries.length + (entries.length===1?" person":" people") + " (across all occurrences)";
           panel.style.display = "block";
         }
       }
@@ -1758,8 +1764,11 @@ function loadEditForm(id) {
   });
   toggleLinkFields();
   const plEl = document.getElementById("f-paymentlink"); if (plEl) plEl.value = ev.paymentlink || "";
-  const imgEl = document.getElementById("f-image-url"); if (imgEl) imgEl.value = ev.imageUrl || "";
-  const dImgEl = document.getElementById("f-detail-image-url"); if (dImgEl) dImgEl.value = ev.detailImageUrl || "";
+  // v11.22: only load generic images for non-recurring (recurring handled above by sheetMatch)
+  if (!found.isRecurring) {
+    const imgEl = document.getElementById("f-image-url"); if (imgEl) imgEl.value = ev.imageUrl || "";
+    const dImgEl = document.getElementById("f-detail-image-url"); if (dImgEl) dImgEl.value = ev.detailImageUrl || "";
+  }
   const kwEl = document.getElementById("f-keywords"); if (kwEl) kwEl.value = ev.keywords || "";
   setExchange(ev.exchangeType || "");
   const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
@@ -2985,6 +2994,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.21 -->
+<!-- Events.html v11.22 - Cancel label dynamic for recurring vs single; image save fix for recurring edits; registrations panel note for recurring
 </body>
 </html>
