@@ -3,8 +3,7 @@
 <head>
   <!--
   event.html Version 4.17
-  v4.17 - Occurrence note: shown above description when present and event not past
-v4.16 - SEO meta tags added: description, Open Graph, Twitter Card; populated dynamically in render()
+  v4.17 - SEO meta tags; occurrence note above description; sheet check in init() for recurring events
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -423,8 +422,6 @@ function render(ev) {
     </div>`;
 
   document.title = ev.title || "Event";
-
-  // SEO meta tags - populated dynamically from event data
   const _metaDesc = (ev.description||"").slice(0,160).replace(/\n/g," ");
   const _setMeta = (id, val) => { const el = document.getElementById(id); if(el) el.setAttribute("content", val||""); };
   _setMeta("meta-description", _metaDesc);
@@ -678,14 +675,12 @@ async function init() {
       try {
         const ev = recurToEv(recurMatch);
         ev.date = dateStr;
-        // v4.17: check sheet for occurrence-specific note
         try {
           const sheetData = await jsonp({ t: Date.now() });
           const noteRow = (sheetData.events||[]).filter(r=>r.id).map(toEv).find(e => e.id === "occ-note-" + id);
           if (noteRow && dateStr) {
             const _today = new Date(); _today.setHours(0,0,0,0);
-            const _evDay = new Date(dateStr + "T00:00:00");
-            if (_evDay >= _today) ev.occurrenceNote = noteRow.description;
+            if (new Date(dateStr + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
           }
         } catch(e2) { /* no note available */ }
         render(ev);
@@ -709,7 +704,7 @@ async function init() {
 
 
 const PREVIEW_EVENT = {
-  id: "preview", title: "Kick off Mondays for Independents",
+  id: "preview", title: "Monday CoWorking",
   date: new Date().toISOString().slice(0,10),
   time: "09:00", endtime: "12:00",
   format: "both", room: "The Commons", location: "23000 Lakeview Dr, Mountlake Terrace, WA 98043",
