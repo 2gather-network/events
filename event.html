@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.15
-  v4.10 - Auto-create sheet row for recurring events on interest update shown after interest registered
+  event.html Version 4.16
+  v4.16 - SEO meta tags added: description, Open Graph, Twitter Card; populated dynamically in render()
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Event</title>
+  <meta name="description" id="meta-description" content="">
+  <meta property="og:title" id="og-title" content="">
+  <meta property="og:description" id="og-description" content="">
+  <meta property="og:image" id="og-image" content="">
+  <meta property="og:type" content="event">
+  <meta property="og:url" id="og-url" content="">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" id="twitter-title" content="">
+  <meta name="twitter:description" id="twitter-description" content="">
+  <meta name="twitter:image" id="twitter-image" content="">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -411,6 +421,19 @@ function render(ev) {
     </div>`;
 
   document.title = ev.title || "Event";
+
+  // SEO meta tags - populated dynamically from event data
+  const _metaDesc = (ev.description||"").slice(0,160).replace(/\n/g," ");
+  const _setMeta = (id, val) => { const el = document.getElementById(id); if(el) el.setAttribute("content", val||""); };
+  _setMeta("meta-description", _metaDesc);
+  _setMeta("og-title", ev.title||"");
+  _setMeta("og-description", _metaDesc);
+  _setMeta("og-image", ev.imageUrl||"");
+  _setMeta("og-url", window.location.href);
+  _setMeta("twitter-title", ev.title||"");
+  _setMeta("twitter-description", _metaDesc);
+  _setMeta("twitter-image", ev.imageUrl||"");
+
   _currentEv = ev;
 
   // if already registered, show confirmed state
@@ -691,6 +714,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.15 -->
+<!-- event.html v4.16 -->
 </body>
 </html>
