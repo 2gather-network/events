@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.22
+  Events.html Version 11.24
   v11.6 - Recurring event edit: correct date + sheet persistence update; share button native sheet field; Appear Network page validation; optional details reorder; description hint; form banner
 -->
 <html lang="en">
@@ -568,6 +568,11 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
     </div>
 
     <!-- Recurring moved to end -->
+    <div class="field" id="occurrence-note-field" style="display:none;">
+      <label class="field-label">Note for this occurrence <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- master only - shows above the description for this date only; clears after the event passes</span></label>
+      <textarea class="textarea" id="f-occurrence-note" placeholder="e.g. Location change this week only - we're meeting at..." style="min-height:80px;"></textarea>
+    </div>
+
     <div class="field" id="recurring-field" style="display:none;">
       <label class="field-label">Recurring event <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);">- optional</span></label>
       <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
@@ -1326,6 +1331,7 @@ function renderEvents() {
       <div class="event-card-body">
         ${ev.date ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}</div>` : ""}
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
+        ${(() => { const _evEndMs = ev.endtime ? new Date(ev.date+"T"+ev.endtime).getTime() : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000; const _noteRow = _evEndMs >= Date.now() ? events.find(e => e.id === "occ-note-"+ev.id) : null; return _noteRow ? `<div style="background:#FFF8E7;border-left:3px solid #F0B429;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:8px;font-size:13px;color:#7B5800;line-height:1.5;">${esc(_noteRow.description||"")}</div>` : ""; })()} 
         ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
       </div>
       <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
@@ -1522,6 +1528,8 @@ function openModal(skipDraft = false) {
   const cancelReset = document.getElementById("f-cancelled"); if(cancelReset) cancelReset.checked = false;
   // v11.22: reset cancel label to default
   const cancelLblReset = document.getElementById("cancel-all-label"); if(cancelLblReset) cancelLblReset.textContent = "Mark as cancelled";
+  const occNoteReset = document.getElementById("f-occurrence-note"); if(occNoteReset) occNoteReset.value = "";
+  const occNoteFieldReset = document.getElementById("occurrence-note-field"); if(occNoteFieldReset) occNoteFieldReset.style.display = "none";
   const cancelOccFieldReset = document.getElementById("cancel-occurrence-field"); if(cancelOccFieldReset) cancelOccFieldReset.style.display = "none";
   const cancelOccReset = document.getElementById("f-cancel-occurrence"); if(cancelOccReset) cancelOccReset.checked = false;
   ["show-hostlink","show-cooplink","show-paymentlink","show-contact"].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; }); const otherReset = document.getElementById("f-exch-other"); if(otherReset) otherReset.value = "";
@@ -1657,7 +1665,8 @@ function loadEditForm(id) {
   const ev = found.ev;
   editingId = id;
   selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
-  selectedRoom = ev.room || null; selectedFormat = ev.format || null;
+  selectedRoom = ev.room || null;
+  if (ev.format) setFormat(ev.format); else selectedFormat = null;
   document.getElementById("post-modal").classList.add("open");
   document.getElementById("post-error").style.display = "none";
   // show registrations if any
@@ -1777,6 +1786,14 @@ function loadEditForm(id) {
   setInterestedEnabled(ev.interestedEnabled || "off");
   setSharedNotesEnabled(ev.sharedNotesEnabled || false);
   openMoreOptions(); // always show details when editing
+  // v11.24: occurrence note - master + recurring only
+  const occNoteField = document.getElementById("occurrence-note-field");
+  const occNoteEl = document.getElementById("f-occurrence-note");
+  if (occNoteField) occNoteField.style.display = (found.isRecurring && isMasterUser) ? "block" : "none";
+  if (occNoteEl) {
+    const noteRow = events.find(e => e.id === "occ-note-" + editingId);
+    occNoteEl.value = noteRow ? (noteRow.description || "") : "";
+  }
   recurFreq = ev.recurFreq || (found.isRecurring ? "weekly" : null);
   const recurCb = document.getElementById("f-recurring");
   if (recurCb) { recurCb.checked = !!recurFreq; }
@@ -2464,6 +2481,24 @@ async function submitEvent() {
         cancelledOccurrences.delete(editingId);
         localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
       }
+      // v11.24: save or clear occurrence note
+      const occNoteVal = document.getElementById("f-occurrence-note")?.value.trim() || "";
+      const noteId = "occ-note-" + editingId;
+      const existingNoteRow = events.find(e => e.id === noteId);
+      if (occNoteVal) {
+        const noteEvData = { id: noteId, title: (title||"") + " (note)", date: editingId.slice(-10), description: occNoteVal, categories: "", format: "", host: host, passcode: MASTER_PASSCODE, going: 0 };
+        if (existingNoteRow) {
+          const nIdx = events.findIndex(e => e.id === noteId);
+          if (nIdx > -1) events[nIdx] = { ...events[nIdx], description: occNoteVal };
+          apiUpdate(evToSheet(noteEvData)).catch(() => {});
+        } else {
+          events.push(noteEvData);
+          apiAdd(evToSheet(noteEvData)).catch(() => {});
+        }
+      } else if (existingNoteRow) {
+        events = events.filter(e => e.id !== noteId);
+        apiDelete(noteId).catch(() => {});
+      }
       closeModal(); renderEvents(); showToast("Recurring event updated for all future occurrences!");
     } else {
       const idx = events.findIndex(e => e.id === editingId);
@@ -2994,6 +3029,8 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.22 - Cancel label dynamic for recurring vs single; image save fix for recurring edits; registrations panel note for recurring
+<!-- Events.html v11.24 - Occurrence note: per-date note for recurring events (master only), shows above description, expires after event
+v11.23 - Fix format chips not updating visually in edit form (loadEditForm now calls setFormat())
+v11.22 - Cancel label dynamic for recurring vs single; image save fix for recurring edits; registrations panel note for recurring
 </body>
 </html>
