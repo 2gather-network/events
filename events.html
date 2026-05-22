@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.25
-  v11.25 - Root cause fix: findEvById detects sheet-stored recurring events correctly; cancel description text dynamic; PREVIEW_EVENT updated
-v11.22 - Cancel label dynamic; image save fix; registrations panel fix for recurring
-v11.23 - Format chips fix in loadEditForm (calls setFormat)
-v11.24 - Occurrence note feature: per-date note, master only, expires after event
+  Events.html Version 11.26
+  v11.26 - Fix: submitEditPin sends URL occurrence ID; loadEditForm patches ev from template for non-recurring- IDs
+v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
+v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
 <html lang="en">
 <head>
@@ -1668,6 +1667,21 @@ function loadEditForm(id) {
   const found = findEvById(id);
   if (!found) return;
   const ev = found.ev;
+  // v11.26: for sheet-stored recurring IDs (rec-, kickoff-001 etc), patch ev with template data
+  if (found.isRecurring && !id.startsWith("recurring-")) {
+    const _tmpl = RECURRING_EVENTS.find(r => r.id === id) ||
+                  RECURRING_EVENTS.find(r => r.title.toLowerCase().replace(/\s+/g,"-") === id.replace(/^rec-/,"")) ||
+                  RECURRING_EVENTS.find(r => r.title.toLowerCase() === (ev.title||"").toLowerCase());
+    if (_tmpl) {
+      ev.time = _tmpl.time || ev.time;
+      ev.endtime = _tmpl.endtime || ev.endtime;
+      ev.format = _tmpl.format || ev.format;
+      ev.title = _tmpl.title || ev.title;
+      if (_tmpl.description) ev.description = _tmpl.description;
+      const _nextOcc = getNextOccurrences(_tmpl, 1)[0];
+      if (_nextOcc) ev.date = _nextOcc.date;
+    }
+  }
   editingId = id;
   selectedCats = new Set(Array.isArray(ev.categories) ? ev.categories : [ev.category].filter(Boolean));
   selectedRoom = ev.room || null;
@@ -3019,6 +3033,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.25 -->
+<!-- Events.html v11.26 -->
 </body>
 </html>
