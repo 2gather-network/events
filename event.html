@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.16
-  v4.16 - SEO meta tags added: description, Open Graph, Twitter Card; populated dynamically in render()
+  event.html Version 4.17
+  v4.17 - Occurrence note: shown above description when present and event not past
+v4.16 - SEO meta tags added: description, Open Graph, Twitter Card; populated dynamically in render()
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -16,9 +17,9 @@
   <meta property="og:type" content="event">
   <meta property="og:url" id="og-url" content="">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" id="twitter-title" content="">
-  <meta name="twitter:description" id="twitter-description" content="">
-  <meta name="twitter:image" id="twitter-image" content="">
+  <meta name="twitter:title" id="x-title" content="">
+  <meta name="twitter:description" id="x-description" content="">
+  <meta name="twitter:image" id="x-image" content="">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -405,6 +406,7 @@ function render(ev) {
       <div class="meta">${lines}</div>
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
+      ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
@@ -430,9 +432,9 @@ function render(ev) {
   _setMeta("og-description", _metaDesc);
   _setMeta("og-image", ev.imageUrl||"");
   _setMeta("og-url", window.location.href);
-  _setMeta("twitter-title", ev.title||"");
-  _setMeta("twitter-description", _metaDesc);
-  _setMeta("twitter-image", ev.imageUrl||"");
+  _setMeta("x-title", ev.title||"");
+  _setMeta("x-description", _metaDesc);
+  _setMeta("x-image", ev.imageUrl||"");
 
   _currentEv = ev;
 
@@ -676,6 +678,16 @@ async function init() {
       try {
         const ev = recurToEv(recurMatch);
         ev.date = dateStr;
+        // v4.17: check sheet for occurrence-specific note
+        try {
+          const sheetData = await jsonp({ t: Date.now() });
+          const noteRow = (sheetData.events||[]).filter(r=>r.id).map(toEv).find(e => e.id === "occ-note-" + id);
+          if (noteRow && dateStr) {
+            const _today = new Date(); _today.setHours(0,0,0,0);
+            const _evDay = new Date(dateStr + "T00:00:00");
+            if (_evDay >= _today) ev.occurrenceNote = noteRow.description;
+          }
+        } catch(e2) { /* no note available */ }
         render(ev);
       } catch(e) {
         showError("Render error: " + e.message);
@@ -714,6 +726,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.16 -->
+<!-- event.html v4.17 -->
 </body>
 </html>
