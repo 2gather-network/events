@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.27
-  v11.27 - loadEditForm redirects non-recurring- IDs to proper occurrence ID instead of patching ev
+  Events.html Version 11.28
+  v11.28 - renderEvents skips stale sheet rows covered by RECURRING_EVENTS templates; fixes kickoff-001 card
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -1237,7 +1237,12 @@ function renderEvents() {
   const publicRec = getPublicRecurring(2);
   const allEvents = [...events, ...publicRec];
 
-  let list = allEvents.filter(e => !e.isPrivate).filter(e => {
+  // v11.28: skip stale sheet rows covered by RECURRING_EVENTS templates (e.g. kickoff-001)
+  const _templateTitles = new Set(RECURRING_EVENTS.map(r => r.title.toLowerCase()));
+  let list = allEvents.filter(e => {
+    if (e.recurFreq && !e.id.startsWith("recurring-") && !e.id.startsWith("occ-note-") && _templateTitles.has((e.title||"").toLowerCase())) return false;
+    return !e.isPrivate;
+  }).filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
     cats = cats.map(c => {
       const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
@@ -3028,6 +3033,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.27 -->
+<!-- Events.html v11.28 -->
 </body>
 </html>
