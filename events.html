@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.36
-  v11.36 - Read PIN from URL param for mobile Glide navigation
+  Events.html Version 11.37
+  v11.37 - fixModalForMobile: set max-height from window.innerHeight; scroll to top on open
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -1121,6 +1121,17 @@ function showLoading(on) {
   if (el) el.style.display = on ? "block" : "none";
 }
 
+function fixModalForMobile() {
+  if (window.innerWidth >= 768) return;
+  const modal = document.querySelector("#post-modal .modal-form");
+  const scrollBody = document.querySelector("#post-modal .modal-scroll-body");
+  if (!modal || !scrollBody) return;
+  const usableHeight = window.innerHeight - 80;
+  modal.style.maxHeight = usableHeight + "px";
+  modal.style.height = usableHeight + "px";
+  setTimeout(() => { scrollBody.scrollTop = 0; window.scrollTo(0, 0); }, 100);
+}
+
 function buildFormChips() {
   const container = document.getElementById("f-cat-chips");
   container.innerHTML = "";
@@ -1523,6 +1534,7 @@ function openModal(skipDraft = false) {
   document.getElementById("own-link-section").style.display = "none";
   document.getElementById("location-field").style.display = "none";
   document.getElementById("post-modal").classList.add("open");
+  fixModalForMobile();
   document.getElementById("post-error").style.display = "none";
   document.getElementById("room-preview").style.display = "none";
   document.getElementById("conflict-warning").style.display = "none";
@@ -1692,6 +1704,7 @@ function loadEditForm(id) {
   selectedRoom = ev.room || null;
   if (ev.format) setFormat(ev.format); else selectedFormat = null;
   document.getElementById("post-modal").classList.add("open");
+  fixModalForMobile();
   document.getElementById("post-error").style.display = "none";
   // show registrations if any
   const panel = document.getElementById("registrations-panel");
@@ -3061,6 +3074,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.36 -->
+<!-- Events.html v11.37 -->
 </body>
 </html>
