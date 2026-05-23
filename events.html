@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.30
-  v11.30 - getPublicRecurring excludes rec-/occ-note-/cancelled- rows from dedup; fixes missing May 25 card
+  Events.html Version 11.31
+  v11.31 - loadEditForm: set template defaults before sheetMatch; guard generic field calls for recurring events
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -1759,6 +1759,12 @@ function loadEditForm(id) {
   if (cancelDescEl) cancelDescEl.textContent = found.isRecurring ? "Cancels this and all future occurrences. Shows a cancelled banner on the event card and event page." : "Marks this event as cancelled. Shows a cancelled banner on the event card and event page.";
   // Fix: for recurring events, load ONLY optional fields from sheet - never override core fields
   if (found.isRecurring) {
+    // v11.31: set template defaults first; sheetMatch overrides below
+    setExchange(ev.exchangeType || "");
+    setExperience(ev.experience || "");
+    setLifeStages(ev.lifeStage || "");
+    setInterestedEnabled(ev.interestedEnabled || "optional");
+    setSharedNotesEnabled(ev.sharedNotesEnabled || false);
     const stableId = "rec-" + (ev.title||"").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
     const sheetMatch = events.find(e => e.id === stableId) || events.find(e => e.title.toLowerCase() === (ev.title||"").toLowerCase() && !e.id.startsWith("recurring-") && e.id.startsWith("rec-"));
     if (sheetMatch) {
@@ -1799,12 +1805,15 @@ function loadEditForm(id) {
     const dImgEl = document.getElementById("f-detail-image-url"); if (dImgEl) dImgEl.value = ev.detailImageUrl || "";
   }
   const kwEl = document.getElementById("f-keywords"); if (kwEl) kwEl.value = ev.keywords || "";
-  setExchange(ev.exchangeType || "");
-  const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
-  setExperience(ev.experience || "");
-  setLifeStages(ev.lifeStage || "");
-  setInterestedEnabled(ev.interestedEnabled || "off");
-  setSharedNotesEnabled(ev.sharedNotesEnabled || false);
+  // v11.31: only set these generically for non-recurring; recurring sets them above
+  if (!found.isRecurring) {
+    setExchange(ev.exchangeType || "");
+    const otherEl = document.getElementById("f-exch-other"); if (otherEl) otherEl.value = ev.otherExchange || "";
+    setExperience(ev.experience || "");
+    setLifeStages(ev.lifeStage || "");
+    setInterestedEnabled(ev.interestedEnabled || "off");
+    setSharedNotesEnabled(ev.sharedNotesEnabled || false);
+  }
   openMoreOptions(); // always show details when editing
   const occNoteField = document.getElementById("occurrence-note-field");
   const occNoteEl = document.getElementById("f-occurrence-note");
@@ -3040,6 +3049,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.30 -->
+<!-- Events.html v11.31 -->
 </body>
 </html>
