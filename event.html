@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.18
-  v4.18 - share() detects Glide WebView and falls back to clipboard
+  event.html Version 4.19
+  v4.19 - Share button ontouchstart; body padding for Glide nav; recurring description calendar link
+v4.18 - share() detects Glide WebView and falls back to clipboard
 v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
   -->
   <meta charset="UTF-8">
@@ -41,6 +42,9 @@ v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
       align-items: center;
       justify-content: flex-start;
       padding: 24px 16px 64px;
+    }
+    @supports (-webkit-touch-callout: none) {
+      body { padding-bottom: 120px; }
     }
     .card {
       background: var(--card-bg);
@@ -186,9 +190,9 @@ const RECURRING_EVENTS = [
   { id:"ikigai-001", title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00", format:"virtual", room:"Ikigai room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.", experience:"connected,expressed,rested", recurFreq:"weekly", interestedEnabled:"optional" },
   { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.", experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
   { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", recurFreq:"weekly", interestedEnabled:"optional" },
-  { id:"kickoff-001", title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00", format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"jessie@appear.network", categories:["arts","learning","professional","creative","resources","care","social","wealth"], description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.", experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact", imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
+  { id:"kickoff-001", title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00", format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"jessie@appear.network", categories:["arts","learning","professional","creative","resources","care","social","wealth"], description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.", experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact", imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
   { id:"getstarted-001", title:"Get started with Appear Network", dayOfWeek:3, time:"09:00", endtime:"10:00", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Join us every Wednesday for a live Q&A session. We'll walk you through the platform and help you get connected to community.", experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly", interestedEnabled:"optional" },
-  { id:"shinelight-001", title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", recurFreq:"weekly", interestedEnabled:"optional" },
+  { id:"shinelight-001", title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", recurFreq:"weekly", interestedEnabled:"optional" },
 ];
 
 function getNextDate(dayOfWeek) {
@@ -407,11 +411,11 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description)}</p>` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>')}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
-        <button class="btn btn-primary" onclick="share()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
+        <button class="btn btn-primary" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
         ${!ev.recurring ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
@@ -724,6 +728,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.18 -->
+<!-- event.html v4.19 -->
 </body>
 </html>
