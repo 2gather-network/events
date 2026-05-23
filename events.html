@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.35
-  v11.35 - Share button removed from event cards
+  Events.html Version 11.36
+  v11.36 - Read PIN from URL param for mobile Glide navigation
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -2976,14 +2976,16 @@ setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents().then(() => {
   // auto-open edit if redirected from event.html with verified PIN
   const editId = new URLSearchParams(window.location.search).get("edit");
+  const editPin = new URLSearchParams(window.location.search).get("pin");
   if (editId) {
     try {
-      const pin = sessionStorage.getItem("ev-edit-verified-" + editId);
+      // v11.36: accept PIN from URL param (mobile Glide) or sessionStorage (desktop)
+      const pin = editPin || sessionStorage.getItem("ev-edit-verified-" + editId);
       sessionStorage.removeItem("ev-edit-verified-" + editId);
       if (pin) {
-        const ev = events.find(e => e.id === editId);
-        if (ev) {
-          isMasterUser = pin === MASTER_PASSCODE && (ev.host||"").trim().toLowerCase() === MASTER_HOST;
+        const found = findEvById(editId);
+        if (found) {
+          isMasterUser = pin === MASTER_PASSCODE && (found.ev.host||"").trim().toLowerCase() === MASTER_HOST;
           loadEditForm(editId);
         }
       }
@@ -3059,6 +3061,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.35 -->
+<!-- Events.html v11.36 -->
 </body>
 </html>
