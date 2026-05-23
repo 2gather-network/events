@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.17
-  v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
+  event.html Version 4.18
+  v4.18 - share() detects Glide WebView and falls back to clipboard
+v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -510,7 +511,8 @@ function share() {
       .catch(() => showCopyUI());
   };
 
-  if (navigator.share) {
+  const isGlide = /glide/i.test(navigator.userAgent) || window.self !== window.top;
+  if (!isGlide && navigator.share) {
     navigator.share({ title: document.title, url })
       .catch(err => { if (err.name !== "AbortError") copyFallback(); });
   } else {
@@ -722,6 +724,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.17 -->
+<!-- event.html v4.18 -->
 </body>
 </html>
