@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.28
-  v11.28 - renderEvents skips stale sheet rows covered by RECURRING_EVENTS templates; fixes kickoff-001 card
+  Events.html Version 11.29
+  v11.29 - Hosting option prefers Gather room over own link; filter occ-note- and cancelled- rows from card display
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -1237,10 +1237,12 @@ function renderEvents() {
   const publicRec = getPublicRecurring(2);
   const allEvents = [...events, ...publicRec];
 
-  // v11.28: skip stale sheet rows covered by RECURRING_EVENTS templates (e.g. kickoff-001)
+  // v11.29: skip stale sheet rows and occ-note- rows from card display
   const _templateTitles = new Set(RECURRING_EVENTS.map(r => r.title.toLowerCase()));
   let list = allEvents.filter(e => {
-    if (e.recurFreq && !e.id.startsWith("recurring-") && !e.id.startsWith("occ-note-") && _templateTitles.has((e.title||"").toLowerCase())) return false;
+    if (e.id.startsWith("occ-note-")) return false;
+    if (e.id.startsWith("cancelled-recurring-")) return false;
+    if (e.recurFreq && !e.id.startsWith("recurring-") && _templateTitles.has((e.title||"").toLowerCase())) return false;
     return !e.isPrivate;
   }).filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
@@ -2743,8 +2745,11 @@ function cloneEvent() {
     ["virtual","inperson","both"].forEach(f => document.getElementById("fmt-"+f).classList.toggle("selected", f === selectedFormat));
     document.getElementById("location-field").style.display = (selectedFormat==="inperson"||selectedFormat==="both") ? "block" : "none";
     buildFormChips(); updateRoomPreview();
-    if (ev.meetinglink) { hostingOption = "own"; setHostingOption("own"); const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink; }
-    else if (ev.room) { hostingOption = "db"; setHostingOption("db"); }
+    // v11.29: prefer Gather room over own link if event has a known room
+  const _knownRoom = ROOMS.some(r => r.name === ev.room);
+  if (_knownRoom) { hostingOption = "db"; setHostingOption("db"); }
+  else if (ev.meetinglink) { hostingOption = "own"; setHostingOption("own"); const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink; }
+  else if (ev.room) { hostingOption = "db"; setHostingOption("db"); }
     const sl = (ev.showLinks || "").split(",").filter(Boolean);
     ["hostlink","cooplink","paymentlink","contact"].forEach(k => { const cb = document.getElementById("show-"+k); if (cb) cb.checked = sl.includes(k); });
     toggleLinkFields();
@@ -3033,6 +3038,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.28 -->
+<!-- Events.html v11.29 -->
 </body>
 </html>
