@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.29
-  v11.29 - Hosting option prefers Gather room over own link; filter occ-note- and cancelled- rows from card display
+  Events.html Version 11.30
+  v11.30 - getPublicRecurring excludes rec-/occ-note-/cancelled- rows from dedup; fixes missing May 25 card
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -2863,8 +2863,10 @@ function getAllRecurring(count = 2) { return RECURRING_EVENTS.flatMap(t => getNe
 
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
-  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
-  const seenTitleDate = new Set(events.map(e => `${(e.title||"").toLowerCase()}|${e.date}`));
+  // v11.30: exclude rec-, occ-note-, cancelled- rows from dedup checks - only real posted events should block template cards
+  const realEvents = events.filter(e => !e.id.startsWith("rec-") && !e.id.startsWith("occ-note-") && !e.id.startsWith("cancelled-"));
+  const seen = new Set(realEvents.map(e => `${e.room}|${e.date}|${e.time}`));
+  const seenTitleDate = new Set(realEvents.map(e => `${(e.title||"").toLowerCase()}|${e.date}`));
   return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`) && !seenTitleDate.has(`${(rec.title||"").toLowerCase()}|${rec.date}`));
 }
 
@@ -3038,6 +3040,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.29 -->
+<!-- Events.html v11.30 -->
 </body>
 </html>
