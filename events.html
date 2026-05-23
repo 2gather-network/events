@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.32
-  v11.32 - Glide WebView fixes: touch events on header buttons; iframe scroll; share fallback to clipboard
+  Events.html Version 11.34
+  v11.34 - Hosting option fix with setTimeout; share card ontouchstart; modal footer safe area; event view height fix
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -95,6 +95,10 @@ v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; 
   .modal-header { padding:28px 32px 16px; flex-shrink:0; }
   .modal-scroll-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 32px; min-height:0; overscroll-behavior:contain; }
   .modal-footer { padding:16px 32px 28px; flex-shrink:0; border-top:1px solid var(--border); }
+    @supports (-webkit-touch-callout: none) {
+      .modal-footer { padding-bottom: max(28px, env(safe-area-inset-bottom, 28px)); }
+      .modal-scroll-body { padding-bottom: 16px; }
+    }
   .modal input, .modal textarea, .modal select, .modal button { touch-action:manipulation; }
   .modal-title { font-size:22px; font-weight:800; margin-bottom:24px; }
   .modal-actions { display:flex; gap:10px; margin-top:8px; }
@@ -762,7 +766,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
-    description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
     imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
     detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
@@ -783,7 +787,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
     categories:["learning","wealth","resources","social"],
-    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
     experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
@@ -1348,7 +1352,7 @@ function renderEvents() {
         ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); if (!meetUrl || !ev.date || !ev.time) return ""; const today = new Date(); const evDay = new Date(ev.date+"T00:00:00"); if (today.toDateString() !== evDay.toDateString()) return ""; const d = new Date(ev.date+"T"+ev.time); const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); const endStr = ev.endtime ? " - "+new Date(ev.date+"T"+ev.endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""; return `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather · ${ts}${endStr} ${tz}</a>`; })() : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
           <button class="btn btn-sm" onclick="openEventView('${ev.id}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
-          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" ontouchstart="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
           ${ev.sharedNotesEnabled && isRegistered(ev.id) ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
         </div>
       </div>`;
@@ -1831,13 +1835,18 @@ function loadEditForm(id) {
   }
   // set visibility last so draft or earlier resets don't override the event's actual value
   setVisibility(ev.isPrivate ? "private" : "public");
-  if (ev.meetinglink) {
+  // v11.34: prefer known Gather room over meetinglink
+  const _knownRoom = ROOMS.some(r => r.name === ev.room);
+  if (_knownRoom) {
+    hostingOption = "db";
+    setTimeout(() => setHostingOption("db"), 50);
+  } else if (ev.meetinglink) {
     hostingOption = "own";
     setHostingOption("own");
     const mlEl = document.getElementById("f-meetinglink"); if (mlEl) mlEl.value = ev.meetinglink;
   } else if (ev.room) {
     hostingOption = "db";
-    setHostingOption("db");
+    setTimeout(() => setHostingOption("db"), 50);
   }
 }
 
@@ -3038,7 +3047,7 @@ loadEvents().then(() => {
 
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;overscroll-behavior:none;">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
+  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:calc(100vh - 80px);display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -3051,6 +3060,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.32 -->
+<!-- Events.html v11.34 -->
 </body>
 </html>
