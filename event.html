@@ -3,7 +3,7 @@
 <head>
   <!--
   event.html Version 4.17
-  v4.17 - SEO meta tags; occurrence note above description; sheet check in init() for recurring events
+  v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -634,14 +634,15 @@ function submitEditPin() {
     document.getElementById("edit-pin-input").focus();
     return;
   }
-  try { sessionStorage.setItem("ev-edit-verified-" + ev.id, pin); } catch(e) {}
+  // v4.17: use URL occurrence ID, not ev.id (which may be a stale template ID like "kickoff-001")
+  const urlId = new URLSearchParams(window.location.search).get("id") || ev.id;
+  try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
   closeEditPin();
-  // If inside iframe, message parent to handle edit - avoids triple popup
   if (window.self !== window.top) {
-    window.parent.postMessage({ type: "openEdit", id: ev.id, pin }, "*");
+    window.parent.postMessage({ type: "openEdit", id: urlId, pin }, "*");
   } else {
     const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-    window.location.href = base + "events.html?edit=" + ev.id;
+    window.location.href = base + "events.html?edit=" + urlId;
   }
 }
 
