@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.20
-  v4.20 - Increased padding-bottom to 160px for Glide nav clearance
+  event.html Version 4.21
+  v4.21 - submitEditPin navigates to full page on mobile instead of opening modal
+v4.20 - Increased padding-bottom to 160px for Glide nav clearance
 v4.18 - share() detects Glide WebView and falls back to clipboard
 v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
   -->
@@ -644,10 +645,12 @@ function submitEditPin() {
   const urlId = new URLSearchParams(window.location.search).get("id") || ev.id;
   try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
   closeEditPin();
-  if (window.self !== window.top) {
+  // v4.21: on mobile always navigate to full page - avoids Glide WebView modal scroll issues
+  const isMobile = window.innerWidth < 768;
+  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+  if (!isMobile && window.self !== window.top) {
     window.parent.postMessage({ type: "openEdit", id: urlId, pin }, "*");
   } else {
-    const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
     window.location.href = base + "events.html?edit=" + urlId;
   }
 }
@@ -728,6 +731,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.20 -->
+<!-- event.html v4.21 -->
 </body>
 </html>
