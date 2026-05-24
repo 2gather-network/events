@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.30
+  event.html Version 4.31
+  v4.31 - rec- IDs resolve in-place (no redirect; works in Glide WebView)
   v4.30 - rec- template IDs redirect to next occurrence with correct date
   v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
   v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
@@ -685,7 +686,7 @@ async function init() {
   const id = new URLSearchParams(window.location.search).get("id");
   if (!id) { render(PREVIEW_EVENT); return; }
 
-  // If a template row ID (rec-) is passed, resolve to next occurrence and redirect
+  // If a template row ID (rec-) is passed, resolve to next occurrence in-place
   if (id.startsWith("rec-")) {
     try {
       const sheetData = await jsonp({ t: Date.now() });
@@ -694,7 +695,17 @@ async function init() {
       if (tmpl && tmpl.dayOfWeek) {
         const slug = (tmpl.title || "").toLowerCase().replace(/\s+/g, "-");
         const nextDate = getNextDate(parseInt(tmpl.dayOfWeek));
-        window.location.replace(`?id=recurring-${slug}-${nextDate}`);
+        const occId = `recurring-${slug}-${nextDate}`;
+        const recEv = { ...toEv(tmpl), dayOfWeek: parseInt(tmpl.dayOfWeek) || 0, time: tmpl.startTime || "", endtime: tmpl.endTime || "" };
+        const ev = recurToEv(recEv);
+        ev.id = occId;
+        ev.date = nextDate;
+        const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + occId);
+        if (noteRow) {
+          const _today = new Date(); _today.setHours(0,0,0,0);
+          if (new Date(nextDate + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
+        }
+        render(ev);
         return;
       }
     } catch(e) {}
@@ -761,6 +772,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.30 -->
+<!-- event.html v4.31 -->
 </body>
 </html>
