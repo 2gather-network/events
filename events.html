@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.44
+  Events.html Version 11.45
+  v11.45 - remove debug banner; padding fix handled in event.html
   v11.44 - debug banner position:absolute (no layout impact); browser vh-130; Glide vh-150
   v11.43 - debug banner inside modal header; Glide vh-150 vs browser vh-80; isGlide detection
   v11.42 - TEMP debug banner; modal height uses visualViewport.height for browser chrome clearance
@@ -2130,21 +2131,6 @@ function openEventView(id) {
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
   document.getElementById("event-view-modal").classList.add("open");
-  setTimeout(() => {
-    const el = document.getElementById("event-view-inner");
-    const rect = el ? el.getBoundingClientRect() : {};
-    const vvh = window.visualViewport ? window.visualViewport.height : "n/a";
-    const vvOff = window.visualViewport ? window.visualViewport.offsetTop : "n/a";
-    const clientH = document.documentElement.clientHeight;
-    const banner = document.getElementById("debug-banner");
-    if (banner) {
-      banner.innerHTML =
-        "isGlide: " + isGlide + " | innerH: " + window.innerHeight + " | vvH: " + vvh + " | vvOff: " + vvOff +
-        " | clientH: " + clientH + " | screenH: " + screen.height +
-        "<br>modalH: " + Math.round(rect.height||0) + " | modalBottom: " + Math.round(rect.bottom||0) + " | modalTop: " + Math.round(rect.top||0);
-      banner.style.display = "block";
-    }
-  }, 500);
 }
 
 function shareEventModal() {
@@ -2160,8 +2146,6 @@ function shareEventModal() {
 
 function closeEventView() {
   document.getElementById("event-view-modal").classList.remove("open");
-  const banner = document.getElementById("debug-banner");
-  if (banner) banner.style.display = "none";
   setTimeout(() => { document.getElementById("event-view-frame").src = "about:blank"; }, 300);
 }
 
@@ -3098,12 +3082,11 @@ loadEvents().then(() => {
           <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
         </div>
       </div>
-      <div id="debug-banner" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:rgba(26,26,46,0.93);color:#fff;font-size:10px;font-family:monospace;padding:5px 8px;text-align:center;line-height:1.6;pointer-events:none;"></div>
     </div>
     <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v11.44 -->
+<!-- Events.html v11.45 -->
 </body>
 </html>
