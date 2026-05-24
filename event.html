@@ -3,6 +3,7 @@
 <head>
   <!--
   event.html Version 4.26
+  v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
   v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
   v4.25 - remove Share button from top header row
   v4.24 - share() removes isGlide check; uses navigator.share directly
@@ -425,7 +426,7 @@ function render(ev) {
       </div>
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>
-    <div style="padding:14px 24px 48px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
+    <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
       <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
     </div>`;
 
@@ -732,6 +733,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.26 -->
+<!-- event.html v4.27 -->
 </body>
 </html>
