@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.78
+  index.html Version 2.79
   v2.67 - Room domain update; share button native sheet + Tend to yourself Tuesdays rename
 -->
 <html lang="en">
@@ -241,7 +241,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"jessie@appear.network",
     categories:["arts","learning","professional","creative","resources","care","social","wealth"],
-    description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
     experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
     imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
     detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
@@ -262,7 +262,7 @@ const RECURRING_EVENTS = [
     hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
     contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
     categories:["learning","wealth","resources","social"],
-    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check with the host to confirm this is happening before making plans to attend.",
+    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
     exchangeType:"free,feedback,noask,money",
     showLinks:"hostlink,paymentlink,contact",
     experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
@@ -425,7 +425,14 @@ function renderEvents() {
   const publicRec = getPublicRecurring(2);
   const allEvents = [...events, ...publicRec];
 
-  let list = allEvents.filter(e => !e.isPrivate).filter(e => {
+  // v2.79: skip occ-note-, cancelled-, and stale sheet rows from card display
+  const _templateTitles = new Set(RECURRING_EVENTS.map(r => r.title.toLowerCase()));
+  let list = allEvents.filter(e => {
+    if (e.id.startsWith("occ-note-")) return false;
+    if (e.id.startsWith("cancelled-recurring-")) return false;
+    if (e.recurFreq && !e.id.startsWith("recurring-") && _templateTitles.has((e.title||"").toLowerCase())) return false;
+    return !e.isPrivate;
+  }).filter(e => {
     let cats = Array.isArray(e.categories) ? e.categories : [e.category].filter(Boolean);
     cats = cats.map(c => {
       const byId = CATEGORIES.find(cat => cat.id === c); if (byId) return c;
@@ -522,6 +529,7 @@ function renderEvents() {
       <div class="event-card-body">
         ${ev.date ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px;">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}</div>` : ""}
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
+        ${(() => { const _evEndMs = ev.endtime ? new Date(ev.date+"T"+ev.endtime).getTime() : new Date(ev.date+"T"+(ev.time||"00:00")).getTime()+3600000; const _noteRow = _evEndMs >= Date.now() ? events.find(e => e.id === "occ-note-"+ev.id) : null; return _noteRow ? `<div style="background:#FFF8E7;border-left:3px solid #F0B429;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:8px;font-size:13px;color:#7B5800;line-height:1.5;">${esc(_noteRow.description||"")}</div>` : ""; })()} 
         ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
         ${recurringBadge ? `<div style="margin-top:8px;">${recurringBadge}</div>` : ""}
       </div>
@@ -529,7 +537,7 @@ function renderEvents() {
         ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); if (!meetUrl || !ev.date || !ev.time) return ""; const today = new Date(); const evDay = new Date(ev.date+"T00:00:00"); if (today.toDateString() !== evDay.toDateString()) return ""; const d = new Date(ev.date+"T"+ev.time); const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); const endStr = ev.endtime ? " - "+new Date(ev.date+"T"+ev.endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""; return `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather · ${ts}${endStr} ${tz}</a>`; })() : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
           <button class="btn btn-sm" onclick="openEventView('${ev.id}','${esc(ev.title)}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:14px;">View</button>
-          <button class="btn btn-sm btn-outline" onclick="shareEvent('${ev.id}')" title="Share event" style="padding:8px 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+          
         </div>
       </div>`;
     grid.appendChild(card);
@@ -571,7 +579,8 @@ function shareEvent(id) {
   if (!ev) return;
   const url = window.location.origin + window.location.pathname.replace(/[^/]+$/, "") + "event.html?id=" + encodeURIComponent(id);
   const copyFallback = () => navigator.clipboard?.writeText(url).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", url));
-  if (navigator.share) {
+  const isGlide = /glide/i.test(navigator.userAgent) || window.self !== window.top;
+  if (!isGlide && navigator.share) {
     navigator.share({ title: ev.title, text: (ev.description || "").slice(0, 100) || ev.title, url })
       .catch(err => { if (err.name !== "AbortError") copyFallback(); });
   } else {
@@ -774,8 +783,10 @@ function getAllRecurring(count = 2) { return RECURRING_EVENTS.flatMap(t => getNe
 
 function getPublicRecurring(count = 2) {
   const generated = RECURRING_EVENTS.filter(t => !t.adminOnly).flatMap(t => getNextOccurrences(t, count));
-  const seen = new Set(events.map(e => `${e.room}|${e.date}|${e.time}`));
-  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`));
+  const realEvents = events.filter(e => !e.id.startsWith("rec-") && !e.id.startsWith("occ-note-") && !e.id.startsWith("cancelled-"));
+  const seen = new Set(realEvents.map(e => `${e.room}|${e.date}|${e.time}`));
+  const seenTitleDate = new Set(realEvents.map(e => `${(e.title||"").toLowerCase()}|${e.date}`));
+  return generated.filter(rec => !seen.has(`${rec.room}|${rec.date}|${rec.time}`) && !seenTitleDate.has(`${(rec.title||"").toLowerCase()}|${rec.date}`));
 }
 
 function fmtDate(date, time, endtime) {
@@ -837,6 +848,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v2.78 -->
+<!-- index.html v2.79 - Sync with events.html v11.37: occ-note filter, realEvents dedup, share button removed, calendar link, Glide share fallback, occurrence note on card
 </body>
 </html>
