@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.26
+  event.html Version 4.28
+  v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
   v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
   v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
   v4.25 - remove Share button from top header row
@@ -490,12 +491,25 @@ function addToCalendar(ev) {
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
-function copyLink() {
-  const url = window.location.href;
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById("copy-btn");
-    if (btn) { const orig = btn.textContent; btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = orig, 2000); }
-  }).catch(() => prompt("Copy this link:", url));
+async function copyLink() {
+  const btn = document.getElementById("copy-btn");
+  const origText = btn ? btn.innerHTML : "";
+  if (btn) btn.innerHTML = "⏳ Getting link...";
+
+  try {
+    const id = _currentEv && _currentEv.id;
+    if (!id) throw new Error("no id");
+    const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if (data.status !== "ok" || !data.code) throw new Error("no code");
+    const shortUrl = `https://go.2gather.network/${data.code}`;
+    await navigator.clipboard.writeText(shortUrl);
+    if (btn) { btn.innerHTML = "✓ Copied!"; setTimeout(() => btn.innerHTML = origText, 2000); }
+  } catch(e) {
+    if (btn) btn.innerHTML = origText;
+    const fallbackUrl = window.location.href;
+    navigator.clipboard?.writeText(fallbackUrl).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", fallbackUrl));
+  }
 }
 
 function share() {
@@ -733,6 +747,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.27 -->
+<!-- event.html v4.28 -->
 </body>
 </html>
