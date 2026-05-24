@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.42
+  Events.html Version 11.43
+  v11.43 - debug banner inside modal header; Glide vh-150 vs browser vh-80; isGlide detection
   v11.42 - TEMP debug banner; modal height uses visualViewport.height for browser chrome clearance
   v11.41 - modal height set via window.innerHeight JS (fixes 100vh WebView clipping); debug banner removed
   v11.40 - TEMP: debug banner shows modal measurements on open (remove after fix)
@@ -198,7 +199,6 @@ v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; 
 </style>
 </head>
 <body>
-<div id="debug-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#1a1a2e;color:#fff;font-size:10px;font-family:monospace;padding:5px 8px;text-align:center;line-height:1.6;"></div>
 
 
 <div id="loading-bar" class="loading-bar"></div>
@@ -2123,9 +2123,11 @@ function openEventView(id) {
   document.getElementById("event-view-frame").src = url;
   document.getElementById("event-view-share-url").value = url;
   document.getElementById("event-view-title").textContent = title;
+  const isGlide = window.self !== window.top;
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const modalHeight = isGlide ? vh - 150 : vh - 80;
   const inner = document.getElementById("event-view-inner");
-  if (inner) inner.style.height = (vh - 80) + "px";
+  if (inner) inner.style.height = modalHeight + "px";
   document.getElementById("event-view-modal").classList.add("open");
   setTimeout(() => {
     const el = document.getElementById("event-view-inner");
@@ -2136,7 +2138,7 @@ function openEventView(id) {
     const banner = document.getElementById("debug-banner");
     if (banner) {
       banner.innerHTML =
-        "innerH: " + window.innerHeight + " | vvH: " + vvh + " | vvOff: " + vvOff +
+        "isGlide: " + isGlide + " | innerH: " + window.innerHeight + " | vvH: " + vvh + " | vvOff: " + vvOff +
         " | clientH: " + clientH + " | screenH: " + screen.height +
         "<br>modalH: " + Math.round(rect.height||0) + " | modalBottom: " + Math.round(rect.bottom||0) + " | modalTop: " + Math.round(rect.top||0);
       banner.style.display = "block";
@@ -3086,18 +3088,21 @@ loadEvents().then(() => {
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;overscroll-behavior:none;">
   <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
-      <div style="display:flex;gap:8px;flex-shrink:0;">
-        <input type="hidden" id="event-view-share-url" value="">
-        <button onclick="shareEventModal()" class="btn btn-sm btn-outline" style="font-size:12px;padding:6px 10px;">↗ Share</button>
-        <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
+    <div style="flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);">
+        <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <input type="hidden" id="event-view-share-url" value="">
+          <button onclick="shareEventModal()" class="btn btn-sm btn-outline" style="font-size:12px;padding:6px 10px;">↗ Share</button>
+          <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
+        </div>
       </div>
+      <div id="debug-banner" style="display:none;background:#1a1a2e;color:#fff;font-size:10px;font-family:monospace;padding:5px 8px;text-align:center;line-height:1.6;"></div>
     </div>
     <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v11.42 -->
+<!-- Events.html v11.43 -->
 </body>
 </html>
