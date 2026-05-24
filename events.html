@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.39
+  Events.html Version 11.40
+  v11.40 - TEMP: debug banner shows modal measurements on open (remove after fix)
   v11.39 - revert openEventView to iframe modal; preserves Glide login session
-  v11.38 - openEventView opens event.html in external browser (_blank) instead of iframe modal
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
 -->
@@ -197,6 +197,7 @@ v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; 
 </style>
 </head>
 <body>
+<div id="debug-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#1a1a2e;color:#fff;font-size:11px;font-family:monospace;padding:6px 10px;text-align:center;"></div>
 
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
@@ -2121,6 +2122,14 @@ function openEventView(id) {
   document.getElementById("event-view-share-url").value = url;
   document.getElementById("event-view-title").textContent = title;
   document.getElementById("event-view-modal").classList.add("open");
+  setTimeout(() => {
+    const modal = document.querySelector(".modal-overlay.open .modal");
+    const rect = modal ? modal.getBoundingClientRect() : {};
+    document.getElementById("debug-banner").innerHTML =
+      "innerH: " + window.innerHeight + " | screenH: " + screen.height +
+      " | modalBottom: " + Math.round(rect.bottom||0) + " | modalH: " + Math.round(rect.height||0);
+    document.getElementById("debug-banner").style.display = "block";
+  }, 400);
 }
 
 function shareEventModal() {
@@ -2136,6 +2145,7 @@ function shareEventModal() {
 
 function closeEventView() {
   document.getElementById("event-view-modal").classList.remove("open");
+  document.getElementById("debug-banner").style.display = "none";
   setTimeout(() => { document.getElementById("event-view-frame").src = "about:blank"; }, 300);
 }
 
@@ -3075,6 +3085,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.39 -->
+<!-- Events.html v11.40 -->
 </body>
 </html>
