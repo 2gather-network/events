@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.28
+  event.html Version 4.29
+  v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
   v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
   v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
   v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
@@ -191,14 +192,7 @@ const ROOM_EMOJI = {
   "Abundance room": "🌻", "Conference room": "🎤",
 };
 
-const RECURRING_EVENTS = [
-  { id:"ikigai-001", title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00", format:"virtual", room:"Ikigai room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.", experience:"connected,expressed,rested", recurFreq:"weekly", interestedEnabled:"optional" },
-  { id:"wellness-001", title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00", format:"virtual", room:"Wellness room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["care"], description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.", experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
-  { id:"feedback-001", title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45", format:"virtual", room:"Co-Create room", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.", experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", recurFreq:"weekly", interestedEnabled:"optional" },
-  { id:"kickoff-001", title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00", format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"jessie@appear.network", categories:["arts","learning","professional","creative","resources","care","social","wealth"], description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.", experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact", imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC", detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional" },
-  { id:"getstarted-001", title:"Get started with Appear Network", dayOfWeek:3, time:"09:00", endtime:"10:00", format:"virtual", room:"The Commons", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", categories:["learning"], description:"Join us every Wednesday for a live Q&A session. We'll walk you through the platform and help you get connected to community.", experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", recurFreq:"weekly", interestedEnabled:"optional" },
-  { id:"shinelight-001", title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00", format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp", hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ", contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751", categories:["learning"], description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.", exchangeType:"free,feedback,noask,money", showLinks:"hostlink,paymentlink,contact", experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", recurFreq:"weekly", interestedEnabled:"optional" },
-];
+let RECURRING_EVENTS = [];
 
 function getNextDate(dayOfWeek) {
   const now = new Date();
@@ -691,29 +685,31 @@ async function init() {
   if (!id) { render(PREVIEW_EVENT); return; }
   // Check recurring events (IDs are dynamic: recurring-{slug}-{YYYY-MM-DD})
   if (id.startsWith("recurring-")) {
-    const dateStr = id.slice(-10); // last 10 chars = YYYY-MM-DD
-    const slug    = id.slice("recurring-".length, id.length - 11); // between prefix and date
-    // Match using same slug logic as events.html: title.toLowerCase().replace(/\s+/g,"-")
-    const recurMatch = RECURRING_EVENTS.find(r =>
-      r.title.toLowerCase().replace(/\s+/g, "-") === slug
-    );
-    if (recurMatch) {
-      try {
+    const dateStr = id.slice(-10);
+    const slug    = id.slice("recurring-".length, id.length - 11);
+    try {
+      const sheetData = await jsonp({ t: Date.now() });
+      const allRows = (sheetData.events || []).filter(r => r.id);
+      // Build RECURRING_EVENTS from rec- rows in sheet
+      RECURRING_EVENTS = allRows
+        .filter(r => String(r.id).startsWith("rec-") && r.recurFreq && r.dayOfWeek)
+        .map(r => ({ ...toEv(r), dayOfWeek: parseInt(r.dayOfWeek) || 0, time: r.startTime || "", endtime: r.endTime || "" }));
+      const recurMatch = RECURRING_EVENTS.find(r =>
+        r.title.toLowerCase().replace(/\s+/g, "-") === slug
+      );
+      if (recurMatch) {
         const ev = recurToEv(recurMatch);
         ev.date = dateStr;
-        try {
-          const sheetData = await jsonp({ t: Date.now() });
-          const noteRow = (sheetData.events||[]).filter(r=>r.id).map(toEv).find(e => e.id === "occ-note-" + id);
-          if (noteRow && dateStr) {
-            const _today = new Date(); _today.setHours(0,0,0,0);
-            if (new Date(dateStr + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
-          }
-        } catch(e2) { /* no note available */ }
+        const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + id);
+        if (noteRow && dateStr) {
+          const _today = new Date(); _today.setHours(0,0,0,0);
+          if (new Date(dateStr + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
+        }
         render(ev);
-      } catch(e) {
-        showError("Render error: " + e.message);
-        console.error(e);
+        return;
       }
+    } catch(e) {
+      showError("Could not load event. Please try again.");
       return;
     }
   }
@@ -747,6 +743,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.28 -->
+<!-- event.html v4.29 -->
 </body>
 </html>
