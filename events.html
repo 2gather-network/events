@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.49
+  Events.html Version 11.50
+  v11.50 - increase modal height (Glide vh-100, browser vh-90)
   v11.49 - CSS spinner loading state
   v11.48 - replace logo loading state with minimal text to fix blank space in Glide
   v11.47 - show logo loading state instead of No events here during initial load
@@ -2074,7 +2075,7 @@ function openEventView(id) {
   document.getElementById("event-view-title").textContent = title;
   const isGlide = window.self !== window.top;
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const modalHeight = isGlide ? vh - 150 : vh - 130;
+  const modalHeight = isGlide ? vh - 100 : vh - 90;
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
   document.getElementById("event-view-modal").classList.add("open");
@@ -3034,6 +3035,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.49 -->
+<!-- Events.html v11.50 -->
 </body>
 </html>
