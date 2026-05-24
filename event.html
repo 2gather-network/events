@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.22
-  v4.22 - submitEditPin passes PIN in URL for mobile (sessionStorage lost in Glide WebView)
+  event.html Version 4.24
+  v4.24 - share() removes isGlide check; uses navigator.share directly on all platforms
+  v4.23 - Share button added to top header row; both share buttons use native share sheet
 v4.20 - Increased padding-bottom to 160px for Glide nav clearance
 v4.18 - share() detects Glide WebView and falls back to clipboard
 v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
@@ -406,7 +407,10 @@ function render(ev) {
     <div class="card-body">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
         <h1 style="margin:0;flex:1;">${esc(ev.title)}</h1>
-        ${joinBtn}
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button class="btn btn-outline" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:8px 14px;font-size:13px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
+          ${joinBtn}
+        </div>
       </div>
       <div class="meta">${lines}</div>
       ${exchange}
@@ -516,8 +520,7 @@ function share() {
       .catch(() => showCopyUI());
   };
 
-  const isGlide = /glide/i.test(navigator.userAgent) || window.self !== window.top;
-  if (!isGlide && navigator.share) {
+  if (navigator.share) {
     navigator.share({ title: document.title, url })
       .catch(err => { if (err.name !== "AbortError") copyFallback(); });
   } else {
@@ -731,6 +734,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.22 -->
+<!-- event.html v4.24 -->
 </body>
 </html>
