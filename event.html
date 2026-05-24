@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.29
+  event.html Version 4.30
+  v4.30 - rec- template IDs redirect to next occurrence with correct date
   v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
   v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
   v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
@@ -683,6 +684,23 @@ async function init() {
   }
   const id = new URLSearchParams(window.location.search).get("id");
   if (!id) { render(PREVIEW_EVENT); return; }
+
+  // If a template row ID (rec-) is passed, resolve to next occurrence and redirect
+  if (id.startsWith("rec-")) {
+    try {
+      const sheetData = await jsonp({ t: Date.now() });
+      const allRows = (sheetData.events || []).filter(r => r.id);
+      const tmpl = allRows.find(r => String(r.id) === id);
+      if (tmpl && tmpl.dayOfWeek) {
+        const slug = (tmpl.title || "").toLowerCase().replace(/\s+/g, "-");
+        const nextDate = getNextDate(parseInt(tmpl.dayOfWeek));
+        window.location.replace(`?id=recurring-${slug}-${nextDate}`);
+        return;
+      }
+    } catch(e) {}
+    showError("Event not found.");
+    return;
+  }
   // Check recurring events (IDs are dynamic: recurring-{slug}-{YYYY-MM-DD})
   if (id.startsWith("recurring-")) {
     const dateStr = id.slice(-10);
@@ -743,6 +761,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.29 -->
+<!-- event.html v4.30 -->
 </body>
 </html>
