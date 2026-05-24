@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.48
+  Events.html Version 11.49
+  v11.49 - CSS spinner loading state
   v11.48 - replace logo loading state with minimal text to fix blank space in Glide
   v11.47 - show logo loading state instead of No events here during initial load
   v11.46 - RECURRING_EVENTS now loaded from sheet rec- rows; hardcoded array removed
@@ -201,7 +202,8 @@ v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; 
   @media(min-width:1400px) {
     .event-grid { grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
   }
-</style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 
@@ -1257,7 +1259,7 @@ function renderEvents() {
   grid.innerHTML = "";
   if (list.length === 0) {
     if (isLoadingData) {
-      grid.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">Loading events...</div>`;
+      grid.innerHTML = `<div style="text-align:center;padding:30px 20px;"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#1b6896;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><p style="color:#6b7280;font-size:14px;margin:0;">Loading events...</p></div>`;
     } else {
       const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
       grid.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p style="color:var(--muted);">${msg}</p></div>`;
@@ -3032,6 +3034,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.48 -->
+<!-- Events.html v11.49 -->
 </body>
 </html>
