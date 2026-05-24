@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.46
+  Events.html Version 11.48
+  v11.48 - replace logo loading state with minimal text to fix blank space in Glide
+  v11.47 - show logo loading state instead of No events here during initial load
   v11.46 - RECURRING_EVENTS now loaded from sheet rec- rows; hardcoded array removed
   v11.45 - remove debug banner; padding fix handled in event.html
   v11.44 - debug banner position:absolute (no layout impact); browser vh-130; Glide vh-150
@@ -744,6 +746,7 @@ const ROOMS = [
 let RECURRING_EVENTS = [];
 
 let events = [];
+let isLoadingData = true;
 let activeFilter = "all";
 let activeTab    = "upcoming";
 let activeDateFilter = "upcoming";
@@ -1033,6 +1036,7 @@ async function loadEvents() {
       }
     }
   } finally {
+    isLoadingData = false;
     showLoading(false);
     populateHostFilter();
     renderEvents();
@@ -1252,8 +1256,12 @@ function renderEvents() {
 
   grid.innerHTML = "";
   if (list.length === 0) {
-    const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
-    grid.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p style="color:var(--muted);">${msg}</p></div>`;
+    if (isLoadingData) {
+      grid.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">Loading events...</div>`;
+    } else {
+      const msg = activeTab === "past" ? "No past events yet." : "Be the first to post something for the community.";
+      grid.innerHTML = `<div style="text-align:center;padding:40px 20px;"><div class="empty-icon">📋</div><div class="empty-title">No events here</div><p style="color:var(--muted);">${msg}</p></div>`;
+    }
     return;
   }
 
@@ -3024,6 +3032,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.46 -->
+<!-- Events.html v11.48 -->
 </body>
 </html>
