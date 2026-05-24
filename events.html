@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.43
+  Events.html Version 11.44
+  v11.44 - debug banner position:absolute (no layout impact); browser vh-130; Glide vh-150
   v11.43 - debug banner inside modal header; Glide vh-150 vs browser vh-80; isGlide detection
   v11.42 - TEMP debug banner; modal height uses visualViewport.height for browser chrome clearance
   v11.41 - modal height set via window.innerHeight JS (fixes 100vh WebView clipping); debug banner removed
@@ -2125,7 +2126,7 @@ function openEventView(id) {
   document.getElementById("event-view-title").textContent = title;
   const isGlide = window.self !== window.top;
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const modalHeight = isGlide ? vh - 150 : vh - 80;
+  const modalHeight = isGlide ? vh - 150 : vh - 130;
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
   document.getElementById("event-view-modal").classList.add("open");
@@ -3088,7 +3089,7 @@ loadEvents().then(() => {
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;overscroll-behavior:none;">
   <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
-    <div style="flex-shrink:0;">
+    <div style="flex-shrink:0;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);">
         <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
         <div style="display:flex;gap:8px;flex-shrink:0;">
@@ -3097,12 +3098,12 @@ loadEvents().then(() => {
           <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
         </div>
       </div>
-      <div id="debug-banner" style="display:none;background:#1a1a2e;color:#fff;font-size:10px;font-family:monospace;padding:5px 8px;text-align:center;line-height:1.6;"></div>
+      <div id="debug-banner" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:rgba(26,26,46,0.93);color:#fff;font-size:10px;font-family:monospace;padding:5px 8px;text-align:center;line-height:1.6;pointer-events:none;"></div>
     </div>
     <iframe id="event-view-frame" style="flex:1;border:none;width:100%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;" src="about:blank"></iframe>
   </div>
 </div>
 
-<!-- Events.html v11.43 -->
+<!-- Events.html v11.44 -->
 </body>
 </html>
