@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.45
+  Events.html Version 11.46
+  v11.46 - RECURRING_EVENTS now loaded from sheet rec- rows; hardcoded array removed
   v11.45 - remove debug banner; padding fix handled in event.html
   v11.44 - debug banner position:absolute (no layout impact); browser vh-130; Glide vh-150
   v11.43 - debug banner inside modal header; Glide vh-150 vs browser vh-80; isGlide detection
@@ -740,65 +741,7 @@ const ROOMS = [
   { name:"Conference room",     emoji:"🎤", url:"https://events.2gather.network/events/335887/502618" },
 ];
 
-const RECURRING_EVENTS = [
-  {
-    title:"Ikigai Tuesdays", dayOfWeek:2, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"Ikigai room", host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    cooplink:"https://app.daybalancer.com/dl/gather/s/a6bc49/r/ZIkgXb-dSHK2Q-lq4hpPpQ",
-    categories:["learning"],
-    description:"A weekly pause to reconnect with what matters. We explore together where your joy, your strengths, and what's needed in the world actually meet.",
-    experience:"connected,expressed,rested", adminOnly:true, interestedEnabled:"optional",
-  },
-  {
-    title:"Wellness Wednesdays", dayOfWeek:3, time:"12:00", endtime:"13:00",
-    format:"virtual", room:"Wellness room", host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories:["care","faith","resources","movement","learning"],
-    description:"Come join our wellness room to discuss how you want to support wellness in your community. Weekly on Wednesdays.",
-    experience:"rested,energized", imageUrl:"https://lh3.googleusercontent.com/d/1qQlQYosaLI47pV2scZD6K_boxYk9XV3C", adminOnly:false, sharedNotesEnabled:true, interestedEnabled:"optional",
-  },
-  {
-    title:"Feedback Fridays", dayOfWeek:5, time:"10:30", endtime:"10:45",
-    format:"virtual", room:"Co-Create room", host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories:["learning","professional","creative"],
-    description:"Bring an idea - small or big. Connect with others in the room and break into another room - or schedule time for later for feedback.",
-    experience:"connected,expressed,energized", imageUrl:"https://lh3.googleusercontent.com/d/1Vs2GpvmFdSOrdLYs2hy8lO06SNyYxm_c", adminOnly:false, interestedEnabled:"optional",
-  },
-  {
-    title:"Monday CoWorking", dayOfWeek:1, time:"09:00", endtime:"12:00",
-    format:"both", room:"The Commons", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043", host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    contactEmail:"jessie@appear.network",
-    categories:["arts","learning","professional","creative","resources","care","social","wealth"],
-    description:"Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
-    experience:"connected,expressed,energized", exchangeType:"spread,feedback", showLinks:"contact",
-    imageUrl:"https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
-    detailImageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM",
-    adminOnly:false, recurFreq:"weekly", sharedNotesEnabled:true, interestedEnabled:"optional",
-  },
-  {
-    title:"Get started with Appear Network", dayOfWeek:3, time:"09:00", endtime:"10:00",
-    format:"virtual", room:"The Commons", host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    categories:["learning"],
-    description:"Join us every Wednesday for a live Q&A session. We'll walk you through the platform and help you get connected to community.",
-    experience:"connected,energized", imageUrl:"https://lh3.googleusercontent.com/d/1QdQ2gA3bTSsrfrIYjf2D7ZqUyHuXBjbM", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
-  },
-  {
-    title:"Tend to yourself Tuesdays", dayOfWeek:2, time:"13:00", endtime:"15:00",
-    format:"inperson", location:"23000 Lakeview Dr, Mountlake Terrace, WA 98043",
-    host:"Jessie Upp",
-    hostlink:"https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-    contactEmail:"hello@daybalancer.com", contactPhone:"601-348-7751",
-    categories:["learning","wealth","resources","social"],
-    description:"A weekly pause to reconnect with what matters. We explore your gifts, what brings you joy, and what's needed - for yourself. Come join us right off the MLT light rail. Arrive early for $5 lunch at noon, or arrive at 1:00 for circle dialogue. Stay after for networking, ping pong, or a walk to the lake.\n\nRecurring event - check [the calendar] to confirm updates before making plans to attend.",
-    exchangeType:"free,feedback,noask,money",
-    showLinks:"hostlink,paymentlink,contact",
-    experience:"connected,expressed,nourished,playful", imageUrl:"https://lh3.googleusercontent.com/d/1oZbvH8JJktR8h5m--5tQkjiZUrHgOuQh", adminOnly:false, recurFreq:"weekly", interestedEnabled:"optional",
-  },
-];
+let RECURRING_EVENTS = [];
 
 let events = [];
 let activeFilter = "all";
@@ -1026,14 +969,12 @@ function parseSheetTime(val) {
 }
 
 function sheetToEv(row) {
-  const RECURRING_TITLES = ["monday kickoff","daybalancer onboarding","ikigai tuesdays"];
-  const RECURRING_IDS    = ["kickoff-001","ikigai-001"];
-  const titleKey = (row.title || "").toLowerCase().trim();
-  const isRecurring = RECURRING_IDS.includes(String(row.id)) || RECURRING_TITLES.some(t => titleKey.includes(t));
+  const isRecurring = String(row.id).startsWith("rec-") || !!(row.recurFreq);
   return {
     id: String(row.id || ""), title: row.title || "",
     categories: row.categories ? String(row.categories).split(",").filter(Boolean) : [],
     date: parseSheetDate(row.date), time: parseSheetTime(row.startTime), endtime: parseSheetTime(row.endTime),
+    dayOfWeek: parseInt(row.dayOfWeek) || 0,
     format: row.format || "", location: row.location || "", lat: row.lat || "", lng: row.lng || "",
     room: row.room || "", description: row.description || "", host: row.host || "",
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
@@ -1063,15 +1004,7 @@ function jsonp(params) {
   });
 }
 
-(function applyRecurringOverrides() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("db-recurring-overrides") || "{}");
-    Object.entries(saved).forEach(([slug, overrides]) => {
-      const idx = RECURRING_EVENTS.findIndex(t => t.title.toLowerCase().replace(/\s+/g,"-") === slug);
-      if (idx > -1) RECURRING_EVENTS[idx] = { ...RECURRING_EVENTS[idx], ...overrides };
-    });
-  } catch(e) {}
-})();
+// recurring overrides via sheet
 
 async function loadEvents() {
   try {
@@ -1079,14 +1012,18 @@ async function loadEvents() {
     events = [];
     renderEvents();
     const data = await jsonp({ t: Date.now() });
-    events = (data.events || []).filter(r => r.id).map(sheetToEv);
+    const allRows = (data.events || []).filter(r => r.id).map(sheetToEv);
+    RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
+    events = allRows.filter(e => !e.id.startsWith("rec-"));
     syncCancelledOccurrences(events);
   } catch(e) {
     console.warn("Events load failed, retrying...", e);
     try {
       await new Promise(r => setTimeout(r, 2000));
       const data = await jsonp({ t: Date.now() });
-      events = (data.events || []).filter(r => r.id).map(sheetToEv);
+      const allRows = (data.events || []).filter(r => r.id).map(sheetToEv);
+      RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
+      events = allRows.filter(e => !e.id.startsWith("rec-"));
     } catch(e2) {
       console.warn("Events retry also failed - showing recurring events only", e2);
       const bar = document.getElementById("loading-bar");
@@ -3087,6 +3024,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.45 -->
+<!-- Events.html v11.46 -->
 </body>
 </html>
