@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.81
+  index.html Version 2.82
+  v2.82 - modal height JS-driven (Glide vh-100, browser vh-90)
   v2.81 - CSS spinner loading state
   v2.80 - RECURRING_EVENTS from sheet; logo loading state; hardcoded array removed
   v2.79 -
@@ -497,6 +498,11 @@ function openEventView(id, title) {
   document.getElementById("event-view-frame").src = url;
   document.getElementById("event-view-share-url").value = url;
   document.getElementById("event-view-title").textContent = title || "";
+  const isGlide = window.self !== window.top;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const modalHeight = isGlide ? vh - 100 : vh - 90;
+  const inner = document.getElementById("event-view-inner");
+  if (inner) inner.style.height = modalHeight + "px";
   const m = document.getElementById("event-view-modal");
   m.style.display = "flex";
 }
@@ -781,7 +787,7 @@ loadEvents();
 </script>
 <!-- Event view modal (iframe) -->
 <div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;overscroll-behavior:none;" id="event-view-modal">
-  <div style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;height:95vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
+  <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:#1a1a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
