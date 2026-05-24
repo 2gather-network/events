@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.37
+  Events.html Version 11.38
+  v11.38 - openEventView opens event.html in external browser (_blank) instead of iframe modal
   v11.37 - fixModalForMobile: set max-height from window.innerHeight; scroll to top on open
 v11.25 - Root cause fix: findEvById detects sheet-stored recurring events; cancel desc dynamic; PREVIEW_EVENT
 v11.22-24 - Cancel label/desc dynamic; image save; registrations; format chips; occurrence note
@@ -2111,15 +2112,9 @@ function editFromFind(id, pin) {
 function isRegistered(id) { try { return localStorage.getItem("db-interested-"+id) === "1"; } catch(e) { return false; } }
 
 function openEventView(id) {
-  const allEv = [...events, ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
-  const ev = allEv.find(e => e.id === id);
-  const title = ev ? ev.title : "";
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
   const url = base + "event.html?id=" + id;
-  document.getElementById("event-view-frame").src = url;
-  document.getElementById("event-view-share-url").value = url;
-  document.getElementById("event-view-title").textContent = title;
-  document.getElementById("event-view-modal").classList.add("open");
+  window.open(url, "_blank");
 }
 
 function shareEventModal() {
@@ -3074,6 +3069,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.37 -->
+<!-- Events.html v11.38 -->
 </body>
 </html>
