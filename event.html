@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.32
+  event.html Version 4.33
+  v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
   v4.32 - spinner on loading state
   v4.31 - rec- IDs resolve in-place (no redirect; works in Glide WebView)
   v4.30 - rec- template IDs redirect to next occurrence with correct date
@@ -421,7 +422,7 @@ function render(ev) {
         <button class="btn btn-primary" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
-        ${!ev.recurring ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
+        <button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>
       </div>
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>
@@ -664,6 +665,9 @@ function submitEditPin() {
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
   if (!isMobile && window.self !== window.top) {
     window.parent.postMessage({ type: "openEdit", id: urlId, pin }, "*");
+  } else if (window.self !== window.top) {
+    // In iframe on mobile - navigate top-level page to avoid triple modal
+    window.top.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
   } else {
     window.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
   }
@@ -774,6 +778,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.32 -->
+<!-- event.html v4.33 -->
 </body>
 </html>
