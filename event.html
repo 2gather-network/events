@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.34
+  event.html Version 4.35
+  v4.35 - add parseSheetTime to fix Invalid Date from Google Sheets datetime format
   v4.34 - fix recEv.id set to occId before recurToEv so copyLink uses occurrence ID
   v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
   v4.32 - spinner on loading state
@@ -207,6 +208,14 @@ function getNextDate(dayOfWeek) {
   const diff = (dayOfWeek - d.getDay() + 7) % 7 || 7;
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0,10);
+}
+
+function parseSheetTime(val) {
+  if (!val) return "";
+  const s = String(val);
+  if (/^\d{2}:\d{2}$/.test(s)) return s;
+  if (s.includes("T")) { const t = s.split("T")[1]; return t.substring(0, 5); }
+  return s;
 }
 
 function recurToEv(r) {
@@ -703,7 +712,7 @@ async function init() {
         const slug = (tmpl.title || "").toLowerCase().replace(/\s+/g, "-");
         const nextDate = getNextDate(parseInt(tmpl.dayOfWeek));
         const occId = `recurring-${slug}-${nextDate}`;
-        const recEv = { ...toEv(tmpl), dayOfWeek: parseInt(tmpl.dayOfWeek) || 0, time: tmpl.startTime || "", endtime: tmpl.endTime || "", id: occId };
+        const recEv = { ...toEv(tmpl), dayOfWeek: parseInt(tmpl.dayOfWeek) || 0, time: parseSheetTime(tmpl.startTime), endtime: parseSheetTime(tmpl.endTime), id: occId };
         const ev = recurToEv(recEv);
         ev.id = occId;
         ev.date = nextDate;
@@ -779,6 +788,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.34 -->
+<!-- event.html v4.35 -->
 </body>
 </html>
