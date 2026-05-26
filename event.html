@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.35
+  event.html Version 4.36
+  v4.36 - apply parseSheetTime to recurring- block (modal date fix)
   v4.35 - add parseSheetTime to fix Invalid Date from Google Sheets datetime format
   v4.34 - fix recEv.id set to occId before recurToEv so copyLink uses occurrence ID
   v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
@@ -133,7 +134,7 @@ v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
 </head>
 <body>
 <div style="width:100%;max-width:560px;">
-  <a class="back-link" href="https://gather.2gather.network/">← All events</a>
+  <a class="back-link" href="https://appear.network/dl/gather">← All events</a>
 </div>
 <div class="card" id="card">
   <div class="loading"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#1b6896;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>Loading event...</div>
@@ -437,7 +438,7 @@ function render(ev) {
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>
     <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
-      <a href="https://gather.2gather.network/" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
+      <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
     </div>`;
 
   document.title = ev.title || "Event";
@@ -738,7 +739,7 @@ async function init() {
       // Build RECURRING_EVENTS from rec- rows in sheet
       RECURRING_EVENTS = allRows
         .filter(r => String(r.id).startsWith("rec-") && r.recurFreq && r.dayOfWeek)
-        .map(r => ({ ...toEv(r), dayOfWeek: parseInt(r.dayOfWeek) || 0, time: r.startTime || "", endtime: r.endTime || "" }));
+        .map(r => ({ ...toEv(r), dayOfWeek: parseInt(r.dayOfWeek) || 0, time: parseSheetTime(r.startTime), endtime: parseSheetTime(r.endTime) }));
       const recurMatch = RECURRING_EVENTS.find(r =>
         r.title.toLowerCase().replace(/\s+/g, "-") === slug
       );
@@ -788,6 +789,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.35 -->
+<!-- event.html v4.36 -->
 </body>
 </html>
