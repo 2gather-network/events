@@ -2,23 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.36
-  v4.36 - apply parseSheetTime to recurring- block (modal date fix)
-  v4.35 - add parseSheetTime to fix Invalid Date from Google Sheets datetime format
-  v4.34 - fix recEv.id set to occId before recurToEv so copyLink uses occurrence ID
-  v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
-  v4.32 - spinner on loading state
-  v4.31 - rec- IDs resolve in-place (no redirect; works in Glide WebView)
-  v4.30 - rec- template IDs redirect to next occurrence with correct date
-  v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
-  v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
-  v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
-  v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
-  v4.25 - remove Share button from top header row
-  v4.24 - share() removes isGlide check; uses navigator.share directly
-v4.20 - Increased padding-bottom to 160px for Glide nav clearance
-v4.18 - share() detects Glide WebView and falls back to clipboard
-v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
+  event.html Version 4.37
+  v4.37 - set ev.id = id in recurring- block so copyLink uses occurrence ID; fix back links
+
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -134,7 +120,7 @@ v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
 </head>
 <body>
 <div style="width:100%;max-width:560px;">
-  <a class="back-link" href="https://appear.network/dl/gather">← All events</a>
+  <a class="back-link" href="https://gather.2gather.network/">← All events</a>
 </div>
 <div class="card" id="card">
   <div class="loading"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#1b6896;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>Loading event...</div>
@@ -426,7 +412,7 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>')}</p>` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>')}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
@@ -438,7 +424,7 @@ function render(ev) {
       ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
     </div>
     <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
-      <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
+      <a href="https://gather.2gather.network/" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
     </div>`;
 
   document.title = ev.title || "Event";
@@ -745,6 +731,7 @@ async function init() {
       );
       if (recurMatch) {
         const ev = recurToEv(recurMatch);
+        ev.id = id;
         ev.date = dateStr;
         const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + id);
         if (noteRow && dateStr) {
@@ -789,6 +776,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.36 -->
+<!-- event.html v4.37 -->
 </body>
 </html>
