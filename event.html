@@ -2,9 +2,26 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.37
+  event.html Version 4.39
+  v4.39 - fix typeMap duplicate labels
+  v4.38 - move Hybrid/Weekly badges to below date line
   v4.37 - set ev.id = id in recurring- block so copyLink uses occurrence ID; fix back links
-
+  v4.36 - apply parseSheetTime to recurring- block (modal date fix)
+  v4.35 - add parseSheetTime to fix Invalid Date from Google Sheets datetime format
+  v4.34 - fix recEv.id set to occId before recurToEv so copyLink uses occurrence ID
+  v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
+  v4.32 - spinner on loading state
+  v4.31 - rec- IDs resolve in-place (no redirect; works in Glide WebView)
+  v4.30 - rec- template IDs redirect to next occurrence with correct date
+  v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
+  v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
+  v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
+  v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
+  v4.25 - remove Share button from top header row
+  v4.24 - share() removes isGlide check; uses navigator.share directly
+v4.20 - Increased padding-bottom to 160px for Glide nav clearance
+v4.18 - share() detects Glide WebView and falls back to clipboard
+v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -304,7 +321,7 @@ function render(ev) {
   const isPast = eventDay && eventDay < today;
 
   const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
-  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"📣 Spread the word",free:"💬 Feedback",testimonial:"⏰ Time",share:"💵 Money"};
+  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"🤝 No ask",free:"🎁 Free",testimonial:"⭐ Testimonial",share:"🔗 Share"};
 
   const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
     : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
@@ -332,6 +349,7 @@ function render(ev) {
   const sl = ev.showLinks||"";
   const lines = [
     ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
+    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${fmtBadge}${recurBadge}</div>` : "",
     ev.experience ? `<div class="meta-item"><span>✨</span><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong>Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : "",
     meetingRoomLine,
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
@@ -421,7 +439,7 @@ function render(ev) {
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
         <button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>
       </div>
-      ${(fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${fmtBadge}${recurBadge}</div>` : ""}
+
     </div>
     <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
       <a href="https://gather.2gather.network/" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
@@ -776,6 +794,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.37 -->
+<!-- event.html v4.39 -->
 </body>
 </html>
