@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.53
+  Events.html Version 11.54
+  v11.54 - force-close event-view modal before opening edit form; raise post-modal z-index above event-view
   v11.53 - 2gather logo + favicon; fix recurring edit slug mismatch; 8-char event IDs; hide cancel section on new event; skip conflict check on cancel; fix rec- template date bug; master session for recurring field
-  v11.52 - update back links to gather.2gather.network
 
 -->
 <html lang="en">
@@ -144,7 +144,7 @@
   .empty-title { font-size:18px; font-weight:700; margin-bottom:8px; color:var(--dark); }
   .error-msg { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
 
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:400; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
 
   /* v6.72: Choice modal and paste modal styles */
@@ -317,7 +317,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
 </div>
 
 <!-- POST MODAL -->
-<div class="modal-overlay" id="post-modal">
+<div class="modal-overlay" id="post-modal" style="z-index:300;">
   <div class="modal modal-form">
     <div class="modal-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;">
@@ -2076,7 +2076,9 @@ function openEventView(id) {
   const modalHeight = isGlide ? vh - 100 : vh - 90;
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
-  document.getElementById("event-view-modal").classList.add("open");
+  const evModal = document.getElementById("event-view-modal");
+  evModal.style.display = ""; // clear any forced inline style from edit flow
+  evModal.classList.add("open");
 }
 
 function shareEventModal() {
@@ -2278,7 +2280,11 @@ window.addEventListener("message", (e) => {
     const id = e.data.id;
     const pin = e.data.pin || sessionStorage.getItem("ev-edit-verified-" + id);
     if (!id) return;
-    closeEventView();
+    // Force-close event view modal immediately (don't rely solely on class removal)
+    const evm = document.getElementById("event-view-modal");
+    if (evm) { evm.classList.remove("open"); evm.style.display = "none"; }
+    const evf = document.getElementById("event-view-frame");
+    if (evf) evf.src = "about:blank";
     setTimeout(() => {
       const found = findEvById(id);
       if (found) {
@@ -2286,7 +2292,7 @@ window.addEventListener("message", (e) => {
         if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
         loadEditForm(id);
       }
-    }, 300);
+    }, 150);
   }
 });
 
@@ -3036,6 +3042,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.53 -->
+<!-- Events.html v11.54 -->
 </body>
 </html>
