@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.54
+  Events.html Version 11.55
+  v11.55 - fix recurring edit: populate image fields when sheetMatch is null; fix save to use RECURRING_EVENTS for apiUpdate instead of events[]
   v11.54 - force-close event-view modal before opening edit form; raise post-modal z-index above event-view
-  v11.53 - 2gather logo + favicon; fix recurring edit slug mismatch; 8-char event IDs; hide cancel section on new event; skip conflict check on cancel; fix rec- template date bug; master session for recurring field
 
 -->
 <html lang="en">
@@ -1758,6 +1758,10 @@ function loadEditForm(id) {
           panel.style.display = "block";
         }
       }
+    } else {
+      // No sheetMatch found - populate image fields directly from template data
+      const imgElFb = document.getElementById("f-image-url"); if(imgElFb) imgElFb.value = ev.imageUrl || "";
+      const dImgElFb = document.getElementById("f-detail-image-url"); if(dImgElFb) dImgElFb.value = ev.detailImageUrl || "";
     }
   }
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
@@ -2476,7 +2480,9 @@ async function submitEvent() {
         localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
       }
       // Persist optional fields to sheet so they load on future edits
-      const existingRecRow = events.find(e => e.title.toLowerCase() === title.toLowerCase() && !e.id.startsWith("recurring-"));
+      // Use RECURRING_EVENTS to find the rec- template row (rec- rows are filtered out of events[])
+      const recTemplate = RECURRING_EVENTS.find(r => r.title.toLowerCase() === title.toLowerCase());
+      const existingRecRow = recTemplate || events.find(e => e.title.toLowerCase() === title.toLowerCase() && !e.id.startsWith("recurring-"));
       const recSheetData = { ...eventData, title, passcode: MASTER_PASSCODE, going: 0, date: "" };
       if (existingRecRow) {
         apiUpdate({ ...existingRecRow, ...recSheetData }).catch(() => {});
@@ -3042,6 +3048,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.54 -->
+<!-- Events.html v11.55 -->
 </body>
 </html>
