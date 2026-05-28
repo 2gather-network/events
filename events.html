@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.52
-  v11.52 - update back links to gather.2gather.network
+  Events.html Version 11.55
+  v11.55 - fix recurring edit: populate image fields when sheetMatch is null; fix save to use RECURRING_EVENTS for apiUpdate instead of events[]
+  v11.54 - force-close event-view modal before opening edit form; raise post-modal z-index above event-view
 
 -->
 <html lang="en">
@@ -10,6 +11,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Community Events</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -142,7 +144,7 @@
   .empty-title { font-size:18px; font-weight:700; margin-bottom:8px; color:var(--dark); }
   .error-msg { color:#c0392b; font-size:13px; margin-bottom:12px; display:none; }
 
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:400; white-space:nowrap; }
   .toast.show { transform:translateX(-50%) translateY(0); }
 
   /* v6.72: Choice modal and paste modal styles */
@@ -201,8 +203,8 @@
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div style="flex:1;display:flex;align-items:center;gap:8px;">
-    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:rgba(255,255,255,0.7);text-decoration:none;flex-shrink:0;" title="Back to home">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0;" title="Back to home">
+      <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
     </a>
     <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
@@ -315,7 +317,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
 </div>
 
 <!-- POST MODAL -->
-<div class="modal-overlay" id="post-modal">
+<div class="modal-overlay" id="post-modal" style="z-index:300;">
   <div class="modal modal-form">
     <div class="modal-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;">
@@ -598,12 +600,14 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
 
     </div><!-- end more-options-section -->
 
+    <div id="cancel-section" style="display:none;">
     <div class="field" style="margin:4px 0 16px;">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" id="f-cancelled" style="width:18px;height:18px;accent-color:#c0392b;">
         <span id="cancel-all-label" style="font-size:14px;font-weight:700;color:#c0392b;">Mark as cancelled</span>
       </label>
       <p id="cancel-all-desc" style="font-size:12px;color:var(--muted);margin-top:4px;">Cancels this and all future occurrences. Shows a cancelled banner on the event card and event page.</p>
+    </div>
     </div>
 
     <div class="field" id="cancel-occurrence-field" style="display:none;margin:4px 0 16px;">
@@ -1489,7 +1493,8 @@ function openModal(skipDraft = false) {
   document.getElementById("passcode-field").style.display = "block";
   document.getElementById("delete-btn").style.display = "none";
   document.getElementById("clone-btn").style.display = "none";
-  document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
+  document.getElementById("recurring-field").style.display = (isMasterUser || !!sessionStorage.getItem('db-master-session')) ? "block" : "none";
+  const cancelSectionReset = document.getElementById("cancel-section"); if(cancelSectionReset) cancelSectionReset.style.display = "none";
   ["f-title","f-date","f-location","f-lat","f-lng","f-desc","f-host","f-hostlink","f-contact-email","f-contact-phone","f-cooplink","f-passcode","f-paymentlink","f-host-note"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
   const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
   const cancelReset = document.getElementById("f-cancelled"); if(cancelReset) cancelReset.checked = false;
@@ -1550,6 +1555,7 @@ function verifyPasscode() {
   const errEl    = document.getElementById("passcode-error");
   if (!entered) { errEl.textContent = "Please enter your PIN."; errEl.style.display = "block"; return; }
   if (entered === MASTER_PASSCODE) {
+    sessionStorage.setItem('db-master-session', '1');
     const found = findEvById(idToEdit);
     isMasterUser = !!(found && (found.ev.host || "").trim().toLowerCase() === MASTER_HOST);
     closePasscodeModal();
@@ -1599,8 +1605,9 @@ function recurToEv(r, dateObj) {
 
 function findRecurringBase(id) {
   for (const r of RECURRING_EVENTS) {
-    const slug = "recurring-" + r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (id.startsWith(slug + "-20")) return r;
+    const slugStrict = "recurring-" + r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const slugSimple = "recurring-" + r.title.toLowerCase().replace(/\s+/g, "-");
+    if (id.startsWith(slugStrict + "-20") || id.startsWith(slugSimple + "-20")) return r;
   }
   return null;
 }
@@ -1673,6 +1680,7 @@ function loadEditForm(id) {
   const cloneCountWrap = document.getElementById("clone-count-wrap");
   if (cloneCountWrap) cloneCountWrap.style.display = "none";
   document.getElementById("recurring-field").style.display = isMasterUser ? "block" : "none";
+  const cancelSection = document.getElementById("cancel-section"); if(cancelSection) cancelSection.style.display = "block";
   let recurNote = document.getElementById("recur-edit-note");
   if (found.isRecurring) {
     if (!recurNote) {
@@ -1750,6 +1758,10 @@ function loadEditForm(id) {
           panel.style.display = "block";
         }
       }
+    } else {
+      // No sheetMatch found - populate image fields directly from template data
+      const imgElFb = document.getElementById("f-image-url"); if(imgElFb) imgElFb.value = ev.imageUrl || "";
+      const dImgElFb = document.getElementById("f-detail-image-url"); if(dImgElFb) dImgElFb.value = ev.detailImageUrl || "";
     }
   }
   document.getElementById("location-field").style.display = (selectedFormat === "inperson" || selectedFormat === "both") ? "block" : "none";
@@ -2047,6 +2059,7 @@ function editFromFind(id, pin) {
   const ev = events.find(e => e.id === id);
   if (!ev) return;
   isMasterUser = pin === MASTER_PASSCODE && (ev.host||"").trim().toLowerCase() === MASTER_HOST;
+  if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
   closeFindModal();
   loadEditForm(id);
 }
@@ -2067,7 +2080,9 @@ function openEventView(id) {
   const modalHeight = isGlide ? vh - 100 : vh - 90;
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
-  document.getElementById("event-view-modal").classList.add("open");
+  const evModal = document.getElementById("event-view-modal");
+  evModal.style.display = ""; // clear any forced inline style from edit flow
+  evModal.classList.add("open");
 }
 
 function shareEventModal() {
@@ -2119,6 +2134,7 @@ function confirmFindPin() {
     return;
   }
   isMasterUser = pin === MASTER_PASSCODE && (ev.host||"").trim().toLowerCase() === MASTER_HOST;
+  if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
   closeFindPinModal();
   closeFindModal();
   loadEditForm(targetId);
@@ -2268,14 +2284,19 @@ window.addEventListener("message", (e) => {
     const id = e.data.id;
     const pin = e.data.pin || sessionStorage.getItem("ev-edit-verified-" + id);
     if (!id) return;
-    closeEventView();
+    // Force-close event view modal immediately (don't rely solely on class removal)
+    const evm = document.getElementById("event-view-modal");
+    if (evm) { evm.classList.remove("open"); evm.style.display = "none"; }
+    const evf = document.getElementById("event-view-frame");
+    if (evf) evf.src = "about:blank";
     setTimeout(() => {
       const found = findEvById(id);
       if (found) {
         isMasterUser = pin === MASTER_PASSCODE && (found.ev.host||"").trim().toLowerCase() === MASTER_HOST;
+        if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
         loadEditForm(id);
       }
-    }, 300);
+    }, 150);
   }
 });
 
@@ -2401,7 +2422,8 @@ async function submitEvent() {
   if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
   if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; return; }
   if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
-  if (selectedRoom && date) {
+  const isCancelling = document.getElementById("f-cancelled")?.checked || document.getElementById("f-cancel-occurrence")?.checked;
+  if (selectedRoom && date && !isCancelling) {
     const conflict = checkConflict(selectedRoom, date, time, editingId);
     if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; return; }
   }
@@ -2458,8 +2480,10 @@ async function submitEvent() {
         localStorage.setItem("db-recurring-overrides", JSON.stringify(saved));
       }
       // Persist optional fields to sheet so they load on future edits
-      const existingRecRow = events.find(e => e.title.toLowerCase() === title.toLowerCase() && !e.id.startsWith("recurring-"));
-      const recSheetData = { ...eventData, title, passcode: MASTER_PASSCODE, going: 0 };
+      // Use RECURRING_EVENTS to find the rec- template row (rec- rows are filtered out of events[])
+      const recTemplate = RECURRING_EVENTS.find(r => r.title.toLowerCase() === title.toLowerCase());
+      const existingRecRow = recTemplate || events.find(e => e.title.toLowerCase() === title.toLowerCase() && !e.id.startsWith("recurring-"));
+      const recSheetData = { ...eventData, title, passcode: MASTER_PASSCODE, going: 0, date: "" };
       if (existingRecRow) {
         apiUpdate({ ...existingRecRow, ...recSheetData }).catch(() => {});
       } else {
@@ -2499,7 +2523,7 @@ async function submitEvent() {
       window.location.href = base + "event.html?id=" + savedId;
     }
   } else {
-    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const newId = Array.from({length:8}, () => Math.floor(Math.random()*36).toString(36)).join('');
     const newEv = { id:newId, ...eventData, passcode, going:0 };
     const RL_KEY = "db-post-log";
     let log = []; try { log = JSON.parse(localStorage.getItem(RL_KEY)||"[]"); } catch {}
@@ -3024,6 +3048,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.52 -->
+<!-- Events.html v11.55 -->
 </body>
 </html>
