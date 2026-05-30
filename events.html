@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.55
+  Events.html Version 11.56
+  v11.56 - set master session flag in URL param edit path (new tab edit flow)
   v11.55 - fix recurring edit: populate image fields when sheetMatch is null; fix save to use RECURRING_EVENTS for apiUpdate instead of events[]
-  v11.54 - force-close event-view modal before opening edit form; raise post-modal z-index above event-view
 
 -->
 <html lang="en">
@@ -2971,6 +2971,7 @@ loadEvents().then(() => {
         const found = findEvById(editId);
         if (found) {
           isMasterUser = pin === MASTER_PASSCODE && (found.ev.host||"").trim().toLowerCase() === MASTER_HOST;
+          if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
           loadEditForm(editId);
         }
       }
@@ -3048,6 +3049,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.55 -->
+<!-- Events.html v11.56 -->
 </body>
 </html>
