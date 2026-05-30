@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.84
+  index.html Version 2.85
+  v2.85 - 2gather logo + favicon; replace house SVG with logo image
   v2.84 - remove sign-in button from header
   v2.83 - update back links to gather.2gather.network
   v2.82 - modal height JS-driven (Glide vh-100, browser vh-90)
@@ -14,6 +15,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Community Events</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -124,8 +126,8 @@
 
 <div class="header">
   <div style="flex:1;display:flex;align-items:center;gap:8px;">
-    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:rgba(255,255,255,0.7);text-decoration:none;flex-shrink:0;" title="Back to home">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0;" title="Back to home">
+      <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
     </a>
     <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
@@ -800,6 +802,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v2.84 -->
+<!-- index.html v2.85 -->
 </body>
 </html>
