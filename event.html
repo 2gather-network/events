@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.39
+  event.html Version 4.40
+  v4.40 - open edit in new tab via window.open instead of postMessage/modal
   v4.39 - fix typeMap duplicate labels
   v4.38 - move Hybrid/Weekly badges to below date line
   v4.37 - set ev.id = id in recurring- block so copyLink uses occurrence ID; fix back links
@@ -675,17 +676,9 @@ function submitEditPin() {
   const urlId = new URLSearchParams(window.location.search).get("id") || ev.id;
   try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
   closeEditPin();
-  // v4.22: on mobile navigate to full page with pin in URL (sessionStorage lost in Glide WebView)
-  const isMobile = window.innerWidth < 768;
+  // v4.40: open edit in new tab - simpler and avoids modal stacking issues
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  if (!isMobile && window.self !== window.top) {
-    window.parent.postMessage({ type: "openEdit", id: urlId, pin }, "*");
-  } else if (window.self !== window.top) {
-    // In iframe on mobile - navigate top-level page to avoid triple modal
-    window.top.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
-  } else {
-    window.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
-  }
+  window.open(base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin), "_blank");
 }
 
 function openReadNotes() {
@@ -794,6 +787,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.39 -->
+<!-- event.html v4.40 -->
 </body>
 </html>
