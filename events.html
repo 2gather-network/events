@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.61
+  Events.html Version 11.62
+  v11.62 - add venue to recurToEv in events.html
   v11.61 - fix venue datalist to include RECURRING_EVENTS
-  v11.60 - fix careerStage/lifeStage mismatch; fix venue column mapping
 
 -->
 <html lang="en">
@@ -1650,7 +1650,7 @@ function recurToEv(r, dateObj) {
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
-    lifeStage: r.careerStage||r.lifeStage||"", keywords: r.keywords||"",
+    lifeStage: r.careerStage||r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
     host_note: r.host_note||"", cancelled: r.cancelled||false,
@@ -3109,6 +3109,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.61 -->
+<!-- Events.html v11.62 -->
 </body>
 </html>
