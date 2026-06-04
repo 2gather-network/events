@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.62
+  Events.html Version 11.63
+  v11.63 - handle ?venue= URL param to pre-set venue filter
   v11.62 - add venue to recurToEv in events.html
-  v11.61 - fix venue datalist to include RECURRING_EVENTS
 
 -->
 <html lang="en">
@@ -3039,6 +3039,18 @@ loadEvents().then(() => {
     // clean up URL
     window.history.replaceState({}, "", window.location.pathname);
   }
+  // pre-set venue filter if ?venue= param present
+  const venueParam = new URLSearchParams(window.location.search).get("venue");
+  if (venueParam) {
+    const venueInput = document.getElementById("venue-filter");
+    if (venueInput) venueInput.value = venueParam;
+    const panel = document.getElementById("filter-panel");
+    if (panel) panel.style.display = "block";
+    const btn = document.getElementById("filter-panel-btn");
+    if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
+    renderEvents();
+    window.history.replaceState({}, "", window.location.pathname);
+  }
 });
 
 </script>
@@ -3109,6 +3121,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.62 -->
+<!-- Events.html v11.63 -->
 </body>
 </html>
