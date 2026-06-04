@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.56
-  v11.56 - set master session flag in URL param edit path (new tab edit flow)
-  v11.55 - fix recurring edit: populate image fields when sheetMatch is null; fix save to use RECURRING_EVENTS for apiUpdate instead of events[]
+  Events.html Version 11.58
+  v11.58 - fix recurToEv meetinglink fallback; swipe left + always warn on edit form swipe dismiss
+  v11.57 - scroll validation error into view on save
 
 -->
 <html lang="en">
@@ -1590,7 +1590,7 @@ function recurToEv(r, dateObj) {
     description: r.description||"", host: r.host||"", hostlink: r.hostlink||"",
     contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
     cooplink: r.cooplink||"", paymentlink: r.paymentlink||"",
-    meetinglink: roomUrl, showLinks: r.showLinks||"",
+    meetinglink: roomUrl || r.meetinglink || "", showLinks: r.showLinks||"",
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
@@ -1972,11 +1972,13 @@ function closeModal() { formDirty = false; document.getElementById("post-modal")
       if (window.innerWidth > 768) return;
       const dy = e.changedTouches[0].clientY - startY;
       const dx = e.changedTouches[0].clientX - startX;
-      if (dy > 140 && Math.abs(dy) > Math.abs(dx) * 2) {
+      const swipeDown = dy > 140 && Math.abs(dy) > Math.abs(dx) * 2;
+      const swipeLeft = dx < -140 && Math.abs(dx) > Math.abs(dy) * 2;
+      if (swipeDown || swipeLeft) {
         const id = overlay.id;
         if (id === "post-modal") {
-          if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
-            if (!confirm("You have unsaved edits. Close anyway?")) return;
+          if (editingId || formDirty) {
+            if (!confirm("You have unsaved changes. Close anyway?")) return;
           }
           closeModal();
         }
@@ -2404,7 +2406,7 @@ async function submitEvent() {
   // #3 Appear Network URL validation
   if (document.getElementById("show-hostlink")?.checked && hostlink && !hostlink.includes("appear.network")) {
     const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "block";
-    errEl.textContent = "Your Appear Network page link must include appear.network."; errEl.style.display = "block"; return;
+    errEl.textContent = "Your Appear Network page link must include appear.network."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return;
   }
   const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
 
@@ -2417,15 +2419,15 @@ async function submitEvent() {
   if (!time) missing.push("start time");
   if (!host) missing.push("host name");
   if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
-  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; return; }
-  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; return; }
-  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
-  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; return; }
-  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
+  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   const isCancelling = document.getElementById("f-cancelled")?.checked || document.getElementById("f-cancel-occurrence")?.checked;
   if (selectedRoom && date && !isCancelling) {
     const conflict = checkConflict(selectedRoom, date, time, editingId);
-    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; return; }
+    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   }
   errEl.style.display = "none";
 
@@ -2435,9 +2437,9 @@ async function submitEvent() {
     let log = [];
     try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
     log = log.filter(t => now24 - t < 24*60*60*1000);
-    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; return; }
+    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
     const dupExists = events.some(e => e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date);
-    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; return; }
+    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   }
 
   const catIds = Array.from(selectedCats);
@@ -3049,6 +3051,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.56 -->
+<!-- Events.html v11.58 -->
 </body>
 </html>
