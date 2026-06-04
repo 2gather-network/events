@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.60
-  v11.60 - fix careerStage/lifeStage mismatch in sheetToEv and evToSheet; fix venue column mapping
-  v11.59 - venue field: form input, card display, filter panel; move host+date filters into panel
+  Events.html Version 11.61
+  v11.61 - fix venue datalist to include RECURRING_EVENTS
+  v11.60 - fix careerStage/lifeStage mismatch; fix venue column mapping
 
 -->
 <html lang="en">
@@ -1219,7 +1219,8 @@ function setVenueFilter(venueName) {
 function populateVenueSuggestions() {
   const datalist = document.getElementById("venue-suggestions");
   if (!datalist) return;
-  const venues = [...new Set(events.map(e => e.venue).filter(Boolean))].sort();
+  const allEvs = [...events, ...RECURRING_EVENTS];
+  const venues = [...new Set(allEvs.map(e => e.venue).filter(Boolean))].sort();
   datalist.innerHTML = venues.map(v => `<option value="${v.replace(/"/g,'&quot;')}">`).join("");
 }
 
@@ -3108,6 +3109,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.60 -->
+<!-- Events.html v11.61 -->
 </body>
 </html>
