@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.46
+  event.html Version 4.47
+  v4.47 - Associated group link below venue; Appear ID field in interest form
   v4.46 - venue links to filtered board; consistent font size on venue/host
-  v4.45 - add venue to recurToEv so recurring events show venue
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -343,9 +343,10 @@ function render(ev) {
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
+    ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
     ev.host ? `<div class="meta-item"><span>👤</span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
-    (ev.cooplink&&sl.includes("cooplink")) ? `<div class="meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener">Group link</a></div>` : "",
+
     (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
     (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
   ].filter(Boolean).join("");
@@ -380,6 +381,8 @@ function render(ev) {
             <button type="button" id="attend-inperson" onclick="selectAttendance('inperson')" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);">📍 In-person</button>
           </div>` : ""}
           <input id="int-name-inline" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:10px;" type="text" placeholder="Your name (optional)" autocomplete="name">
+          <input id="int-appear-id" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:4px;" type="text" placeholder="Your Appear ID (optional)" autocomplete="off">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Share your ID to show you are coming to this event on your Appear page.</p>
           <p class="error-msg" id="int-inline-error"></p>
           <button class="btn btn-primary" onclick="submitInterestInline()" id="int-submit-btn">Submit</button>
         </div>
@@ -575,6 +578,7 @@ function showInterestForm() {
 async function submitInterestInline() {
   if (!_currentEv) return;
   const name = (document.getElementById("int-name-inline")?.value || "").trim();
+  const appearId = (document.getElementById("int-appear-id")?.value || "").trim();
   const required = _currentEv.interestedEnabled === "required";
   const errEl = document.getElementById("int-inline-error");
   if (required && !name) {
@@ -593,7 +597,7 @@ async function submitInterestInline() {
   if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
   const modeLabel = _attendanceMode === "online" ? "💻 Online" : _attendanceMode === "inperson" ? "📍 In-person" : "";
-  const entry = [name, modeLabel].filter(Boolean).join(" · ") || "Anonymous";
+  const entry = [name, appearId ? `@${appearId}` : "", modeLabel].filter(Boolean).join(" · ") || "Anonymous";
   _attendanceMode = "";
   // If this is a recurring event, auto-create a sheet row first so interest saves correctly
   if (_currentEv.id && _currentEv.id.startsWith("recurring-")) {
@@ -775,6 +779,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.46 -->
+<!-- event.html v4.47 -->
 </body>
 </html>
