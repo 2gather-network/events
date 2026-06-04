@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.44
+  event.html Version 4.45
+  v4.45 - add venue to recurToEv so recurring events show venue
   v4.44 - fix categories text wrapping; Venue: and Event host: labels
-  v4.43 - edit opens in new tab; fix stray changelog lines
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -219,7 +219,7 @@ function recurToEv(r) {
     meetinglink: ROOMS[r.room] || "", showLinks: r.showLinks||"",
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
-    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
     host_note: r.host_note||"",
@@ -290,7 +290,7 @@ function toEv(r) {
     cooplink: r.cooplink||"", paymentlink: r.paymentlink||"", meetinglink: r.meetinglink||"",
     showLinks: r.showLinks||"", otherExchange: r.otherExchange||"",
     exchangeType: r.exchangeType||"", recurFreq: r.recurFreq||"",
-    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
     passcode: r.passcode||"",
@@ -775,6 +775,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.44 -->
+<!-- event.html v4.45 -->
 </body>
 </html>
