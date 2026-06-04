@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.45
+  event.html Version 4.46
+  v4.46 - venue links to filtered board; consistent font size on venue/host
   v4.45 - add venue to recurToEv so recurring events show venue
-  v4.44 - fix categories text wrapping; Venue: and Event host: labels
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -342,8 +342,8 @@ function render(ev) {
     meetingRoomLine,
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
-    ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:13px;"><strong>Venue:</strong> ${esc(ev.venue)}</span></div>` : "",
-    ev.host ? `<div class="meta-item"><span>👤</span><span><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
+    ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
+    ev.host ? `<div class="meta-item"><span>👤</span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
     (ev.cooplink&&sl.includes("cooplink")) ? `<div class="meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener">Group link</a></div>` : "",
     (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
@@ -775,6 +775,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.45 -->
+<!-- event.html v4.46 -->
 </body>
 </html>
