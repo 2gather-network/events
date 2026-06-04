@@ -2,26 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.41
-  v4.41 - favicon; categories field in toEv; show categories below experience on detail page
-  v4.40 - open edit in new tab via window.open instead of postMessage/modal
-  -->
-  v4.36 - apply parseSheetTime to recurring- block (modal date fix)
-  v4.35 - add parseSheetTime to fix Invalid Date from Google Sheets datetime format
-  v4.34 - fix recEv.id set to occId before recurToEv so copyLink uses occurrence ID
-  v4.33 - pencil shows for recurring events; edit uses window.top on mobile iframe; copy update
-  v4.32 - spinner on loading state
-  v4.31 - rec- IDs resolve in-place (no redirect; works in Glide WebView)
-  v4.30 - rec- template IDs redirect to next occurrence with correct date
-  v4.29 - RECURRING_EVENTS loaded from sheet rec- rows; hardcoded array removed
-  v4.28 - copyLink() fetches short code from Apps Script, copies go.2gather.network/code
-  v4.27 - increase footer bottom padding to 148px for browser mobile scroll clearance
-  v4.26 - increase footer bottom padding to 48px for scroll clearance below chips
-  v4.25 - remove Share button from top header row
-  v4.24 - share() removes isGlide check; uses navigator.share directly
-v4.20 - Increased padding-bottom to 160px for Glide nav clearance
-v4.18 - share() detects Glide WebView and falls back to clipboard
-v4.17 - submitEditPin uses URL id not ev.id; SEO meta tags; occurrence note
+  event.html Version 4.42
+  v4.42 - add venue to toEv; show venue on detail page
+  v4.41 - favicon; categories in toEv; show categories below experience on detail page
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -314,6 +297,7 @@ function toEv(r) {
     host_note: r.host_note||"",
     cancelled: r.cancelled==="true"||r.cancelled===true||false,
     categories: (r.categories||"").split(",").map(s=>s.trim()).filter(Boolean),
+    venue: r.venue||"",
   };
 }
 
@@ -358,6 +342,7 @@ function render(ev) {
     meetingRoomLine,
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
+    ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:13px;">${esc(ev.venue)}</span></div>` : "",
     ev.host ? `<div class="meta-item"><span>👤</span><span>Hosted by ${hostHtml}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
     (ev.cooplink&&sl.includes("cooplink")) ? `<div class="meta-item"><span>🔗</span><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener">Group link</a></div>` : "",
@@ -798,6 +783,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.41 -->
+<!-- event.html v4.42 -->
 </body>
 </html>
