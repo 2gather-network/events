@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.59
+  Events.html Version 11.60
+  v11.60 - fix careerStage/lifeStage mismatch in sheetToEv and evToSheet; fix venue column mapping
   v11.59 - venue field: form input, card display, filter panel; move host+date filters into panel
-  v11.58 - fix recurToEv meetinglink fallback; swipe left + always warn on edit form swipe dismiss
 
 -->
 <html lang="en">
@@ -963,12 +963,11 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", hostEmail: ev.hostEmail || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, lifeStage: ev.lifeStage || "", keywords: ev.keywords || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, careerStage: ev.lifeStage || "", lifeStage: ev.lifeStage || "", keywords: ev.keywords || "", venue: ev.venue || "",
     interestedEnabled: ev.interestedEnabled || "off", interested: ev.interested || "",
     sharedNotesEnabled: ev.sharedNotesEnabled || false, sharedNotes: ev.sharedNotes || "",
     host_note: ev.host_note || "",
     cancelled: ev.cancelled || false,
-    venue: ev.venue || "",
   };
 }
 
@@ -1002,12 +1001,11 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", hostEmail: (row.hostEmail || "").trim(), cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.lifeStage || "", keywords: row.keywords || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.careerStage || row.lifeStage || "", keywords: row.keywords || "", venue: row.venue || "",
     interestedEnabled: row.interestedEnabled || "off", interested: row.interested || "",
     sharedNotesEnabled: row.sharedNotesEnabled === "true" || row.sharedNotesEnabled === true || false, sharedNotes: row.sharedNotes || "",
     host_note: row.host_note || "",
     cancelled: row.cancelled === "true" || row.cancelled === true || false,
-    venue: row.venue || "",
   };
 }
 
@@ -1651,7 +1649,7 @@ function recurToEv(r, dateObj) {
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
-    lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    lifeStage: r.careerStage||r.lifeStage||"", keywords: r.keywords||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
     host_note: r.host_note||"", cancelled: r.cancelled||false,
@@ -3110,6 +3108,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.59 -->
+<!-- Events.html v11.60 -->
 </body>
 </html>
