@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.58
+  Events.html Version 11.59
+  v11.59 - venue field: form input, card display, filter panel; move host+date filters into panel
   v11.58 - fix recurToEv meetinglink fallback; swipe left + always warn on edit form swipe dismiss
-  v11.57 - scroll validation error into view on save
 
 -->
 <html lang="en">
@@ -249,19 +249,35 @@
   </div>
 
   <div class="filter-row">
-    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
-    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;flex:0 0 auto;">
-        <option value="upcoming">All upcoming events</option>
-        <option value="week">Upcoming this week</option>
-        <option value="month">Upcoming this month</option>
-        <option value="past-week">Events past week</option>
-        <option value="past-month">Events past month</option>
-        <option value="past-quarter">Events past quarter</option>
-    </select>
-    <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
-      <option value="">All hosts</option>
-    </select>
+    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()" style="flex:1;">
+    <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--white);color:var(--dark);border:1.5px solid var(--border);">⚙️ Filters</button>
     <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--primary-dark);color:#fff;border:none;">Reset filters</button>
+  </div>
+
+  <div id="filter-panel" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Venue</label>
+        <input class="input" id="venue-filter" placeholder="Search venue..." oninput="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;">
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Host</label>
+        <select class="input" id="host-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="">All hosts</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Show</label>
+        <select class="input" id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="upcoming">All upcoming events</option>
+          <option value="week">Upcoming this week</option>
+          <option value="month">Upcoming this month</option>
+          <option value="past-week">Events past week</option>
+          <option value="past-month">Events past month</option>
+          <option value="past-quarter">Events past quarter</option>
+        </select>
+      </div>
+    </div>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -386,6 +402,12 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
       </div>
       <input type="hidden" id="f-lat">
       <input type="hidden" id="f-lng">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Venue name <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+      <input class="input" id="f-venue" placeholder="e.g. Lake Ballinger Community Center" list="venue-suggestions" autocomplete="off">
+      <datalist id="venue-suggestions"></datalist>
     </div>
 
     <div class="field">
@@ -946,6 +968,7 @@ function evToSheet(ev) {
     sharedNotesEnabled: ev.sharedNotesEnabled || false, sharedNotes: ev.sharedNotes || "",
     host_note: ev.host_note || "",
     cancelled: ev.cancelled || false,
+    venue: ev.venue || "",
   };
 }
 
@@ -984,6 +1007,7 @@ function sheetToEv(row) {
     sharedNotesEnabled: row.sharedNotesEnabled === "true" || row.sharedNotesEnabled === true || false, sharedNotes: row.sharedNotes || "",
     host_note: row.host_note || "",
     cancelled: row.cancelled === "true" || row.cancelled === true || false,
+    venue: row.venue || "",
   };
 }
 
@@ -1035,6 +1059,7 @@ async function loadEvents() {
     isLoadingData = false;
     showLoading(false);
     populateHostFilter();
+    populateVenueSuggestions();
     renderEvents();
     checkEventLink();
   }
@@ -1174,9 +1199,38 @@ function makeFilterBtn(text, isActive, onClick) {
   b.textContent = text; b.onclick = onClick;
   return b;
 }
+function toggleFilterPanel() {
+  const panel = document.getElementById("filter-panel");
+  const btn = document.getElementById("filter-panel-btn");
+  const open = panel.style.display === "none" || panel.style.display === "";
+  panel.style.display = open ? "block" : "none";
+  btn.style.background = open ? "var(--primary)" : "var(--white)";
+  btn.style.color = open ? "#fff" : "var(--dark)";
+}
+
+function setVenueFilter(venueName) {
+  const panel = document.getElementById("filter-panel");
+  const venueInput = document.getElementById("venue-filter");
+  if (venueInput) venueInput.value = venueName;
+  if (panel) panel.style.display = "block";
+  const btn = document.getElementById("filter-panel-btn");
+  if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
+  renderEvents();
+}
+
+function populateVenueSuggestions() {
+  const datalist = document.getElementById("venue-suggestions");
+  if (!datalist) return;
+  const venues = [...new Set(events.map(e => e.venue).filter(Boolean))].sort();
+  datalist.innerHTML = venues.map(v => `<option value="${v.replace(/"/g,'&quot;')}">`).join("");
+}
+
 function resetFilters() {
   document.getElementById("search-input").value = "";
   document.getElementById("host-filter").value = "";
+  const venueFilterEl = document.getElementById("venue-filter"); if(venueFilterEl) venueFilterEl.value = "";
+  const panel = document.getElementById("filter-panel"); if(panel) panel.style.display = "none";
+  const btn = document.getElementById("filter-panel-btn"); if(btn) { btn.style.background = "var(--white)"; btn.style.color = "var(--dark)"; }
   setFilter("all");
   setDateFilter("upcoming");
   setMode("all");
@@ -1241,7 +1295,9 @@ function renderEvents() {
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate;
+    const activeVenue = (document.getElementById("venue-filter")?.value || "").trim().toLowerCase();
+    const matchVenue = !activeVenue || (e.venue||"").toLowerCase().includes(activeVenue);
+    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate && matchVenue;
   });
 
   list.sort((a, b) => {
@@ -1280,7 +1336,8 @@ function renderEvents() {
       ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#FFF7ED;color:#9a3412;padding:3px 9px;border-radius:20px;white-space:nowrap;">🔀 Hybrid</span>`
       : "";
     const cityState = (ev.format === "inperson" || ev.format === "both") ? parseCityState(ev.location) : "";
-    const locationLine = (cityState || formatBadge) ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;"><span style="font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cityState ? "📍 "+esc(cityState) : ""}</span>${formatBadge}</div>` : "";
+    const venueLine = ev.venue ? `<div style="font-size:11px;color:var(--primary);font-weight:600;margin-top:3px;cursor:pointer;" onclick="setVenueFilter('${esc(ev.venue)}')">${esc(ev.venue)}</div>` : "";
+    const locationLine = (cityState || formatBadge || ev.venue) ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;"><span style="font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cityState ? "📍 "+esc(cityState) : ""}${venueLine}</span>${formatBadge}</div>` : "";
     const recurringBadge = ev.recurring
       ? `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:3px 9px;border-radius:20px;white-space:nowrap;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
       : "";
@@ -1707,6 +1764,7 @@ function loadEditForm(id) {
   document.getElementById("f-time").value  = ev.time || "";
   document.getElementById("f-endtime").value = ev.endtime || "";
   document.getElementById("f-location").value = ev.location || "";
+  const venueEditEl = document.getElementById("f-venue"); if(venueEditEl) venueEditEl.value = ev.venue || "";
   document.getElementById("f-desc").value  = ev.description || "";
   document.getElementById("f-host").value  = ev.host || "";
   document.getElementById("f-hostlink").value = ev.hostlink || "";
@@ -2467,6 +2525,7 @@ async function submitEvent() {
     interestedEnabled, sharedNotesEnabled,
     host_note: document.getElementById("f-host-note")?.value.trim() || "",
     cancelled: document.getElementById("f-cancelled")?.checked || false,
+    venue: document.getElementById("f-venue")?.value.trim() || "",
   };
 
   if (editingId) {
@@ -3051,6 +3110,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.58 -->
+<!-- Events.html v11.59 -->
 </body>
 </html>
