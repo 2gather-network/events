@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.47
+  event.html Version 4.48
+  v4.48 - linkify creating.works in event description
   v4.47 - Associated group link below venue; Appear ID field in interest form
-  v4.46 - venue links to filtered board; consistent font size on venue/host
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -422,7 +422,7 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>')}</p>` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" target="_blank" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
@@ -779,6 +779,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.47 -->
+<!-- event.html v4.48 -->
 </body>
 </html>
