@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.55
-  v11.55 - fix recurring edit: populate image fields when sheetMatch is null; fix save to use RECURRING_EVENTS for apiUpdate instead of events[]
-  v11.54 - force-close event-view modal before opening edit form; raise post-modal z-index above event-view
+  Events.html Version 11.64
+  v11.64 - QR code button on event cards; generates short URL QR with download
+  v11.63 - handle ?venue= URL param to pre-set venue filter
 
 -->
 <html lang="en">
@@ -249,19 +249,35 @@
   </div>
 
   <div class="filter-row">
-    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
-    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;flex:0 0 auto;">
-        <option value="upcoming">All upcoming events</option>
-        <option value="week">Upcoming this week</option>
-        <option value="month">Upcoming this month</option>
-        <option value="past-week">Events past week</option>
-        <option value="past-month">Events past month</option>
-        <option value="past-quarter">Events past quarter</option>
-    </select>
-    <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
-      <option value="">All hosts</option>
-    </select>
+    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()" style="flex:1;">
+    <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--white);color:var(--dark);border:1.5px solid var(--border);">⚙️ Filters</button>
     <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:var(--primary-dark);color:#fff;border:none;">Reset filters</button>
+  </div>
+
+  <div id="filter-panel" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Venue</label>
+        <input class="input" id="venue-filter" placeholder="Search venue..." oninput="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;">
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Host</label>
+        <select class="input" id="host-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="">All hosts</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Show</label>
+        <select class="input" id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="upcoming">All upcoming events</option>
+          <option value="week">Upcoming this week</option>
+          <option value="month">Upcoming this month</option>
+          <option value="past-week">Events past week</option>
+          <option value="past-month">Events past month</option>
+          <option value="past-quarter">Events past quarter</option>
+        </select>
+      </div>
+    </div>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div class="event-grid" id="event-grid"></div>
@@ -386,6 +402,12 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
       </div>
       <input type="hidden" id="f-lat">
       <input type="hidden" id="f-lng">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Venue name <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+      <input class="input" id="f-venue" placeholder="e.g. Lake Ballinger Community Center" list="venue-suggestions" autocomplete="off">
+      <datalist id="venue-suggestions"></datalist>
     </div>
 
     <div class="field">
@@ -941,7 +963,7 @@ function evToSheet(ev) {
     description: ev.description || "", host: ev.host || "", hostlink: ev.hostlink || "",
     contactEmail: ev.contactEmail || "", contactPhone: ev.contactPhone || "",
     passcode: ev.passcode || "", hostEmail: ev.hostEmail || "", cooplink: ev.cooplink || "", going: ev.going || 0,
-    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, lifeStage: ev.lifeStage || "", keywords: ev.keywords || "",
+    paymentlink: ev.paymentlink || "", exchangeType: ev.exchangeType || "", showLinks: ev.showLinks || "", otherExchange: ev.otherExchange || "", recurFreq: ev.recurFreq || "", experience: ev.experience || "", imageUrl: ev.imageUrl || "", detailImageUrl: ev.detailImageUrl || "", isPrivate: ev.isPrivate || false, careerStage: ev.lifeStage || "", lifeStage: ev.lifeStage || "", keywords: ev.keywords || "", venue: ev.venue || "",
     interestedEnabled: ev.interestedEnabled || "off", interested: ev.interested || "",
     sharedNotesEnabled: ev.sharedNotesEnabled || false, sharedNotes: ev.sharedNotes || "",
     host_note: ev.host_note || "",
@@ -979,7 +1001,7 @@ function sheetToEv(row) {
     hostlink: row.hostlink || "", contactEmail: row.contactEmail || "", contactPhone: row.contactPhone || "",
     passcode: row.passcode || "", hostEmail: (row.hostEmail || "").trim(), cooplink: row.cooplink || "", going: parseInt(row.going) || 0,
     meetinglink: row.meetinglink || "", recurring: isRecurring,
-    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.lifeStage || "", keywords: row.keywords || "",
+    paymentlink: row.paymentlink || "", exchangeType: row.exchangeType || "", showLinks: row.showLinks || "", otherExchange: row.otherExchange || "", recurFreq: row.recurFreq || "", experience: row.experience || "", imageUrl: row.imageUrl || "", detailImageUrl: row.detailImageUrl || "", isPrivate: row.isPrivate === "true" || row.isPrivate === true || false, lifeStage: row.careerStage || row.lifeStage || "", keywords: row.keywords || "", venue: row.venue || "",
     interestedEnabled: row.interestedEnabled || "off", interested: row.interested || "",
     sharedNotesEnabled: row.sharedNotesEnabled === "true" || row.sharedNotesEnabled === true || false, sharedNotes: row.sharedNotes || "",
     host_note: row.host_note || "",
@@ -1035,6 +1057,7 @@ async function loadEvents() {
     isLoadingData = false;
     showLoading(false);
     populateHostFilter();
+    populateVenueSuggestions();
     renderEvents();
     checkEventLink();
   }
@@ -1174,9 +1197,39 @@ function makeFilterBtn(text, isActive, onClick) {
   b.textContent = text; b.onclick = onClick;
   return b;
 }
+function toggleFilterPanel() {
+  const panel = document.getElementById("filter-panel");
+  const btn = document.getElementById("filter-panel-btn");
+  const open = panel.style.display === "none" || panel.style.display === "";
+  panel.style.display = open ? "block" : "none";
+  btn.style.background = open ? "var(--primary)" : "var(--white)";
+  btn.style.color = open ? "#fff" : "var(--dark)";
+}
+
+function setVenueFilter(venueName) {
+  const panel = document.getElementById("filter-panel");
+  const venueInput = document.getElementById("venue-filter");
+  if (venueInput) venueInput.value = venueName;
+  if (panel) panel.style.display = "block";
+  const btn = document.getElementById("filter-panel-btn");
+  if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
+  renderEvents();
+}
+
+function populateVenueSuggestions() {
+  const datalist = document.getElementById("venue-suggestions");
+  if (!datalist) return;
+  const allEvs = [...events, ...RECURRING_EVENTS];
+  const venues = [...new Set(allEvs.map(e => e.venue).filter(Boolean))].sort();
+  datalist.innerHTML = venues.map(v => `<option value="${v.replace(/"/g,'&quot;')}">`).join("");
+}
+
 function resetFilters() {
   document.getElementById("search-input").value = "";
   document.getElementById("host-filter").value = "";
+  const venueFilterEl = document.getElementById("venue-filter"); if(venueFilterEl) venueFilterEl.value = "";
+  const panel = document.getElementById("filter-panel"); if(panel) panel.style.display = "none";
+  const btn = document.getElementById("filter-panel-btn"); if(btn) { btn.style.background = "var(--white)"; btn.style.color = "var(--dark)"; }
   setFilter("all");
   setDateFilter("upcoming");
   setMode("all");
@@ -1241,7 +1294,9 @@ function renderEvents() {
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate;
+    const activeVenue = (document.getElementById("venue-filter")?.value || "").trim().toLowerCase();
+    const matchVenue = !activeVenue || (e.venue||"").toLowerCase().includes(activeVenue);
+    return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate && matchVenue;
   });
 
   list.sort((a, b) => {
@@ -1280,7 +1335,8 @@ function renderEvents() {
       ? `<span style="flex-shrink:0;font-size:11px;font-weight:700;background:#FFF7ED;color:#9a3412;padding:3px 9px;border-radius:20px;white-space:nowrap;">🔀 Hybrid</span>`
       : "";
     const cityState = (ev.format === "inperson" || ev.format === "both") ? parseCityState(ev.location) : "";
-    const locationLine = (cityState || formatBadge) ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;"><span style="font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cityState ? "📍 "+esc(cityState) : ""}</span>${formatBadge}</div>` : "";
+    const venueLine = ev.venue ? `<div style="font-size:11px;color:var(--primary);font-weight:600;margin-top:3px;cursor:pointer;" onclick="setVenueFilter('${esc(ev.venue)}')">${esc(ev.venue)}</div>` : "";
+    const locationLine = (cityState || formatBadge || ev.venue) ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;"><span style="font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cityState ? "📍 "+esc(cityState) : ""}${venueLine}</span>${formatBadge}</div>` : "";
     const recurringBadge = ev.recurring
       ? `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:3px 9px;border-radius:20px;white-space:nowrap;">🔁 ${ev.recurFreq === "monthly" ? "Monthly" : "Weekly"}</span>`
       : "";
@@ -1309,6 +1365,7 @@ function renderEvents() {
         ${recurringBadge ? `<div>${recurringBadge}</div>` : ""}
         ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); if (!meetUrl || !ev.date || !ev.time) return ""; const today = new Date(); const evDay = new Date(ev.date+"T00:00:00"); if (today.toDateString() !== evDay.toDateString()) return ""; const d = new Date(ev.date+"T"+ev.time); const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); const endStr = ev.endtime ? " - "+new Date(ev.date+"T"+ev.endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""; return `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather · ${ts}${endStr} ${tz}</a>`; })() : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
+          <button class="btn btn-sm btn-outline" onclick="openQrModal('${ev.id}')" title="Get QR code" style="padding:8px 10px;">⬜</button>
           <button class="btn btn-sm" onclick="openEventView('${ev.id}')" style="padding:9px 18px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;">View</button>
           ${ev.sharedNotesEnabled && isRegistered(ev.id) ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
         </div>
@@ -1590,11 +1647,11 @@ function recurToEv(r, dateObj) {
     description: r.description||"", host: r.host||"", hostlink: r.hostlink||"",
     contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
     cooplink: r.cooplink||"", paymentlink: r.paymentlink||"",
-    meetinglink: roomUrl, showLinks: r.showLinks||"",
+    meetinglink: roomUrl || r.meetinglink || "", showLinks: r.showLinks||"",
     otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
     recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
     imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"",
-    lifeStage: r.lifeStage||"", keywords: r.keywords||"",
+    lifeStage: r.careerStage||r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
     interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
     sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
     host_note: r.host_note||"", cancelled: r.cancelled||false,
@@ -1707,6 +1764,7 @@ function loadEditForm(id) {
   document.getElementById("f-time").value  = ev.time || "";
   document.getElementById("f-endtime").value = ev.endtime || "";
   document.getElementById("f-location").value = ev.location || "";
+  const venueEditEl = document.getElementById("f-venue"); if(venueEditEl) venueEditEl.value = ev.venue || "";
   document.getElementById("f-desc").value  = ev.description || "";
   document.getElementById("f-host").value  = ev.host || "";
   document.getElementById("f-hostlink").value = ev.hostlink || "";
@@ -1972,11 +2030,13 @@ function closeModal() { formDirty = false; document.getElementById("post-modal")
       if (window.innerWidth > 768) return;
       const dy = e.changedTouches[0].clientY - startY;
       const dx = e.changedTouches[0].clientX - startX;
-      if (dy > 140 && Math.abs(dy) > Math.abs(dx) * 2) {
+      const swipeDown = dy > 140 && Math.abs(dy) > Math.abs(dx) * 2;
+      const swipeLeft = dx < -140 && Math.abs(dx) > Math.abs(dy) * 2;
+      if (swipeDown || swipeLeft) {
         const id = overlay.id;
         if (id === "post-modal") {
-          if (editingId && localStorage.getItem(EDIT_DRAFT_KEY)) {
-            if (!confirm("You have unsaved edits. Close anyway?")) return;
+          if (editingId || formDirty) {
+            if (!confirm("You have unsaved changes. Close anyway?")) return;
           }
           closeModal();
         }
@@ -2184,6 +2244,76 @@ function shareEvent(id) {
   } else {
     copyFallback();
   }
+}
+
+// ── QR Code ─────────────────────────────────────────────────────
+let _qrEventId = null;
+let _qrShortUrl = null;
+
+async function openQrModal(id) {
+  const allEv = [...(typeof events !== "undefined" ? events : []), ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
+  const ev = allEv.find(e => e.id === id);
+  if (!ev) return;
+  _qrEventId = id;
+  _qrShortUrl = null;
+  document.getElementById("qr-canvas").style.display = "none";
+  document.getElementById("qr-loading").style.display = "block";
+  document.getElementById("qr-event-title").textContent = ev.title || "";
+  document.getElementById("qr-short-url").textContent = "";
+  document.getElementById("qr-modal").classList.add("open");
+
+  try {
+    const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if (data.status !== "ok" || !data.code) throw new Error("no code");
+    _qrShortUrl = `https://go.2gather.network/${data.code}`;
+  } catch(e) {
+    _qrShortUrl = `${window.location.origin}${window.location.pathname.replace(/[^/]+$/, "")}event.html?id=${encodeURIComponent(id)}`;
+  }
+
+  document.getElementById("qr-short-url").textContent = _qrShortUrl;
+  renderQr(_qrShortUrl, ev.title || "Event");
+}
+
+function renderQr(url, title) {
+  if (!window.QRious) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+    s.onload = () => renderQr(url, title);
+    s.onerror = () => {
+      document.getElementById("qr-loading").textContent = "Could not load QR library. Try again.";
+    };
+    document.head.appendChild(s);
+    return;
+  }
+  const canvas = document.getElementById("qr-canvas");
+  new QRious({
+    element: canvas,
+    value: url,
+    size: 280,
+    backgroundAlpha: 1,
+    foreground: "#1a1a2e",
+    background: "#ffffff",
+    level: "H",
+    padding: 16,
+  });
+  document.getElementById("qr-loading").style.display = "none";
+  canvas.style.display = "block";
+}
+
+function closeQrModal() {
+  document.getElementById("qr-modal").classList.remove("open");
+  _qrEventId = null;
+  _qrShortUrl = null;
+}
+
+function downloadQr() {
+  const canvas = document.getElementById("qr-canvas");
+  const title = (document.getElementById("qr-event-title").textContent || "event").replace(/[^a-z0-9]/gi, "-").toLowerCase();
+  const link = document.createElement("a");
+  link.download = `qr-${title}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
 
 function openEventById(id) {
@@ -2404,7 +2534,7 @@ async function submitEvent() {
   // #3 Appear Network URL validation
   if (document.getElementById("show-hostlink")?.checked && hostlink && !hostlink.includes("appear.network")) {
     const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "block";
-    errEl.textContent = "Your Appear Network page link must include appear.network."; errEl.style.display = "block"; return;
+    errEl.textContent = "Your Appear Network page link must include appear.network."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return;
   }
   const hlErr = document.getElementById("hostlink-error"); if(hlErr) hlErr.style.display = "none";
 
@@ -2417,15 +2547,15 @@ async function submitEvent() {
   if (!time) missing.push("start time");
   if (!host) missing.push("host name");
   if (!editingId && !/^\d{4}$/.test(passcode)) missing.push("4-digit private PIN");
-  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; return; }
-  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; return; }
-  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; return; }
-  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; return; }
-  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; return; }
+  if (missing.length > 0) { errEl.textContent = "Please add: " + missing.join(", ") + "."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (time && endtime && endtime <= time) { errEl.textContent = "End time must be after start time."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (checkAllFields()) { errEl.textContent = "Please keep it community-friendly - your post contains language that isn't allowed."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if ((selectedFormat === "virtual" || selectedFormat === "both") && !hostingOption) { errEl.textContent = "Please choose where you're hosting this - a community room or your own link."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
+  if (hostingOption === "db" && !selectedRoom) { errEl.textContent = "Please select which virtual room is best for this event."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   const isCancelling = document.getElementById("f-cancelled")?.checked || document.getElementById("f-cancel-occurrence")?.checked;
   if (selectedRoom && date && !isCancelling) {
     const conflict = checkConflict(selectedRoom, date, time, editingId);
-    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; return; }
+    if (conflict) { errEl.textContent = `"${selectedRoom}" is already booked around this time for "${conflict.title}". Please choose a different time or room.`; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   }
   errEl.style.display = "none";
 
@@ -2435,9 +2565,9 @@ async function submitEvent() {
     let log = [];
     try { log = JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch {}
     log = log.filter(t => now24 - t < 24*60*60*1000);
-    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; return; }
+    if (log.length >= 4) { errEl.textContent = "You've posted 4 events in the last 24 hours. Please try again tomorrow."; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
     const dupExists = events.some(e => e.title.trim().toLowerCase() === title.toLowerCase() && e.date === date);
-    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; return; }
+    if (dupExists) { errEl.textContent = `An event called "${title}" is already posted for this date. Please use a different title or date.`; errEl.style.display = "block"; errEl.scrollIntoView({ behavior:"smooth", block:"nearest" }); return; }
   }
 
   const catIds = Array.from(selectedCats);
@@ -2465,6 +2595,7 @@ async function submitEvent() {
     interestedEnabled, sharedNotesEnabled,
     host_note: document.getElementById("f-host-note")?.value.trim() || "",
     cancelled: document.getElementById("f-cancelled")?.checked || false,
+    venue: document.getElementById("f-venue")?.value.trim() || "",
   };
 
   if (editingId) {
@@ -2971,11 +3102,24 @@ loadEvents().then(() => {
         const found = findEvById(editId);
         if (found) {
           isMasterUser = pin === MASTER_PASSCODE && (found.ev.host||"").trim().toLowerCase() === MASTER_HOST;
+          if (pin === MASTER_PASSCODE) sessionStorage.setItem('db-master-session', '1');
           loadEditForm(editId);
         }
       }
     } catch(e) {}
     // clean up URL
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+  // pre-set venue filter if ?venue= param present
+  const venueParam = new URLSearchParams(window.location.search).get("venue");
+  if (venueParam) {
+    const venueInput = document.getElementById("venue-filter");
+    if (venueInput) venueInput.value = venueParam;
+    const panel = document.getElementById("filter-panel");
+    if (panel) panel.style.display = "block";
+    const btn = document.getElementById("filter-panel-btn");
+    if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
+    renderEvents();
     window.history.replaceState({}, "", window.location.pathname);
   }
 });
@@ -3048,6 +3192,27 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.55 -->
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qr-modal" style="z-index:250;">
+  <div class="modal" style="max-width:340px;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);">Event QR Code</div>
+      <button onclick="closeQrModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
+    </div>
+    <div id="qr-loading" style="padding:20px 0;color:var(--muted);font-size:13px;">
+      <div style="width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+      Generating QR code...
+    </div>
+    <canvas id="qr-canvas" style="display:none;border-radius:10px;max-width:100%;"></canvas>
+    <p id="qr-event-title" style="font-size:13px;font-weight:700;color:var(--dark);margin:12px 0 4px;"></p>
+    <p id="qr-short-url" style="font-size:12px;color:var(--muted);margin-bottom:16px;word-break:break-all;"></p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="downloadQr()">⬇ Download PNG</button>
+      <button class="btn btn-outline" onclick="closeQrModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Events.html v11.64 -->
 </body>
 </html>
