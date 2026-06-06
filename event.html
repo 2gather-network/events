@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.49
-  v4.49 - share() now fetches short URL before sharing/copying
-  v4.48 - linkify creating.works in event description
+  event.html Version 4.51
+  v4.51 - QR code button on event detail page; download PNG
+  v4.50 - Appear ID RSVP flow: QR scan + manual entry + photo confirmation
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -141,6 +141,105 @@
     <div class="modal-actions">
       <button class="btn btn-primary" style="flex:1;" onclick="submitInterest()">Submit</button>
       <button class="btn btn-outline" onclick="closeInterestModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- RSVP Modal -->
+<div class="modal-overlay" id="rsvp-modal">
+  <div class="modal">
+    <!-- Step 1: Choose method -->
+    <div id="rsvp-step-1">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="modal-title" style="margin-bottom:0;">+1 I'm going!</div>
+        <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Use your Appear ID to register so others can see you're coming.</p>
+      <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Appear QR code</button>
+      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:16px;">⌨️ Enter my Appear ID</button>
+      <div style="text-align:center;">
+        <button onclick="submitRsvpAnonymous()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;">Skip — register anonymously</button>
+      </div>
+    </div>
+    <!-- Step 1b: QR scanner -->
+    <div id="rsvp-step-qr" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">Scan your QR code</div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Point your camera at your Appear profile QR code.</p>
+      <div style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;">
+        <video id="rsvp-video" style="width:100%;display:block;" playsinline autoplay muted></video>
+        <canvas id="rsvp-canvas" style="display:none;"></canvas>
+        <div style="position:absolute;inset:0;border:3px solid var(--primary);border-radius:12px;pointer-events:none;opacity:0.6;"></div>
+      </div>
+      <p id="rsvp-scan-status" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px;">Scanning...</p>
+      <button class="btn btn-outline" onclick="cancelQrScan()" style="width:100%;justify-content:center;">Cancel</button>
+    </div>
+    <!-- Step 1c: Manual entry -->
+    <div id="rsvp-step-manual" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">Enter your Appear ID</div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Your short ID from your Appear profile (e.g. w.hss or 0VfHB).</p>
+      <input class="modal-input" id="rsvp-manual-input" type="text" placeholder="Your Appear ID" autocomplete="off" style="margin-bottom:8px;">
+      <p class="error-msg" id="rsvp-manual-error"></p>
+      <div class="modal-actions" style="margin-top:8px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="submitManualId()">Look me up</button>
+        <button class="btn btn-outline" onclick="closeRsvpModal()">Cancel</button>
+      </div>
+    </div>
+    <!-- Step 2: Photo confirmation -->
+    <div id="rsvp-step-confirm" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
+      </div>
+      <div style="text-align:center;margin-bottom:20px;">
+        <img id="rsvp-confirm-photo" src="" alt="" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin-bottom:12px;">
+        <p id="rsvp-confirm-id" style="font-size:13px;color:var(--muted);"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" style="flex:1;" onclick="confirmRsvp()">✓ Yes, that's me</button>
+        <button class="btn btn-outline" onclick="showStep(1)">Not me</button>
+      </div>
+    </div>
+    <!-- Step 2b: ID not found -->
+    <div id="rsvp-step-notfound" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">ID not found</div>
+      </div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Appear ID in our community. You can still register anonymously.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register anonymously</button>
+        <button class="btn btn-outline" onclick="showStep(1)">Try again</button>
+      </div>
+    </div>
+    <!-- Step 3: Loading -->
+    <div id="rsvp-step-loading" style="display:none;text-align:center;padding:20px 0;">
+      <div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>
+      <p id="rsvp-loading-msg" style="font-size:14px;color:var(--muted);">Looking up your profile...</p>
+    </div>
+  </div>
+</div>
+<!-- QR Code Modal -->
+<div class="modal-overlay" id="qr-modal" style="z-index:250;">
+  <div class="modal" style="max-width:320px;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);">Event QR Code</div>
+      <button onclick="closeQrModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
+    </div>
+    <div id="qr-loading" style="padding:20px 0;color:var(--muted);font-size:13px;">
+      <div style="width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+      Generating QR code...
+    </div>
+    <canvas id="qr-canvas" style="display:none;border-radius:10px;max-width:100%;"></canvas>
+    <p id="qr-event-title" style="font-size:13px;font-weight:700;color:var(--dark);margin:12px 0 4px;"></p>
+    <p id="qr-short-url" style="font-size:12px;color:var(--muted);margin-bottom:16px;word-break:break-all;"></p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="downloadQr()">⬇ Download PNG</button>
+      <button class="btn btn-outline" onclick="closeQrModal()">Close</button>
     </div>
   </div>
 </div>
@@ -369,25 +468,10 @@ function render(ev) {
     <div id="engagement-section" style="margin:0 0 18px;">
       ${hasInterest ? `
         <div id="interest-area">
-          <button class="btn btn-primary" onclick="showInterestForm()" id="interest-btn">+1 I'm interested</button>
-        </div>
-        <div id="interest-form" style="display:none;margin-top:14px;padding:18px;background:#f9fafb;border-radius:12px;border:1px solid var(--border);">
-          <p style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:6px;">The host sees you expressed interest!</p>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Want to share who is coming? Enter your info below.</p>
-          ${ev.format === "both" ? `
-          <p style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:8px;">How are you joining?</p>
-          <div style="display:flex;gap:8px;margin-bottom:14px;">
-            <button type="button" id="attend-online" onclick="selectAttendance('online')" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);">💻 Online</button>
-            <button type="button" id="attend-inperson" onclick="selectAttendance('inperson')" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);">📍 In-person</button>
-          </div>` : ""}
-          <input id="int-name-inline" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:10px;" type="text" placeholder="Your name (optional)" autocomplete="name">
-          <input id="int-appear-id" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:4px;" type="text" placeholder="Your Appear ID (optional)" autocomplete="off">
-          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Share your ID to show you are coming to this event on your Appear page.</p>
-          <p class="error-msg" id="int-inline-error"></p>
-          <button class="btn btn-primary" onclick="submitInterestInline()" id="int-submit-btn">Submit</button>
+          <button class="btn btn-primary" onclick="openRsvpModal()" id="interest-btn">+1 I'm going</button>
         </div>
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-          ✓ The host knows you're interested. If you can't make it, reach out to ${contactLink}.
+          ✓ You're registered! If you can't make it, reach out to ${contactLink}.
         </div>
       ` : ""}
       ${ev.host_note ? `
@@ -429,6 +513,7 @@ function render(ev) {
         <button class="btn btn-primary" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
+        <button class="btn btn-outline" onclick="openQrModal()" title="Get QR code" style="padding:10px 14px;">⊞ QR</button>
         <button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>
       </div>
 
@@ -456,7 +541,7 @@ function render(ev) {
     try {
       if (localStorage.getItem("db-interested-" + ev.id) === "1") {
         const btn = document.getElementById("interest-btn");
-        if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
+        if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
         const confirmed = document.getElementById("interest-confirmed");
         if (confirmed) confirmed.style.display = "block";
         const notes = document.getElementById("notes-section");
@@ -567,70 +652,170 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-let _attendanceMode = "";
+// ── RSVP Modal ──────────────────────────────────────────────────
+const APPEAR_BASE = "https://appear.network/dl/page/s/e13594/r/";
+let _rsvpAppearId = null;
+let _qrStream = null;
+let _qrScanInterval = null;
 
-function selectAttendance(mode) {
-  _attendanceMode = mode;
-  const online = document.getElementById("attend-online");
-  const inperson = document.getElementById("attend-inperson");
-  if (online) online.style.cssText = online.style.cssText.replace(/background:[^;]+;|border-color:[^;]+;|color:[^;]+;/g,"") + (mode === "online" ? "background:#EFF6FF;border-color:#1d4ed8;color:#1d4ed8;" : "background:#fff;border-color:var(--border);color:var(--muted);");
-  if (inperson) inperson.style.cssText = inperson.style.cssText.replace(/background:[^;]+;|border-color:[^;]+;|color:[^;]+;/g,"") + (mode === "inperson" ? "background:#F0FDF4;border-color:#166534;color:#166534;" : "background:#fff;border-color:var(--border);color:var(--muted);");
+function openRsvpModal() {
+  _rsvpAppearId = null;
+  showStep(1);
+  document.getElementById("rsvp-modal").classList.add("open");
 }
 
-function showInterestForm() {
-  const btn = document.getElementById("interest-btn");
-  if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
-  const form = document.getElementById("interest-form");
-  if (form) form.style.display = "block";
+function closeRsvpModal() {
+  document.getElementById("rsvp-modal").classList.remove("open");
+  cancelQrScan();
 }
 
-async function submitInterestInline() {
-  if (!_currentEv) return;
-  const name = (document.getElementById("int-name-inline")?.value || "").trim();
-  const appearId = (document.getElementById("int-appear-id")?.value || "").trim();
-  const required = _currentEv.interestedEnabled === "required";
-  const errEl = document.getElementById("int-inline-error");
-  if (required && !name) {
-    if (errEl) { errEl.textContent = "Please enter your name to register."; errEl.style.display = "block"; }
+function showStep(n) {
+  ["rsvp-step-1","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  if (n === 1) document.getElementById("rsvp-step-1").style.display = "block";
+  else if (n === "qr") document.getElementById("rsvp-step-qr").style.display = "block";
+  else if (n === "manual") document.getElementById("rsvp-step-manual").style.display = "block";
+  else if (n === "confirm") document.getElementById("rsvp-step-confirm").style.display = "block";
+  else if (n === "notfound") document.getElementById("rsvp-step-notfound").style.display = "block";
+  else if (n === "loading") document.getElementById("rsvp-step-loading").style.display = "block";
+}
+
+function showManualEntry() {
+  showStep("manual");
+  setTimeout(() => document.getElementById("rsvp-manual-input")?.focus(), 100);
+}
+
+// ── QR scanning ──
+async function startQrScan() {
+  showStep("qr");
+  document.getElementById("rsvp-scan-status").textContent = "Starting camera...";
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    const video = document.getElementById("rsvp-video");
+    video.srcObject = _qrStream;
+    await video.play();
+    document.getElementById("rsvp-scan-status").textContent = "Point at your Appear QR code";
+    _qrScanInterval = setInterval(() => scanFrame(video), 300);
+  } catch(e) {
+    document.getElementById("rsvp-scan-status").textContent = "Camera not available. Please enter your ID manually.";
+    setTimeout(() => showManualEntry(), 1500);
+  }
+}
+
+function scanFrame(video) {
+  if (!window.BarcodeDetector) {
+    clearInterval(_qrScanInterval);
+    document.getElementById("rsvp-scan-status").textContent = "QR scanning not supported on this browser. Enter ID manually.";
+    setTimeout(() => showManualEntry(), 1500);
     return;
   }
-  const form = document.getElementById("interest-form");
-  if (form) form.style.display = "none";
+  const detector = new BarcodeDetector({ formats: ["qr_code"] });
+  const canvas = document.getElementById("rsvp-canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+  detector.detect(canvas).then(codes => {
+    if (codes.length > 0) {
+      clearInterval(_qrScanInterval);
+      cancelQrScan();
+      const raw = codes[0].rawValue;
+      const id = extractAppearId(raw);
+      if (id) {
+        lookupAndConfirm(id);
+      } else {
+        document.getElementById("rsvp-scan-status").textContent = "QR not recognised. Try entering your ID manually.";
+        setTimeout(() => showManualEntry(), 1500);
+      }
+    }
+  }).catch(() => {});
+}
+
+function cancelQrScan() {
+  clearInterval(_qrScanInterval);
+  _qrScanInterval = null;
+  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
+  const video = document.getElementById("rsvp-video");
+  if (video) { video.srcObject = null; }
+}
+
+function extractAppearId(url) {
+  // Handles full URL: https://appear.network/dl/.../r/APPEAR_ID
+  // or bare ID typed directly
+  const match = url.match(/\/r\/([A-Za-z0-9._-]+)/);
+  if (match) return match[1];
+  // bare short ID (no slashes, reasonable length)
+  if (/^[A-Za-z0-9._-]{3,20}$/.test(url.trim())) return url.trim();
+  return null;
+}
+
+// ── Manual ID submission ──
+function submitManualId() {
+  const raw = (document.getElementById("rsvp-manual-input")?.value || "").trim();
+  const errEl = document.getElementById("rsvp-manual-error");
+  const id = extractAppearId(raw);
+  if (!id) {
+    if (errEl) { errEl.textContent = "Please enter a valid Appear ID."; errEl.style.display = "block"; }
+    return;
+  }
+  if (errEl) errEl.style.display = "none";
+  lookupAndConfirm(id);
+}
+
+// ── Profile lookup ──
+async function lookupAndConfirm(appearId) {
+  showStep("loading");
+  document.getElementById("rsvp-loading-msg").textContent = "Looking up your profile...";
+  try {
+    const res = await fetch(`${GS_URL}?action=lookupProfile&appearId=${encodeURIComponent(appearId)}`);
+    const data = await res.json();
+    if (data.found && data.photo) {
+      _rsvpAppearId = appearId;
+      document.getElementById("rsvp-confirm-photo").src = data.photo;
+      document.getElementById("rsvp-confirm-id").textContent = "Appear ID: " + appearId;
+      showStep("confirm");
+    } else {
+      showStep("notfound");
+    }
+  } catch(e) {
+    showStep("notfound");
+  }
+}
+
+// ── Confirm and save RSVP ──
+async function confirmRsvp() {
+  if (!_rsvpAppearId || !_currentEv) return;
+  showStep("loading");
+  document.getElementById("rsvp-loading-msg").textContent = "Registering you...";
+  try {
+    await fetch(`${GS_URL}?action=rsvp&appearId=${encodeURIComponent(_rsvpAppearId)}&eventId=${encodeURIComponent(_currentEv.id)}`);
+  } catch(e) { /* best effort */ }
+  finishRsvp();
+}
+
+async function submitRsvpAnonymous() {
+  if (!_currentEv) return;
+  showStep("loading");
+  document.getElementById("rsvp-loading-msg").textContent = "Registering...";
+  try {
+    await jsonp({ action:"interest", id:_currentEv.id, entry:"Anonymous" });
+  } catch(e) {}
+  finishRsvp();
+}
+
+function finishRsvp() {
+  closeRsvpModal();
+  const btn = document.getElementById("interest-btn");
+  if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
   const confirmed = document.getElementById("interest-confirmed");
   if (confirmed) confirmed.style.display = "block";
   const notes = document.getElementById("notes-section");
   if (notes) notes.style.display = "block";
   const hostNoteSection = document.getElementById("host-note-section");
   if (hostNoteSection) hostNoteSection.style.display = "block";
-  const btn = document.getElementById("interest-btn");
-  if (btn) { btn.textContent = "✓ Interested"; btn.disabled = true; btn.style.opacity = "0.7"; }
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
-  const modeLabel = _attendanceMode === "online" ? "💻 Online" : _attendanceMode === "inperson" ? "📍 In-person" : "";
-  const entry = [name, appearId ? `@${appearId}` : "", modeLabel].filter(Boolean).join(" · ") || "Anonymous";
-  _attendanceMode = "";
-  // If this is a recurring event, auto-create a sheet row first so interest saves correctly
-  if (_currentEv.id && _currentEv.id.startsWith("recurring-")) {
-    const stableId = "rec-" + (_currentEv.title||"").toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
-    try {
-      await jsonp({
-        action: "add",
-        event: JSON.stringify({
-          id: stableId, title: _currentEv.title||"", categories: Array.isArray(_currentEv.categories)?_currentEv.categories.join(","):"",
-          date: _currentEv.date||"", startTime: _currentEv.time||"", endTime: _currentEv.endtime||"",
-          format: _currentEv.format||"", location: _currentEv.location||"", room: _currentEv.room||"",
-          description: _currentEv.description||"", host: _currentEv.host||"", hostlink: _currentEv.hostlink||"",
-          contactEmail: _currentEv.contactEmail||"", contactPhone: _currentEv.contactPhone||"",
-          passcode: "6090", going: 0, recurFreq: _currentEv.recurFreq||"weekly",
-          interestedEnabled: _currentEv.interestedEnabled||"optional",
-          sharedNotesEnabled: _currentEv.sharedNotesEnabled||false,
-          interested: entry,
-        })
-      });
-      // Now save interest to the stable ID row
-      return;
-    } catch(e) { console.warn("Auto-create recurring row failed", e); }
-  }
-  try { await jsonp({ action:"interest", id:_currentEv.id, entry }); } catch(e) { console.warn("Interest save failed", e); }
+  showToast("✓ You're registered!");
 }
 
 async function saveSharedNotes() {
@@ -649,6 +834,68 @@ async function saveSharedNotes() {
 }
 
 const MASTER_PASSCODE = "6090";
+
+// ── QR Code ─────────────────────────────────────────────────────
+let _qrShortUrl = null;
+
+async function openQrModal() {
+  if (!_currentEv) return;
+  _qrShortUrl = null;
+  document.getElementById("qr-canvas").style.display = "none";
+  document.getElementById("qr-loading").style.display = "block";
+  document.getElementById("qr-event-title").textContent = _currentEv.title || "";
+  document.getElementById("qr-short-url").textContent = "";
+  document.getElementById("qr-modal").classList.add("open");
+
+  try {
+    const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(_currentEv.id)}`);
+    const data = await res.json();
+    if (data.status !== "ok" || !data.code) throw new Error("no code");
+    _qrShortUrl = `https://go.2gather.network/${data.code}`;
+  } catch(e) {
+    _qrShortUrl = window.location.href;
+  }
+
+  document.getElementById("qr-short-url").textContent = _qrShortUrl;
+  renderQr(_qrShortUrl);
+}
+
+function renderQr(url) {
+  if (!window.QRious) {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
+    s.onload = () => renderQr(url);
+    s.onerror = () => { document.getElementById("qr-loading").textContent = "Could not load QR library."; };
+    document.head.appendChild(s);
+    return;
+  }
+  const canvas = document.getElementById("qr-canvas");
+  new QRious({
+    element: canvas,
+    value: url,
+    size: 260,
+    foreground: "#1a1a2e",
+    background: "#ffffff",
+    level: "H",
+    padding: 16,
+  });
+  document.getElementById("qr-loading").style.display = "none";
+  canvas.style.display = "block";
+}
+
+function closeQrModal() {
+  document.getElementById("qr-modal").classList.remove("open");
+  _qrShortUrl = null;
+}
+
+function downloadQr() {
+  const canvas = document.getElementById("qr-canvas");
+  const title = (_currentEv?.title || "event").replace(/[^a-z0-9]/gi, "-").toLowerCase();
+  const link = document.createElement("a");
+  link.download = `qr-${title}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
 
 function openEditPin() {
   if (!_currentEv) return;
@@ -788,6 +1035,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.49 -->
+<!-- event.html v4.51 -->
 </body>
 </html>
