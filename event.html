@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.51
+  event.html Version 4.52
+  v4.52 - swap BarcodeDetector for jsQR (iOS Safari support); profileUrl in RSVP
   v4.51 - QR code button on event detail page; download PNG
-  v4.50 - Appear ID RSVP flow: QR scan + manual entry + photo confirmation
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -691,6 +691,20 @@ function showManualEntry() {
 async function startQrScan() {
   showStep("qr");
   document.getElementById("rsvp-scan-status").textContent = "Starting camera...";
+  // Load jsQR if not already loaded (works on iOS Safari + all browsers)
+  if (!window.jsQR) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    }).catch(() => {
+      document.getElementById("rsvp-scan-status").textContent = "Could not load scanner. Enter your ID manually.";
+      setTimeout(() => showManualEntry(), 1500);
+      return;
+    });
+  }
   try {
     _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     const video = document.getElementById("rsvp-video");
@@ -705,31 +719,26 @@ async function startQrScan() {
 }
 
 function scanFrame(video) {
-  if (!window.BarcodeDetector) {
-    clearInterval(_qrScanInterval);
-    document.getElementById("rsvp-scan-status").textContent = "QR scanning not supported on this browser. Enter ID manually.";
-    setTimeout(() => showManualEntry(), 1500);
-    return;
-  }
-  const detector = new BarcodeDetector({ formats: ["qr_code"] });
+  if (!window.jsQR) return;
   const canvas = document.getElementById("rsvp-canvas");
+  if (!canvas || video.videoWidth === 0) return;
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext("2d").drawImage(video, 0, 0);
-  detector.detect(canvas).then(codes => {
-    if (codes.length > 0) {
-      clearInterval(_qrScanInterval);
-      cancelQrScan();
-      const raw = codes[0].rawValue;
-      const id = extractAppearId(raw);
-      if (id) {
-        lookupAndConfirm(id);
-      } else {
-        document.getElementById("rsvp-scan-status").textContent = "QR not recognised. Try entering your ID manually.";
-        setTimeout(() => showManualEntry(), 1500);
-      }
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+  if (code) {
+    clearInterval(_qrScanInterval);
+    cancelQrScan();
+    const id = extractAppearId(code.data);
+    if (id) {
+      lookupAndConfirm(id);
+    } else {
+      document.getElementById("rsvp-scan-status").textContent = "QR not recognised. Try entering your ID manually.";
+      setTimeout(() => showManualEntry(), 1500);
     }
-  }).catch(() => {});
+  }
 }
 
 function cancelQrScan() {
@@ -1035,6 +1044,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.51 -->
+<!-- event.html v4.52 -->
 </body>
 </html>
