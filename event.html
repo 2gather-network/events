@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.52
+  event.html Version 4.53
+  v4.53 - addToCalendar: single occurrence skips RRULE; description trimmed to 400 chars
   v4.52 - swap BarcodeDetector for jsQR (iOS Safari support); profileUrl in RSVP
-  v4.51 - QR code button on event detail page; download PNG
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -567,17 +567,23 @@ function addToCalendar(ev) {
   const start = toGCal(ev.date, ev.time);
   const end   = ev.endtime ? toGCal(ev.date, ev.endtime) : toGCal(ev.date, ev.time);
   const loc   = ev.location || ev.meetinglink || "";
+  const rawDesc = ev.description || "";
+  const desc = rawDesc.length > 400 ? rawDesc.slice(0, 400) + "..." : rawDesc;
   const params = new URLSearchParams({
     text: ev.title,
     dates: start + "/" + end,
-    details: (ev.description||"").slice(0,500),
+    details: desc,
     location: loc,
   });
-  if (ev.recurFreq === "weekly") {
-    const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
-    params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
-  } else if (ev.recurFreq === "monthly") {
-    params.append("recur", "RRULE:FREQ=MONTHLY");
+  // Only add recurrence rule for template rows (rec-), not specific occurrences
+  const isOccurrence = ev.id && ev.id.startsWith("recurring-");
+  if (!isOccurrence) {
+    if (ev.recurFreq === "weekly") {
+      const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
+      params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
+    } else if (ev.recurFreq === "monthly") {
+      params.append("recur", "RRULE:FREQ=MONTHLY");
+    }
   }
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
@@ -1044,6 +1050,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.52 -->
+<!-- event.html v4.53 -->
 </body>
 </html>
