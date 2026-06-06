@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.48
+  event.html Version 4.49
+  v4.49 - share() now fetches short URL before sharing/copying
   v4.48 - linkify creating.works in event description
-  v4.47 - Associated group link below venue; Appear ID field in interest form
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -518,8 +518,17 @@ async function copyLink() {
   }
 }
 
-function share() {
-  const url = window.location.href;
+async function share() {
+  // Always use short URL for sharing
+  let url = window.location.href;
+  try {
+    const id = _currentEv && _currentEv.id;
+    if (id) {
+      const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.status === "ok" && data.code) url = `https://go.2gather.network/${data.code}`;
+    }
+  } catch(e) { /* fall back to raw URL */ }
 
   const showCopyUI = () => {
     const existing = document.getElementById("share-url-box");
@@ -779,6 +788,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.48 -->
+<!-- event.html v4.49 -->
 </body>
 </html>
