@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.53
+  event.html Version 4.54
+  v4.54 - Cancel RSVP button; cancelRsvp writes to sheet + clears localStorage
   v4.53 - addToCalendar: single occurrence skips RRULE; description trimmed to 400 chars
-  v4.52 - swap BarcodeDetector for jsQR (iOS Safari support); profileUrl in RSVP
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -469,6 +469,9 @@ function render(ev) {
       ${hasInterest ? `
         <div id="interest-area">
           <button class="btn btn-primary" onclick="openRsvpModal()" id="interest-btn">+1 I'm going</button>
+          <div id="cancel-rsvp-area" style="display:none;margin-top:8px;">
+            <button onclick="cancelRsvp()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">Cancel RSVP</button>
+          </div>
         </div>
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
           ✓ You're registered! If you can't make it, reach out to ${contactLink}.
@@ -542,6 +545,8 @@ function render(ev) {
       if (localStorage.getItem("db-interested-" + ev.id) === "1") {
         const btn = document.getElementById("interest-btn");
         if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
+        const cancelArea = document.getElementById("cancel-rsvp-area");
+        if (cancelArea) cancelArea.style.display = "block";
         const confirmed = document.getElementById("interest-confirmed");
         if (confirmed) confirmed.style.display = "block";
         const notes = document.getElementById("notes-section");
@@ -823,6 +828,8 @@ function finishRsvp() {
   closeRsvpModal();
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
+  const cancelArea = document.getElementById("cancel-rsvp-area");
+  if (cancelArea) cancelArea.style.display = "block";
   const confirmed = document.getElementById("interest-confirmed");
   if (confirmed) confirmed.style.display = "block";
   const notes = document.getElementById("notes-section");
@@ -831,6 +838,23 @@ function finishRsvp() {
   if (hostNoteSection) hostNoteSection.style.display = "block";
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
   showToast("✓ You're registered!");
+}
+
+async function cancelRsvp() {
+  if (!_currentEv) return;
+  if (!confirm("Cancel your RSVP for this event?")) return;
+  try {
+    const appearId = _rsvpAppearId || "";
+    await fetch(`${GS_URL}?action=cancelRsvp&appearId=${encodeURIComponent(appearId)}&eventId=${encodeURIComponent(_currentEv.id)}`);
+  } catch(e) { /* best effort */ }
+  try { localStorage.removeItem("db-interested-" + _currentEv.id); } catch(e) {}
+  const btn = document.getElementById("interest-btn");
+  if (btn) { btn.textContent = "+1 I'm going"; btn.disabled = false; btn.style.opacity = "1"; }
+  const cancelArea = document.getElementById("cancel-rsvp-area");
+  if (cancelArea) cancelArea.style.display = "none";
+  const confirmed = document.getElementById("interest-confirmed");
+  if (confirmed) confirmed.style.display = "none";
+  showToast("RSVP cancelled.");
 }
 
 async function saveSharedNotes() {
@@ -1050,6 +1074,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.53 -->
+<!-- event.html v4.54 -->
 </body>
 </html>
