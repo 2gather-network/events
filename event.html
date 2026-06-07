@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.55
-  v4.55 - fix jsQR timing: load library before camera, wait for loadeddata before scanning
-  v4.54 - Cancel RSVP button; cancelRsvp writes to sheet + clears localStorage
+  event.html Version 4.59
+  v4.59 - new RSVP flow: Appear vs anonymous steps; name/email for anon; Appear help link
+  v4.58 - public RSVP flag; post-RSVP my events link; who's going section
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -153,11 +153,39 @@
         <div class="modal-title" style="margin-bottom:0;">+1 I'm going!</div>
         <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
       </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Use your Appear ID to register so others can see you're coming.</p>
+      <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Appear code</button>
+      <button class="btn btn-outline" onclick="showStep('anon')" style="width:100%;justify-content:center;">Register anonymously</button>
+    </div>
+    <!-- Step 1a: Appear options -->
+    <div id="rsvp-step-appear" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">Register with Appear</div>
+      </div>
       <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Appear QR code</button>
-      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:16px;">⌨️ Enter my Appear ID</button>
+      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Appear ID</button>
       <div style="text-align:center;">
-        <button onclick="submitRsvpAnonymous()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;">Skip — register anonymously</button>
+        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">How do I find my Appear ID?</button>
+        <div id="appear-help" style="display:none;margin-top:8px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--muted);text-align:left;line-height:1.6;">
+          Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and copy your code under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
+        </div>
+      </div>
+    </div>
+    <!-- Step 1b: Anonymous -->
+    <div id="rsvp-step-anon" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <div class="modal-title" style="margin-bottom:0;">Register anonymously</div>
+      </div>
+      <input class="modal-input" id="anon-name" type="text" placeholder="Name (optional)" autocomplete="name" style="margin-bottom:10px;">
+      <input class="modal-input" id="anon-email" type="email" placeholder="Email (optional)" autocomplete="email" style="margin-bottom:14px;">
+      <div style="padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;margin-bottom:14px;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Register on Appear once. Show up anywhere.</p>
+        <a href="http://appear.network" target="_blank" class="btn btn-outline" style="font-size:13px;padding:8px 14px;width:100%;justify-content:center;display:flex;">Sign up for Appear</a>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register</button>
+        <button class="btn btn-outline" onclick="closeRsvpModal()">Cancel</button>
       </div>
     </div>
     <!-- Step 1b: QR scanner -->
@@ -476,6 +504,13 @@ function render(ev) {
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
           ✓ You're registered! If you can't make it, reach out to ${contactLink}.
         </div>
+        <div id="post-rsvp-actions" style="display:none;margin-top:12px;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid var(--border);">
+          <a id="my-events-link" href="myevents.html" style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;">📅 View my events page</a>
+        </div>
+        <div id="who-is-going" style="display:none;margin-top:16px;">
+          <p style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;">Others going</p>
+          <div id="who-is-going-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
       ` : ""}
       ${ev.host_note ? `
         <div id="host-note-section" style="display:none;margin-top:16px;padding:14px 16px;background:#E8F2F9;border-radius:10px;border:1.5px solid #1B6896;">
@@ -547,6 +582,14 @@ function render(ev) {
         if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
         const cancelArea = document.getElementById("cancel-rsvp-area");
         if (cancelArea) cancelArea.style.display = "block";
+        // Show my events link
+        const postRsvp = document.getElementById("post-rsvp-actions");
+        const savedId = localStorage.getItem("appear-id");
+        if (postRsvp && savedId) {
+          document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(savedId);
+          postRsvp.style.display = "block";
+        }
+        loadWhoIsGoing();
         const confirmed = document.getElementById("interest-confirmed");
         if (confirmed) confirmed.style.display = "block";
         const notes = document.getElementById("notes-section");
@@ -671,8 +714,15 @@ let _qrScanInterval = null;
 
 function openRsvpModal() {
   _rsvpAppearId = null;
-  showStep(1);
   document.getElementById("rsvp-modal").classList.add("open");
+
+  // Check if we already know who this person is
+  const savedId = localStorage.getItem("appear-id");
+  if (savedId) {
+    lookupAndConfirm(savedId);
+  } else {
+    showStep(1);
+  }
 }
 
 function closeRsvpModal() {
@@ -681,16 +731,23 @@ function closeRsvpModal() {
 }
 
 function showStep(n) {
-  ["rsvp-step-1","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
+  ["rsvp-step-1","rsvp-step-appear","rsvp-step-anon","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });
   if (n === 1) document.getElementById("rsvp-step-1").style.display = "block";
+  else if (n === "appear") document.getElementById("rsvp-step-appear").style.display = "block";
+  else if (n === "anon") document.getElementById("rsvp-step-anon").style.display = "block";
   else if (n === "qr") document.getElementById("rsvp-step-qr").style.display = "block";
   else if (n === "manual") document.getElementById("rsvp-step-manual").style.display = "block";
   else if (n === "confirm") document.getElementById("rsvp-step-confirm").style.display = "block";
   else if (n === "notfound") document.getElementById("rsvp-step-notfound").style.display = "block";
   else if (n === "loading") document.getElementById("rsvp-step-loading").style.display = "block";
+}
+
+function toggleAppearHelp() {
+  const el = document.getElementById("appear-help");
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
 function showManualEntry() {
@@ -707,7 +764,7 @@ async function startQrScan() {
   if (!window.jsQR) {
     const loaded = await new Promise((resolve) => {
       const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js";
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
       s.onload = () => resolve(true);
       s.onerror = () => resolve(false);
       document.head.appendChild(s);
@@ -820,8 +877,9 @@ async function confirmRsvp() {
   if (!_rsvpAppearId || !_currentEv) return;
   showStep("loading");
   document.getElementById("rsvp-loading-msg").textContent = "Registering you...";
+  const isPublic = confirm("Would you like others to see you're going to this event?");
   try {
-    await fetch(`${GS_URL}?action=rsvp&appearId=${encodeURIComponent(_rsvpAppearId)}&eventId=${encodeURIComponent(_currentEv.id)}`);
+    await fetch(`${GS_URL}?action=rsvp&appearId=${encodeURIComponent(_rsvpAppearId)}&eventId=${encodeURIComponent(_currentEv.id)}&public=${isPublic}`);
   } catch(e) { /* best effort */ }
   finishRsvp();
 }
@@ -830,14 +888,20 @@ async function submitRsvpAnonymous() {
   if (!_currentEv) return;
   showStep("loading");
   document.getElementById("rsvp-loading-msg").textContent = "Registering...";
+  const name = (document.getElementById("anon-name")?.value || "").trim();
+  const email = (document.getElementById("anon-email")?.value || "").trim();
+  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
   try {
-    await jsonp({ action:"interest", id:_currentEv.id, entry:"Anonymous" });
+    await jsonp({ action:"interest", id:_currentEv.id, entry });
   } catch(e) {}
   finishRsvp();
 }
 
 function finishRsvp() {
   closeRsvpModal();
+  if (_rsvpAppearId) {
+    try { localStorage.setItem("appear-id", _rsvpAppearId); } catch(e) {}
+  }
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
   const cancelArea = document.getElementById("cancel-rsvp-area");
@@ -849,7 +913,32 @@ function finishRsvp() {
   const hostNoteSection = document.getElementById("host-note-section");
   if (hostNoteSection) hostNoteSection.style.display = "block";
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
+  if (_rsvpAppearId) {
+    const postRsvp = document.getElementById("post-rsvp-actions");
+    if (postRsvp) {
+      document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(_rsvpAppearId);
+      postRsvp.style.display = "block";
+    }
+  }
+  loadWhoIsGoing();
   showToast("✓ You're registered!");
+}
+
+async function loadWhoIsGoing() {
+  if (!_currentEv) return;
+  try {
+    const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(_currentEv.id)}`);
+    const data = await res.json();
+    if (!data.attendees || data.attendees.length === 0) return;
+    const list = document.getElementById("who-is-going-list");
+    const section = document.getElementById("who-is-going");
+    if (!list || !section) return;
+    list.innerHTML = data.attendees.map(a => `
+      <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" target="_blank" title="${a.appearId}" style="display:block;width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--border);">
+        <img src="${a.photo}" alt="${a.appearId}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${a.appearId}&size=44'">
+      </a>`).join("");
+    section.style.display = "block";
+  } catch(e) {}
 }
 
 async function cancelRsvp() {
@@ -1086,6 +1175,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.55 -->
+<!-- event.html v4.59 -->
 </body>
 </html>
