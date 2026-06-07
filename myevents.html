@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.0
-  v1.0 - initial build; personal events page by Appear ID
+  myevents.html Version 1.1
+  v1.1 - Member Card number badge top right; no-card prompt; Member Card number → Member Card language
+  v1.0 - initial build; personal events page by Member Card number
 -->
 <html lang="en">
 <head>
@@ -20,7 +21,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
-    header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; width: 100%; }
     header img { height: 32px; }
     header h1 { font-size: 18px; font-weight: 800; color: var(--dark); }
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
@@ -54,6 +55,7 @@
 <header>
   <a href="events.html"><img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather"></a>
   <h1>My Events</h1>
+  <div id="header-card-badge" style="display:none;margin-left:auto;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#166534;white-space:nowrap;">🪪 <span id="header-card-number"></span></div>
 </header>
 
 <div class="container">
@@ -61,7 +63,7 @@
     <img id="profile-photo" src="" alt="">
     <div>
       <div id="profile-id" class="id"></div>
-      <a id="profile-link" class="appear-link" href="#" target="_blank">View Appear profile →</a>
+      <a id="profile-link" class="appear-link" href="#" target="_blank">View Appear Network profile →</a>
     </div>
     <button class="save-btn" onclick="saveBookmark()">🔖 Save my events</button>
   </div>
@@ -72,9 +74,11 @@
   </div>
 
   <div id="not-found" style="display:none;" class="empty">
-    <p style="font-size:32px;margin-bottom:12px;">🤔</p>
-    <p>No Appear ID found.<br>Register for an event first, or check your link.</p>
-    <a href="events.html" style="display:inline-block;margin-top:16px;color:var(--primary);font-weight:700;">← Browse events</a>
+    <p style="font-size:32px;margin-bottom:12px;">🪪</p>
+    <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">No Member Card found</p>
+    <p style="margin-bottom:16px;">Register for an event first, or get your Member Card on Appear Network.</p>
+    <a href="http://appear.network" target="_blank" style="display:inline-block;margin-bottom:12px;padding:10px 20px;background:var(--primary);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;">Get your Member Card on Appear Network</a><br>
+    <a href="events.html" style="display:inline-block;margin-top:8px;color:var(--primary);font-weight:700;">← Browse events</a>
   </div>
 
   <div id="empty" style="display:none;" class="empty">
@@ -217,7 +221,7 @@ async function loadAttendees(eventId) {
 }
 
 async function init() {
-  // Get Appear ID from URL or localStorage
+  // Get Member Card number from URL or localStorage
   const params = new URLSearchParams(window.location.search);
   _appearId = params.get("id") || localStorage.getItem("appear-id");
 
@@ -244,9 +248,13 @@ async function init() {
   } catch(e) {
     document.getElementById("profile-photo").src = "https://ui-avatars.com/api/?name=" + _appearId + "&size=48";
   }
-  document.getElementById("profile-id").textContent = "Appear ID: " + _appearId;
+  document.getElementById("profile-id").textContent = "Member Card: " + _appearId;
   document.getElementById("profile-link").href = APPEAR_BASE + encodeURIComponent(_appearId);
   document.getElementById("profile-bar").style.display = "flex";
+  // Show member card badge in header
+  const badge = document.getElementById("header-card-badge");
+  const badgeNum = document.getElementById("header-card-number");
+  if (badge && badgeNum) { badgeNum.textContent = _appearId; badge.style.display = "flex"; }
 
   // Load registrations + all events in parallel
   try {
@@ -266,6 +274,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.0 -->
+<!-- myevents.html v1.1 -->
 </body>
 </html>
