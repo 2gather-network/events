@@ -1,1180 +1,271 @@
 <!DOCTYPE html>
+<!--
+  myevents.html Version 1.0
+  v1.0 - initial build; personal events page by Appear ID
+-->
 <html lang="en">
 <head>
-  <!--
-  event.html Version 4.59
-  v4.59 - new RSVP flow: Appear vs anonymous steps; name/email for anon; Appear help link
-  v4.58 - public RSVP flag; post-RSVP my events link; who's going section
-  -->
   <meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event</title>
+  <title>My Events</title>
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png">
-  <meta name="description" id="meta-description" content="">
-  <meta property="og:title" id="og-title" content="">
-  <meta property="og:description" id="og-description" content="">
-  <meta property="og:image" id="og-image" content="">
-  <meta property="og:type" content="event">
-  <meta property="og:url" id="og-url" content="">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" id="x-title" content="">
-  <meta name="twitter:description" id="x-description" content="">
-  <meta name="twitter:image" id="x-image" content="">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --primary: #1b6896;
+      --primary: #1d4ed8;
       --dark: #1a1a2e;
       --muted: #6b7280;
       --border: #e5e7eb;
-      --bg: #f5f6fa;
-      --card-bg: #ffffff;
-      --radius: 14px;
+      --bg: #f9fafb;
     }
-    body {
-      font-family: 'Nunito Sans','Segoe UI',sans-serif;
-      background: var(--bg);
-      color: var(--dark);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 24px 16px 64px;
-    }
-    @supports (-webkit-touch-callout: none) {
-      body { padding-bottom: 160px; }
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      width: 100%;
-      max-width: 560px;
-      overflow: hidden;
-    }
-    .cover-img { width: 100%; height: 220px; object-fit: cover; display: block; }
-    .card-body { padding: 24px 24px 28px; touch-action: pan-y; }
-    .top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-    .format-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 12px; font-weight: 600; padding: 4px 10px;
-      border-radius: 20px; letter-spacing: 0.03em; white-space: nowrap;
-    }
-    .badge-virtual  { background: #EFF6FF; color: #1d4ed8; }
-    .badge-inperson { background: #F0FDF4; color: #166534; }
-    .badge-hybrid   { background: #FFF7ED; color: #9a3412; }
-    .badge-recurring { background: #E8F2F9; color: var(--primary); }
-    h1 { font-size: 22px; font-weight: 700; line-height: 1.3; margin-bottom: 18px; }
-    .meta { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
-    .meta-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; }
-    .meta-item span { flex-shrink: 0; }
-    .meta-item a { color: var(--primary); text-decoration: none; font-weight: 600; }
-    .contributions {
-      font-size: 13px; color: var(--muted);
-      margin-bottom: 18px; padding: 10px 14px;
-      background: #f9fafb; border-radius: 8px; border: 1px solid var(--border);
-    }
-    .detail-img { width: 100%; border-radius: 10px; margin-bottom: 16px; display: block; max-height: 300px; object-fit: cover; }
-    .description { font-size: 15px; color: #374151; line-height: 1.7; margin-bottom: 24px; white-space: pre-wrap; }
-    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; pointer-events:none; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
-      cursor: pointer; border: 1.5px solid transparent; text-decoration: none; transition: opacity 0.15s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .btn-outline { background: transparent; border-color: var(--border); color: var(--dark); }
-    .back-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 13px; color: var(--muted); text-decoration: none; padding: 0 0 12px 0;
-    }
-    .back-link:hover { color: var(--primary); }
-    .past-banner {
-      background: #f0f0f0; color: #666; font-size: 11px; font-weight: 700;
-      letter-spacing: 0.07em; padding: 5px 18px; border-bottom: 1px solid var(--border);
-    }
-    .loading, .error { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 15px; }
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
-    .modal-overlay.open { display:flex; }
-    .modal { background:#fff; border-radius:16px; padding:28px; max-width:400px; width:100%; max-height:92vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
-    .modal-title { font-size:18px; font-weight:700; margin-bottom:18px; color:var(--dark); }
-    .modal-field { margin-bottom:14px; }
-    .modal-label { display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
-    .modal-input { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:10px 14px; font-size:15px; font-family:inherit; color:var(--dark); outline:none; }
-    .modal-input:focus { border-color:var(--primary); }
-    .modal-actions { display:flex; gap:10px; margin-top:6px; }
-    .error-msg { color:#c0392b; font-size:13px; margin-bottom:10px; display:none; }
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:white; padding:12px 24px; border-radius:10px; font-weight:700; font-size:14px; transition:transform .3s; z-index:200; white-space:nowrap; }
-    .toast.show { transform:translateX(-50%) translateY(0); }
-    @media(max-width:768px) {
-      .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
-      .modal { border-radius:20px 20px 0 0; max-width:100%; max-height:90vh; padding:8px 20px 32px; }
-      .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+    header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    header img { height: 32px; }
+    header h1 { font-size: 18px; font-weight: 800; color: var(--dark); }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
+    .profile-bar { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 20px; }
+    .profile-bar img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+    .profile-bar .id { font-size: 13px; color: var(--muted); }
+    .profile-bar .appear-link { font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 700; }
+    .save-btn { margin-left: auto; background: none; border: 1.5px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 700; color: var(--dark); cursor: pointer; white-space: nowrap; }
+    .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; }
+    .event-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; }
+    .event-title { font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 4px; text-decoration: none; display: block; }
+    .event-title:hover { color: var(--primary); }
+    .event-meta { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .event-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; border: none; font-family: inherit; }
+    .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: #fff; border: 1.5px solid #fca5a5; color: #dc2626; }
+    .who-going { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .who-going a img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); display: block; }
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 15px; }
+    .loading { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .spinner { width: 28px; height: 28px; border: 3px solid #e5e7eb; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 700; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
-<div style="width:100%;max-width:560px;">
-  <a class="back-link" href="https://gather.2gather.network/">← All events</a>
-</div>
-<div class="card" id="card">
-  <div class="loading"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#1b6896;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>Loading event...</div>
-</div>
-<div class="modal-overlay" id="interest-modal">
-  <div class="modal">
-    <div class="modal-title">I'm interested</div>
-    <div class="modal-field">
-      <label class="modal-label" id="int-name-label">Name</label>
-      <input class="modal-input" id="int-name" type="text" placeholder="Your name" autocomplete="name">
+
+<header>
+  <a href="events.html"><img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather"></a>
+  <h1>My Events</h1>
+</header>
+
+<div class="container">
+  <div id="profile-bar" class="profile-bar" style="display:none;">
+    <img id="profile-photo" src="" alt="">
+    <div>
+      <div id="profile-id" class="id"></div>
+      <a id="profile-link" class="appear-link" href="#" target="_blank">View Appear profile →</a>
     </div>
-    <div class="modal-field">
-      <label class="modal-label" id="int-email-label">Email</label>
-      <input class="modal-input" id="int-email" type="email" placeholder="you@example.com" autocomplete="email">
-    </div>
-    <p class="error-msg" id="int-error"></p>
-    <div class="modal-actions">
-      <button class="btn btn-primary" style="flex:1;" onclick="submitInterest()">Submit</button>
-      <button class="btn btn-outline" onclick="closeInterestModal()">Cancel</button>
-    </div>
+    <button class="save-btn" onclick="saveBookmark()">🔖 Save my events</button>
   </div>
-</div>
-<!-- RSVP Modal -->
-<div class="modal-overlay" id="rsvp-modal">
-  <div class="modal">
-    <!-- Step 1: Choose method -->
-    <div id="rsvp-step-1">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div class="modal-title" style="margin-bottom:0;">+1 I'm going!</div>
-        <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
-      </div>
-      <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Appear code</button>
-      <button class="btn btn-outline" onclick="showStep('anon')" style="width:100%;justify-content:center;">Register anonymously</button>
-    </div>
-    <!-- Step 1a: Appear options -->
-    <div id="rsvp-step-appear" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Register with Appear</div>
-      </div>
-      <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Appear QR code</button>
-      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Appear ID</button>
-      <div style="text-align:center;">
-        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">How do I find my Appear ID?</button>
-        <div id="appear-help" style="display:none;margin-top:8px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--muted);text-align:left;line-height:1.6;">
-          Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and copy your code under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
-        </div>
-      </div>
-    </div>
-    <!-- Step 1b: Anonymous -->
-    <div id="rsvp-step-anon" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Register anonymously</div>
-      </div>
-      <input class="modal-input" id="anon-name" type="text" placeholder="Name (optional)" autocomplete="name" style="margin-bottom:10px;">
-      <input class="modal-input" id="anon-email" type="email" placeholder="Email (optional)" autocomplete="email" style="margin-bottom:14px;">
-      <div style="padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;margin-bottom:14px;">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Register on Appear once. Show up anywhere.</p>
-        <a href="http://appear.network" target="_blank" class="btn btn-outline" style="font-size:13px;padding:8px 14px;width:100%;justify-content:center;display:flex;">Sign up for Appear</a>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register</button>
-        <button class="btn btn-outline" onclick="closeRsvpModal()">Cancel</button>
-      </div>
-    </div>
-    <!-- Step 1b: QR scanner -->
-    <div id="rsvp-step-qr" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Scan your QR code</div>
-      </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Point your camera at your Appear profile QR code.</p>
-      <div style="position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;">
-        <video id="rsvp-video" style="width:100%;display:block;" playsinline autoplay muted></video>
-        <canvas id="rsvp-canvas" style="display:none;"></canvas>
-        <div style="position:absolute;inset:0;border:3px solid var(--primary);border-radius:12px;pointer-events:none;opacity:0.6;"></div>
-      </div>
-      <p id="rsvp-scan-status" style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px;">Scanning...</p>
-      <button class="btn btn-outline" onclick="cancelQrScan()" style="width:100%;justify-content:center;">Cancel</button>
-    </div>
-    <!-- Step 1c: Manual entry -->
-    <div id="rsvp-step-manual" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Enter your Appear ID</div>
-      </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Your short ID from your Appear profile (e.g. w.hss or 0VfHB).</p>
-      <input class="modal-input" id="rsvp-manual-input" type="text" placeholder="Your Appear ID" autocomplete="off" style="margin-bottom:8px;">
-      <p class="error-msg" id="rsvp-manual-error"></p>
-      <div class="modal-actions" style="margin-top:8px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="submitManualId()">Look me up</button>
-        <button class="btn btn-outline" onclick="closeRsvpModal()">Cancel</button>
-      </div>
-    </div>
-    <!-- Step 2: Photo confirmation -->
-    <div id="rsvp-step-confirm" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
-      </div>
-      <div style="text-align:center;margin-bottom:20px;">
-        <img id="rsvp-confirm-photo" src="" alt="" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin-bottom:12px;">
-        <p id="rsvp-confirm-id" style="font-size:13px;color:var(--muted);"></p>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-primary" style="flex:1;" onclick="confirmRsvp()">✓ Yes, that's me</button>
-        <button class="btn btn-outline" onclick="showStep(1)">Not me</button>
-      </div>
-    </div>
-    <!-- Step 2b: ID not found -->
-    <div id="rsvp-step-notfound" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">ID not found</div>
-      </div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Appear ID in our community. You can still register anonymously.</p>
-      <div class="modal-actions">
-        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register anonymously</button>
-        <button class="btn btn-outline" onclick="showStep(1)">Try again</button>
-      </div>
-    </div>
-    <!-- Step 3: Loading -->
-    <div id="rsvp-step-loading" style="display:none;text-align:center;padding:20px 0;">
-      <div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>
-      <p id="rsvp-loading-msg" style="font-size:14px;color:var(--muted);">Looking up your profile...</p>
-    </div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    Loading your events...
   </div>
-</div>
-<!-- QR Code Modal -->
-<div class="modal-overlay" id="qr-modal" style="z-index:250;">
-  <div class="modal" style="max-width:320px;text-align:center;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:16px;font-weight:700;color:var(--dark);">Event QR Code</div>
-      <button onclick="closeQrModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
-    </div>
-    <div id="qr-loading" style="padding:20px 0;color:var(--muted);font-size:13px;">
-      <div style="width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
-      Generating QR code...
-    </div>
-    <canvas id="qr-canvas" style="display:none;border-radius:10px;max-width:100%;"></canvas>
-    <p id="qr-event-title" style="font-size:13px;font-weight:700;color:var(--dark);margin:12px 0 4px;"></p>
-    <p id="qr-short-url" style="font-size:12px;color:var(--muted);margin-bottom:16px;word-break:break-all;"></p>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="downloadQr()">⬇ Download PNG</button>
-      <button class="btn btn-outline" onclick="closeQrModal()">Close</button>
-    </div>
+
+  <div id="not-found" style="display:none;" class="empty">
+    <p style="font-size:32px;margin-bottom:12px;">🤔</p>
+    <p>No Appear ID found.<br>Register for an event first, or check your link.</p>
+    <a href="events.html" style="display:inline-block;margin-top:16px;color:var(--primary);font-weight:700;">← Browse events</a>
   </div>
-</div>
-<div class="modal-overlay" id="edit-pin-modal">
-  <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div class="modal-title" style="margin-bottom:0;">✏️ Edit this event</div>
-      <button onclick="closeEditPin()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
-    </div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Enter the 4-digit PIN you set when posting this event.</p>
-    <input class="modal-input" id="edit-pin-input" type="tel" maxlength="4" placeholder="••••" style="letter-spacing:0.3em;text-align:center;font-size:20px;margin-bottom:8px;" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
-    <p class="error-msg" id="edit-pin-error" style="margin-bottom:12px;">Incorrect PIN. Please try again.</p>
-    <div class="modal-actions">
-      <button class="btn btn-primary" style="flex:1;" onclick="submitEditPin()">Unlock</button>
-      <button class="btn btn-outline" onclick="closeEditPin()">Cancel</button>
-    </div>
+
+  <div id="empty" style="display:none;" class="empty">
+    <p style="font-size:32px;margin-bottom:12px;">📅</p>
+    <p>No upcoming events registered yet.</p>
+    <a href="events.html" style="display:inline-block;margin-top:16px;color:var(--primary);font-weight:700;">← Browse events</a>
   </div>
+
+  <div id="events-list"></div>
 </div>
-<div class="modal-overlay" id="read-notes-modal">
-  <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div class="modal-title" style="margin-bottom:0;">📝 Shared notes</div>
-      <button onclick="closeReadNotes()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
-    </div>
-    <div id="read-notes-content" style="font-size:14px;color:var(--dark);line-height:1.7;white-space:pre-wrap;max-height:60vh;overflow-y:auto;"></div>
-  </div>
-</div>
+
 <div class="toast" id="toast"></div>
+
 <script>
-
-const ROOMS = {
-  "The Commons":            "https://events.2gather.network/events/yvrgej/zkxbzq",
-  "Ikigai room":            "https://events.2gather.network/events/eojvkq/qwmpgq",
-  "Wellness room":          "https://events.2gather.network/events/336936/504368",
-  "Community Care room":    "https://events.2gather.network/events/yvrgej/gypxbp",
-  "Co-Create room":         "https://events.2gather.network/events/yvrgej/rwbplq",
-  "Coworking room":         "https://events.2gather.network/events/yvrgej/gpbqox",
-  "Conference room":        "https://events.2gather.network/events/335887/502618",
-};
-
-const ROOM_EMOJI = {
-  "The Commons": "🌳", "Ikigai room": "🧭", "Wellness room": "💛",
-  "Community Care room": "💜", "Co-Create room": "🎨", "Coworking room": "💻",
-  "Abundance room": "🌻", "Conference room": "🎤",
-};
-
-let RECURRING_EVENTS = [];
-
-function getNextDate(dayOfWeek) {
-  const now = new Date();
-  const d = new Date(now);
-  d.setHours(0,0,0,0);
-  const diff = (dayOfWeek - d.getDay() + 7) % 7 || 7;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0,10);
-}
-
-function parseSheetTime(val) {
-  if (!val) return "";
-  const s = String(val);
-  if (/^\d{2}:\d{2}$/.test(s)) return s;
-  if (s.includes("T")) { const t = s.split("T")[1]; return t.substring(0, 5); }
-  return s;
-}
-
-function recurToEv(r) {
-  return {
-    id: r.id, title: r.title||"",
-    date: getNextDate(r.dayOfWeek),
-    time: r.time||"", endtime: r.endtime||"",
-    format: r.format||"", location: r.location||"",
-    room: r.room||"", description: r.description||"",
-    host: r.host||"", hostlink: r.hostlink||"",
-    contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
-    cooplink: r.cooplink||"", paymentlink: r.paymentlink||"",
-    meetinglink: ROOMS[r.room] || "", showLinks: r.showLinks||"",
-    otherExchange: r.otherExchange||"", exchangeType: r.exchangeType||"",
-    recurFreq: r.recurFreq||"weekly", experience: r.experience||"",
-    imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
-    interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
-    sharedNotesEnabled: r.sharedNotesEnabled||false, sharedNotes: r.sharedNotes||"",
-    host_note: r.host_note||"",
-    cancelled: r.cancelled||false,
-  };
-}
-
 const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
-
-function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function jsonp(params) {
-  return new Promise((resolve, reject) => {
-    const cb = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-    let done = false;
-    const finish = (fn) => { if (done) return; done = true; delete window[cb]; try { el.remove(); } catch(e){} fn(); };
-    const t = setTimeout(() => finish(() => reject(new Error("timeout"))), 20000);
-    window[cb] = (d) => { clearTimeout(t); finish(() => resolve(d)); };
-    const qs = Object.entries(params).map(([k,v]) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
-    const el = document.createElement("script");
-    el.src = GS_URL + "?" + qs + "&callback=" + cb;
-    el.onerror = () => finish(() => reject(new Error("error")));
-    document.head.appendChild(el);
-  });
-}
-
-function parseDate(v) {
-  if (!v) return "";
-  const s = String(v).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  if (s.includes("T")) return s.split("T")[0];
-  const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (m) return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");
-  return s;
-}
-
-function parseTime(v) {
-  if (!v) return "";
-  const m = String(v).trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-  if (!m) return "";
-  let h = parseInt(m[1]); const mn = m[2], ap = (m[3]||"").toUpperCase();
-  if (ap==="PM" && h<12) h+=12;
-  if (ap==="AM" && h===12) h=0;
-  return String(h).padStart(2,"0")+":"+mn;
-}
-
-function fmtDate(date, time, endtime) {
-  if (!date) return "";
-  const d = new Date(date+"T"+(time||"00:00"));
-  let s = d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
-  if (time) {
-    s += " · " + new Date(date+"T"+time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    if (endtime) s += " - " + new Date(date+"T"+endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    try { const tzAbbr = new Date(date+"T"+time).toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); s += " " + tzAbbr; } catch(e){}
-  }
-  return s;
-}
-
-function toEv(r) {
-  return {
-    id: String(r.id||""), title: r.title||"",
-    date: parseDate(r.date), time: parseTime(r.startTime), endtime: parseTime(r.endTime),
-    format: r.format||"", location: r.location||"", room: r.room||"",
-    description: r.description||"", host: r.host||"", hostlink: r.hostlink||"",
-    contactEmail: r.contactEmail||"", contactPhone: r.contactPhone||"",
-    cooplink: r.cooplink||"", paymentlink: r.paymentlink||"", meetinglink: r.meetinglink||"",
-    showLinks: r.showLinks||"", otherExchange: r.otherExchange||"",
-    exchangeType: r.exchangeType||"", recurFreq: r.recurFreq||"",
-    experience: r.experience||"", imageUrl: r.imageUrl||"", detailImageUrl: r.detailImageUrl||"", lifeStage: r.lifeStage||"", keywords: r.keywords||"", venue: r.venue||"",
-    interestedEnabled: r.interestedEnabled||"off", interested: r.interested||"",
-    sharedNotesEnabled: r.sharedNotesEnabled==="true"||r.sharedNotesEnabled===true||false, sharedNotes: r.sharedNotes||"",
-    passcode: r.passcode||"",
-    host_note: r.host_note||"",
-    cancelled: r.cancelled==="true"||r.cancelled===true||false,
-    categories: (r.categories||"").split(",").map(s=>s.trim()).filter(Boolean),
-    venue: r.venue||"",
-  };
-}
-
-function render(ev) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const eventDay = ev.date ? new Date(ev.date + "T00:00:00") : null;
-  const isPast = eventDay && eventDay < today;
-
-  const expMap = {connected:"🌐 Connected",expressed:"🎨 Expressed",nourished:"🥘 Nourished from food/drink",energized:"🌀 Energized",playful:"🏓 Playful",rested:"💙 Rested"};
-  const catMap = {arts:"Arts/culture",movement:"Physical health/wellness",learning:"Learning/discovery",nature:"Nature/outdoors",professional:"Work/skills",creative:"Creative making",faith:"Inner life",resources:"Resource sharing",care:"Mental health/wellness",social:"Social gathering",family:"Family/caregiving/home",food:"Food/drink",wealth:"Wealth/abundance"};
-  const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"🤝 No ask",free:"🎁 Free",testimonial:"⭐ Testimonial",share:"🔗 Share"};
-
-  const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
-    : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
-    : ev.format==="both" ? `<span class="format-badge badge-hybrid">🔀 Hybrid</span>` : "";
-
-  const recurBadge = ev.recurFreq ? `<span class="format-badge badge-recurring">🔁 ${ev.recurFreq==="monthly"?"Monthly":"Weekly"}</span>` : "";
-
-  const roomUrl = ROOMS[ev.room] || "https://events.2gather.network/events/yvrgej/zkxbzq";
-  const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
-  const isToday = eventDay && eventDay.toDateString() === today.toDateString();
-  const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday
-    ? `<a href="${esc(ev.meetinglink || roomUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
-    : "";
-  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room
-    ? `<div class="meta-item"><span>${roomEmoji}</span><span>Meeting room: <a href="${esc(roomUrl)}" target="_blank" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
-    : "";
-
-  const locLink = ev.location
-    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`
-    : "In-person";
-
-  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener">${esc(ev.host)}</a>` : esc(ev.host);
-  const firstName = (ev.host||"").trim().split(/\s+/)[0]||"Host";
-
-  const sl = ev.showLinks||"";
-  const lines = [
-    ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
-    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${fmtBadge}${recurBadge}</div>` : "",
-    ev.experience ? `<div class="meta-item"><span>✨</span><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong>Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : "",
-    (ev.categories && ev.categories.length) ? `<div class="meta-item" style="margin-top:2px;align-items:flex-start;"><span>🏷️</span><span style="font-size:13px;color:var(--muted);white-space:normal;word-break:break-word;flex:1;">${ev.categories.map(c=>catMap[c]||c).join(", ")}</span></div>` : "",
-    meetingRoomLine,
-    (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
-    (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
-    ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
-    ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
-    ev.host ? `<div class="meta-item"><span>👤</span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
-    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
-
-    (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
-    (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
-  ].filter(Boolean).join("");
-
-  const exchange = ev.exchangeType
-    ? `<div style="margin-bottom:18px;">
-        <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin:0 0 8px;">What ${esc(firstName)} invites</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">${ev.exchangeType.split(",").filter(Boolean).map(t=>`<span style="font-size:13px;font-weight:600;padding:5px 12px;border-radius:20px;background:#f9fafb;border:1px solid var(--border);color:var(--dark);">${typeMap[t]||(t==="other"?"✏️ "+(ev.otherExchange||"Other"):t)}</span>`).join("")}</div>
-       </div>` : "";
-
-  const hasInterest = ev.interestedEnabled && ev.interestedEnabled !== "off";
-  const hasNotes = ev.sharedNotesEnabled;
-  const contactDisplay = (ev.contactEmail && sl.includes("contact")) ? ev.contactEmail
-    : (ev.contactPhone && sl.includes("contact")) ? ev.contactPhone : "";
-  const contactLink = contactDisplay
-    ? `<a href="${contactDisplay.includes("@") ? "mailto:" : "tel:"}${esc(contactDisplay)}" style="color:var(--primary);font-weight:600;">${esc(contactDisplay)}</a>`
-    : "the host directly";
-
-  const engagementSection = (hasInterest || hasNotes) ? `
-    <div id="engagement-section" style="margin:0 0 18px;">
-      ${hasInterest ? `
-        <div id="interest-area">
-          <button class="btn btn-primary" onclick="openRsvpModal()" id="interest-btn">+1 I'm going</button>
-          <div id="cancel-rsvp-area" style="display:none;margin-top:8px;">
-            <button onclick="cancelRsvp()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">Cancel RSVP</button>
-          </div>
-        </div>
-        <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-          ✓ You're registered! If you can't make it, reach out to ${contactLink}.
-        </div>
-        <div id="post-rsvp-actions" style="display:none;margin-top:12px;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid var(--border);">
-          <a id="my-events-link" href="myevents.html" style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;">📅 View my events page</a>
-        </div>
-        <div id="who-is-going" style="display:none;margin-top:16px;">
-          <p style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;">Others going</p>
-          <div id="who-is-going-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-        </div>
-      ` : ""}
-      ${ev.host_note ? `
-        <div id="host-note-section" style="display:none;margin-top:16px;padding:14px 16px;background:#E8F2F9;border-radius:10px;border:1.5px solid #1B6896;">
-          <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#1B6896;margin-bottom:8px;">Note from the host</p>
-          <p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.host_note)}</p>
-        </div>
-      ` : ""}
-      ${hasNotes ? `
-        <div id="notes-section" style="display:none;margin-top:16px;">
-          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">📋 This is a shared notes board - anything you add is seen by the host and all participants.</p>
-          <textarea id="shared-notes-area" style="width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--dark);outline:none;">${esc(ev.sharedNotes||"")}</textarea>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-            <button class="btn btn-outline" onclick="saveSharedNotes()" id="save-notes-btn" style="font-size:13px;padding:8px 16px;">Save</button>
-            <span id="notes-saved-msg" style="display:none;font-size:13px;color:#4CAF7D;font-weight:700;">✓ Saved</span>
-          </div>
-        </div>
-      ` : ""}
-    </div>` : "";
-
-  document.getElementById("card").innerHTML = `
-    ${ev.imageUrl ? `<img class="cover-img" src="${esc(ev.imageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
-    ${ev.cancelled ? `<div style="background:#FEE2E2;color:#c0392b;font-size:13px;font-weight:700;letter-spacing:0.07em;padding:10px 24px;border-bottom:1px solid #FECACA;text-align:center;">THIS EVENT HAS BEEN CANCELLED</div>` : ""}
-    ${isPast ? `<div class="past-banner">PAST EVENT</div>` : ""}
-    ${ev.isPrivate ? `<div style="background:#FFF8E7;border-bottom:1px solid #F0B429;padding:8px 24px;font-size:12px;font-weight:700;color:#7B5800;letter-spacing:0.05em;">🔒 PRIVATE EVENT - Share this link only with your guests</div>` : ""}
-    <div class="card-body">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
-        <h1 style="margin:0;flex:1;">${esc(ev.title)}</h1>
-        ${joinBtn}
-      </div>
-      <div class="meta">${lines}</div>
-      ${exchange}
-      ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
-      ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" target="_blank" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
-      ${engagementSection}
-      <hr class="divider">
-      <div class="actions">
-        <button class="btn btn-primary" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
-        ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
-        <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
-        <button class="btn btn-outline" onclick="openQrModal()" title="Get QR code" style="padding:10px 14px;">⊞ QR</button>
-        <button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>
-      </div>
-
-    </div>
-    <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
-      <a href="https://gather.2gather.network/" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
-    </div>`;
-
-  document.title = ev.title || "Event";
-  const _metaDesc = (ev.description||"").slice(0,160).replace(/\n/g," ");
-  const _setMeta = (id, val) => { const el = document.getElementById(id); if(el) el.setAttribute("content", val||""); };
-  _setMeta("meta-description", _metaDesc);
-  _setMeta("og-title", ev.title||"");
-  _setMeta("og-description", _metaDesc);
-  _setMeta("og-image", ev.imageUrl||"");
-  _setMeta("og-url", window.location.href);
-  _setMeta("x-title", ev.title||"");
-  _setMeta("x-description", _metaDesc);
-  _setMeta("x-image", ev.imageUrl||"");
-
-  _currentEv = ev;
-
-  // if already registered, show confirmed state
-  if (ev.interestedEnabled && ev.interestedEnabled !== "off") {
-    try {
-      if (localStorage.getItem("db-interested-" + ev.id) === "1") {
-        const btn = document.getElementById("interest-btn");
-        if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
-        const cancelArea = document.getElementById("cancel-rsvp-area");
-        if (cancelArea) cancelArea.style.display = "block";
-        // Show my events link
-        const postRsvp = document.getElementById("post-rsvp-actions");
-        const savedId = localStorage.getItem("appear-id");
-        if (postRsvp && savedId) {
-          document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(savedId);
-          postRsvp.style.display = "block";
-        }
-        loadWhoIsGoing();
-        const confirmed = document.getElementById("interest-confirmed");
-        if (confirmed) confirmed.style.display = "block";
-        const notes = document.getElementById("notes-section");
-        if (notes) notes.style.display = "block";
-        const hostNoteEl = document.getElementById("host-note-section");
-        if (hostNoteEl) hostNoteEl.style.display = "block";
-      }
-    } catch(e) {}
-  }
-}
-
-
-let _currentEv = null; // store rendered event for calendar lookup
-
-function addToCalendarById(id) {
-  if (_currentEv && _currentEv.id === id) addToCalendar(_currentEv);
-}
-
-function addToCalendar(ev) {
-  if (!ev.date) return;
-  const pad = n => String(n).padStart(2,"0");
-  const toGCal = (d,t) => { const dt = new Date(d+"T"+(t||"00:00")); return dt.getFullYear()+pad(dt.getMonth()+1)+pad(dt.getDate())+"T"+pad(dt.getHours())+pad(dt.getMinutes())+"00"; };
-  const start = toGCal(ev.date, ev.time);
-  const end   = ev.endtime ? toGCal(ev.date, ev.endtime) : toGCal(ev.date, ev.time);
-  const loc   = ev.location || ev.meetinglink || "";
-  const rawDesc = ev.description || "";
-  const desc = rawDesc.length > 400 ? rawDesc.slice(0, 400) + "..." : rawDesc;
-  const params = new URLSearchParams({
-    text: ev.title,
-    dates: start + "/" + end,
-    details: desc,
-    location: loc,
-  });
-  // Only add recurrence rule for template rows (rec-), not specific occurrences
-  const isOccurrence = ev.id && ev.id.startsWith("recurring-");
-  if (!isOccurrence) {
-    if (ev.recurFreq === "weekly") {
-      const day = ["SU","MO","TU","WE","TH","FR","SA"][new Date(ev.date+"T12:00").getDay()];
-      params.append("recur", "RRULE:FREQ=WEEKLY;BYDAY="+day);
-    } else if (ev.recurFreq === "monthly") {
-      params.append("recur", "RRULE:FREQ=MONTHLY");
-    }
-  }
-  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
-}
-
-async function copyLink() {
-  const btn = document.getElementById("copy-btn");
-  const origText = btn ? btn.innerHTML : "";
-  if (btn) btn.innerHTML = "⏳ Getting link...";
-
-  try {
-    const id = _currentEv && _currentEv.id;
-    if (!id) throw new Error("no id");
-    const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(id)}`);
-    const data = await res.json();
-    if (data.status !== "ok" || !data.code) throw new Error("no code");
-    const shortUrl = `https://go.2gather.network/${data.code}`;
-    await navigator.clipboard.writeText(shortUrl);
-    if (btn) { btn.innerHTML = "✓ Copied!"; setTimeout(() => btn.innerHTML = origText, 2000); }
-  } catch(e) {
-    if (btn) btn.innerHTML = origText;
-    const fallbackUrl = window.location.href;
-    navigator.clipboard?.writeText(fallbackUrl).then(() => showToast("🔗 Link copied!")).catch(() => prompt("Copy this link:", fallbackUrl));
-  }
-}
-
-async function share() {
-  // Always use short URL for sharing
-  let url = window.location.href;
-  try {
-    const id = _currentEv && _currentEv.id;
-    if (id) {
-      const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(id)}`);
-      const data = await res.json();
-      if (data.status === "ok" && data.code) url = `https://go.2gather.network/${data.code}`;
-    }
-  } catch(e) { /* fall back to raw URL */ }
-
-  const showCopyUI = () => {
-    const existing = document.getElementById("share-url-box");
-    if (existing) { existing.remove(); return; }
-    const box = document.createElement("div");
-    box.id = "share-url-box";
-    box.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:9999;width:min(340px,92vw);";
-    box.innerHTML = `<p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Copy this link to share:</p><div style="display:flex;gap:8px;"><input id="share-url-input" value="${url}" readonly style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--dark);min-width:0;"><button id="share-copy-btn" onclick="(()=>{const i=document.getElementById('share-url-input');i.select();navigator.clipboard?.writeText(i.value).catch(()=>{});document.getElementById('share-copy-btn').textContent='✓';setTimeout(()=>document.getElementById('share-url-box')?.remove(),1200);})()" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Copy</button></div>`;
-    document.body.appendChild(box);
-    setTimeout(() => { const i = document.getElementById("share-url-input"); i?.select(); }, 60);
-    setTimeout(() => box.remove(), 8000);
-  };
-
-  const copyFallback = () => {
-    navigator.clipboard?.writeText(url)
-      .then(() => showToast("🔗 Link copied!"))
-      .catch(() => showCopyUI());
-  };
-
-  if (navigator.share) {
-    navigator.share({ title: document.title, url })
-      .catch(err => { if (err.name !== "AbortError") copyFallback(); });
-  } else {
-    copyFallback();
-  }
-}
-
-function showError(msg) {
-  document.getElementById("card").innerHTML = `<div class="error">${esc(msg)}</div>`;
-}
+const APPEAR_BASE = "https://appear.network/dl/page/s/e13594/r/";
+let _appearId = null;
+let _allEvents = [];
 
 function showToast(msg) {
   const t = document.getElementById("toast");
-  if (!t) return;
-  t.textContent = msg; t.classList.add("show");
+  t.textContent = msg;
+  t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-// ── RSVP Modal ──────────────────────────────────────────────────
-const APPEAR_BASE = "https://appear.network/dl/page/s/e13594/r/";
-let _rsvpAppearId = null;
-let _qrStream = null;
-let _qrScanInterval = null;
+function saveBookmark() {
+  showToast("Bookmark this page (Ctrl+D / ⌘+D) to save your events page!");
+}
 
-function openRsvpModal() {
-  _rsvpAppearId = null;
-  document.getElementById("rsvp-modal").classList.add("open");
-
-  // Check if we already know who this person is
-  const savedId = localStorage.getItem("appear-id");
-  if (savedId) {
-    lookupAndConfirm(savedId);
-  } else {
-    showStep(1);
+function formatDate(dateStr, time) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T12:00");
+  const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  let s = `${dayNames[d.getDay()]}, ${monthNames[d.getMonth()]} ${d.getDate()}`;
+  if (time) {
+    const [h, m] = time.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    s += ` · ${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
   }
+  return s;
 }
 
-function closeRsvpModal() {
-  document.getElementById("rsvp-modal").classList.remove("open");
-  cancelQrScan();
+function addToCalendar(ev) {
+  const pad = n => String(n).padStart(2,"0");
+  const toGCal = (d,t) => { const dt = new Date(d+"T"+(t||"00:00")); return dt.getFullYear()+pad(dt.getMonth()+1)+pad(dt.getDate())+"T"+pad(dt.getHours())+pad(dt.getMinutes())+"00"; };
+  const start = toGCal(ev.date, ev.startTime);
+  const end = ev.endTime ? toGCal(ev.date, ev.endTime) : toGCal(ev.date, ev.startTime);
+  const desc = (ev.description || "").length > 400 ? (ev.description||"").slice(0,400)+"..." : (ev.description||"");
+  const params = new URLSearchParams({ text: ev.title, dates: start+"/"+end, details: desc, location: ev.location||ev.meetinglink||"" });
+  window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
 }
 
-function showStep(n) {
-  ["rsvp-step-1","rsvp-step-appear","rsvp-step-anon","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-  if (n === 1) document.getElementById("rsvp-step-1").style.display = "block";
-  else if (n === "appear") document.getElementById("rsvp-step-appear").style.display = "block";
-  else if (n === "anon") document.getElementById("rsvp-step-anon").style.display = "block";
-  else if (n === "qr") document.getElementById("rsvp-step-qr").style.display = "block";
-  else if (n === "manual") document.getElementById("rsvp-step-manual").style.display = "block";
-  else if (n === "confirm") document.getElementById("rsvp-step-confirm").style.display = "block";
-  else if (n === "notfound") document.getElementById("rsvp-step-notfound").style.display = "block";
-  else if (n === "loading") document.getElementById("rsvp-step-loading").style.display = "block";
-}
-
-function toggleAppearHelp() {
-  const el = document.getElementById("appear-help");
-  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
-}
-
-function showManualEntry() {
-  showStep("manual");
-  setTimeout(() => document.getElementById("rsvp-manual-input")?.focus(), 100);
-}
-
-// ── QR scanning ──
-async function startQrScan() {
-  showStep("qr");
-  document.getElementById("rsvp-scan-status").textContent = "Loading scanner...";
-
-  // Load jsQR first, wait for it to be ready before touching camera
-  if (!window.jsQR) {
-    const loaded = await new Promise((resolve) => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.head.appendChild(s);
-    });
-    if (!loaded) {
-      document.getElementById("rsvp-scan-status").textContent = "Could not load scanner. Enter your ID manually.";
-      setTimeout(() => showManualEntry(), 1500);
-      return;
-    }
-  }
-
-  document.getElementById("rsvp-scan-status").textContent = "Starting camera...";
-  try {
-    _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    const video = document.getElementById("rsvp-video");
-    video.srcObject = _qrStream;
-
-    // Wait for video to have actual frame data before scanning
-    await new Promise((resolve) => {
-      video.onloadeddata = resolve;
-      video.play();
-      // Fallback in case loadeddata never fires
-      setTimeout(resolve, 2000);
-    });
-
-    document.getElementById("rsvp-scan-status").textContent = "Point at your Appear QR code";
-    _qrScanInterval = setInterval(() => scanFrame(video), 250);
-  } catch(e) {
-    document.getElementById("rsvp-scan-status").textContent = "Camera not available. Please enter your ID manually.";
-    setTimeout(() => showManualEntry(), 1500);
-  }
-}
-
-function scanFrame(video) {
-  if (!window.jsQR) return;
-  const canvas = document.getElementById("rsvp-canvas");
-  if (!canvas || video.videoWidth === 0) return;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-  if (code) {
-    clearInterval(_qrScanInterval);
-    cancelQrScan();
-    const id = extractAppearId(code.data);
-    if (id) {
-      lookupAndConfirm(id);
-    } else {
-      document.getElementById("rsvp-scan-status").textContent = "QR not recognised. Try entering your ID manually.";
-      setTimeout(() => showManualEntry(), 1500);
-    }
-  }
-}
-
-function cancelQrScan() {
-  clearInterval(_qrScanInterval);
-  _qrScanInterval = null;
-  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
-  const video = document.getElementById("rsvp-video");
-  if (video) { video.srcObject = null; }
-}
-
-function extractAppearId(url) {
-  // Handles full URL: https://appear.network/dl/.../r/APPEAR_ID
-  // or bare ID typed directly
-  const match = url.match(/\/r\/([A-Za-z0-9._-]+)/);
-  if (match) return match[1];
-  // bare short ID (no slashes, reasonable length)
-  if (/^[A-Za-z0-9._-]{3,20}$/.test(url.trim())) return url.trim();
-  return null;
-}
-
-// ── Manual ID submission ──
-function submitManualId() {
-  const raw = (document.getElementById("rsvp-manual-input")?.value || "").trim();
-  const errEl = document.getElementById("rsvp-manual-error");
-  const id = extractAppearId(raw);
-  if (!id) {
-    if (errEl) { errEl.textContent = "Please enter a valid Appear ID."; errEl.style.display = "block"; }
-    return;
-  }
-  if (errEl) errEl.style.display = "none";
-  lookupAndConfirm(id);
-}
-
-// ── Profile lookup ──
-async function lookupAndConfirm(appearId) {
-  showStep("loading");
-  document.getElementById("rsvp-loading-msg").textContent = "Looking up your profile...";
-  try {
-    const res = await fetch(`${GS_URL}?action=lookupProfile&appearId=${encodeURIComponent(appearId)}`);
-    const data = await res.json();
-    if (data.found && data.photo) {
-      _rsvpAppearId = appearId;
-      document.getElementById("rsvp-confirm-photo").src = data.photo;
-      document.getElementById("rsvp-confirm-id").textContent = "Appear ID: " + appearId;
-      showStep("confirm");
-    } else {
-      showStep("notfound");
-    }
-  } catch(e) {
-    showStep("notfound");
-  }
-}
-
-// ── Confirm and save RSVP ──
-async function confirmRsvp() {
-  if (!_rsvpAppearId || !_currentEv) return;
-  showStep("loading");
-  document.getElementById("rsvp-loading-msg").textContent = "Registering you...";
-  const isPublic = confirm("Would you like others to see you're going to this event?");
-  try {
-    await fetch(`${GS_URL}?action=rsvp&appearId=${encodeURIComponent(_rsvpAppearId)}&eventId=${encodeURIComponent(_currentEv.id)}&public=${isPublic}`);
-  } catch(e) { /* best effort */ }
-  finishRsvp();
-}
-
-async function submitRsvpAnonymous() {
-  if (!_currentEv) return;
-  showStep("loading");
-  document.getElementById("rsvp-loading-msg").textContent = "Registering...";
-  const name = (document.getElementById("anon-name")?.value || "").trim();
-  const email = (document.getElementById("anon-email")?.value || "").trim();
-  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
-  try {
-    await jsonp({ action:"interest", id:_currentEv.id, entry });
-  } catch(e) {}
-  finishRsvp();
-}
-
-function finishRsvp() {
-  closeRsvpModal();
-  if (_rsvpAppearId) {
-    try { localStorage.setItem("appear-id", _rsvpAppearId); } catch(e) {}
-  }
-  const btn = document.getElementById("interest-btn");
-  if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
-  const cancelArea = document.getElementById("cancel-rsvp-area");
-  if (cancelArea) cancelArea.style.display = "block";
-  const confirmed = document.getElementById("interest-confirmed");
-  if (confirmed) confirmed.style.display = "block";
-  const notes = document.getElementById("notes-section");
-  if (notes) notes.style.display = "block";
-  const hostNoteSection = document.getElementById("host-note-section");
-  if (hostNoteSection) hostNoteSection.style.display = "block";
-  try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
-  if (_rsvpAppearId) {
-    const postRsvp = document.getElementById("post-rsvp-actions");
-    if (postRsvp) {
-      document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(_rsvpAppearId);
-      postRsvp.style.display = "block";
-    }
-  }
-  loadWhoIsGoing();
-  showToast("✓ You're registered!");
-}
-
-async function loadWhoIsGoing() {
-  if (!_currentEv) return;
-  try {
-    const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(_currentEv.id)}`);
-    const data = await res.json();
-    if (!data.attendees || data.attendees.length === 0) return;
-    const list = document.getElementById("who-is-going-list");
-    const section = document.getElementById("who-is-going");
-    if (!list || !section) return;
-    list.innerHTML = data.attendees.map(a => `
-      <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" target="_blank" title="${a.appearId}" style="display:block;width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--border);">
-        <img src="${a.photo}" alt="${a.appearId}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${a.appearId}&size=44'">
-      </a>`).join("");
-    section.style.display = "block";
-  } catch(e) {}
-}
-
-async function cancelRsvp() {
-  if (!_currentEv) return;
+async function cancelRsvp(eventId) {
   if (!confirm("Cancel your RSVP for this event?")) return;
   try {
-    const appearId = _rsvpAppearId || "";
-    await fetch(`${GS_URL}?action=cancelRsvp&appearId=${encodeURIComponent(appearId)}&eventId=${encodeURIComponent(_currentEv.id)}`);
-  } catch(e) { /* best effort */ }
-  try { localStorage.removeItem("db-interested-" + _currentEv.id); } catch(e) {}
-  const btn = document.getElementById("interest-btn");
-  if (btn) { btn.textContent = "+1 I'm going"; btn.disabled = false; btn.style.opacity = "1"; }
-  const cancelArea = document.getElementById("cancel-rsvp-area");
-  if (cancelArea) cancelArea.style.display = "none";
-  const confirmed = document.getElementById("interest-confirmed");
-  if (confirmed) confirmed.style.display = "none";
-  showToast("RSVP cancelled.");
+    await fetch(`${GS_URL}?action=cancelRsvp&appearId=${encodeURIComponent(_appearId)}&eventId=${encodeURIComponent(eventId)}`);
+    try { localStorage.removeItem("db-interested-" + eventId); } catch(e) {}
+    showToast("RSVP cancelled.");
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) { showToast("Error cancelling. Please try again."); }
 }
 
-async function saveSharedNotes() {
-  const area = document.getElementById("shared-notes-area");
-  if (!area || !_currentEv) return;
-  const notes = area.value;
-  const btn = document.getElementById("save-notes-btn");
-  if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
-  try {
-    await jsonp({ action:"sharedNotes", id:_currentEv.id, notes });
-    _currentEv.sharedNotes = notes;
-    const msg = document.getElementById("notes-saved-msg");
-    if (msg) { msg.style.display = "inline"; setTimeout(() => msg.style.display = "none", 2500); }
-  } catch(e) { console.warn("Notes save failed", e); showToast("Could not save. Try again."); }
-  if (btn) { btn.disabled = false; btn.textContent = "Save"; }
-}
+function renderEvents(registrations, events) {
+  const now = new Date();
+  now.setHours(0,0,0,0);
 
-const MASTER_PASSCODE = "6090";
+  // Match registrations to events, filter cancelled and past
+  const active = registrations
+    .filter(r => r.cancelled !== "true")
+    .map(r => {
+      const ev = events.find(e => e.id === r.eventId);
+      return ev ? { ...ev, _rsvp: r } : null;
+    })
+    .filter(Boolean)
+    .filter(ev => ev.date && new Date(ev.date + "T23:59") >= now)
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
 
-// ── QR Code ─────────────────────────────────────────────────────
-let _qrShortUrl = null;
+  document.getElementById("loading").style.display = "none";
 
-async function openQrModal() {
-  if (!_currentEv) return;
-  _qrShortUrl = null;
-  document.getElementById("qr-canvas").style.display = "none";
-  document.getElementById("qr-loading").style.display = "block";
-  document.getElementById("qr-event-title").textContent = _currentEv.title || "";
-  document.getElementById("qr-short-url").textContent = "";
-  document.getElementById("qr-modal").classList.add("open");
-
-  try {
-    const res = await fetch(`${GS_URL}?action=getShortCode&id=${encodeURIComponent(_currentEv.id)}`);
-    const data = await res.json();
-    if (data.status !== "ok" || !data.code) throw new Error("no code");
-    _qrShortUrl = `https://go.2gather.network/${data.code}`;
-  } catch(e) {
-    _qrShortUrl = window.location.href;
-  }
-
-  document.getElementById("qr-short-url").textContent = _qrShortUrl;
-  renderQr(_qrShortUrl);
-}
-
-function renderQr(url) {
-  if (!window.QRious) {
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js";
-    s.onload = () => renderQr(url);
-    s.onerror = () => { document.getElementById("qr-loading").textContent = "Could not load QR library."; };
-    document.head.appendChild(s);
+  if (active.length === 0) {
+    document.getElementById("empty").style.display = "block";
     return;
   }
-  const canvas = document.getElementById("qr-canvas");
-  new QRious({
-    element: canvas,
-    value: url,
-    size: 260,
-    foreground: "#1a1a2e",
-    background: "#ffffff",
-    level: "H",
-    padding: 16,
+
+  const list = document.getElementById("events-list");
+  list.innerHTML = "";
+
+  // Section title
+  const title = document.createElement("div");
+  title.className = "section-title";
+  title.textContent = `Upcoming (${active.length})`;
+  list.appendChild(title);
+
+  active.forEach(ev => {
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.innerHTML = `
+      <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
+      <div class="event-meta">${formatDate(ev.date, ev.startTime)}${ev.location ? " · " + ev.location : ""}</div>
+      <div class="event-actions">
+        <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
+        <button class="btn btn-danger" onclick="cancelRsvp('${ev.id}')">✕ Cancel RSVP</button>
+      </div>
+      <div id="who-${ev.id}" class="who-going"></div>
+    `;
+    list.appendChild(card);
+
+    // Load who's going for this event
+    loadAttendees(ev.id);
   });
-  document.getElementById("qr-loading").style.display = "none";
-  canvas.style.display = "block";
 }
 
-function closeQrModal() {
-  document.getElementById("qr-modal").classList.remove("open");
-  _qrShortUrl = null;
-}
-
-function downloadQr() {
-  const canvas = document.getElementById("qr-canvas");
-  const title = (_currentEv?.title || "event").replace(/[^a-z0-9]/gi, "-").toLowerCase();
-  const link = document.createElement("a");
-  link.download = `qr-${title}.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-
-function openEditPin() {
-  if (!_currentEv) return;
-  document.getElementById("edit-pin-input").value = "";
-  document.getElementById("edit-pin-error").style.display = "none";
-  document.getElementById("edit-pin-modal").classList.add("open");
-  setTimeout(() => document.getElementById("edit-pin-input").focus(), 100);
-}
-
-function closeEditPin() {
-  document.getElementById("edit-pin-modal").classList.remove("open");
-}
-
-function submitEditPin() {
-  const pin = document.getElementById("edit-pin-input").value.trim();
-  const ev = _currentEv;
-  if (!ev) return;
-  const errEl = document.getElementById("edit-pin-error");
-  if (pin !== String(ev.passcode) && pin !== MASTER_PASSCODE) {
-    errEl.style.display = "block";
-    document.getElementById("edit-pin-input").value = "";
-    document.getElementById("edit-pin-input").focus();
-    return;
-  }
-  // v4.17: use URL occurrence ID, not ev.id (which may be a stale template ID like "kickoff-001")
-  const urlId = new URLSearchParams(window.location.search).get("id") || ev.id;
-  try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
-  closeEditPin();
-  // v4.40: open edit in new tab - simpler, avoids modal stacking issues
-  const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  window.open(base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin), "_blank");
-}
-
-function openReadNotes() {
-  if (!_currentEv || !_currentEv.sharedNotes) return;
-  document.getElementById("read-notes-content").textContent = _currentEv.sharedNotes;
-  document.getElementById("read-notes-modal").classList.add("open");
-}
-function closeReadNotes() {
-  document.getElementById("read-notes-modal").classList.remove("open");
+async function loadAttendees(eventId) {
+  try {
+    const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(eventId)}`);
+    const data = await res.json();
+    if (!data.attendees || data.attendees.length === 0) return;
+    const container = document.getElementById("who-" + eventId);
+    if (!container) return;
+    const label = document.createElement("p");
+    label.style.cssText = "font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;margin-top:12px;";
+    label.textContent = "Others going";
+    container.appendChild(label);
+    data.attendees.forEach(a => {
+      if (a.appearId === _appearId) return; // skip self
+      const link = document.createElement("a");
+      link.href = APPEAR_BASE + encodeURIComponent(a.appearId);
+      link.target = "_blank";
+      const img = document.createElement("img");
+      img.src = a.photo;
+      img.alt = a.appearId;
+      img.title = a.appearId;
+      img.onerror = () => { img.src = "https://ui-avatars.com/api/?name=" + a.appearId + "&size=36"; };
+      link.appendChild(img);
+      container.appendChild(link);
+    });
+  } catch(e) {}
 }
 
 async function init() {
-  const inIframe = window.self !== window.top;
-  // hide back link when in iframe - the modal provides navigation
-  if (inIframe) {
-    const backBar = document.querySelector('body > div:first-child');
-    if (backBar) backBar.style.display = "none";
-  }
-  const id = new URLSearchParams(window.location.search).get("id");
-  if (!id) { render(PREVIEW_EVENT); return; }
+  // Get Appear ID from URL or localStorage
+  const params = new URLSearchParams(window.location.search);
+  _appearId = params.get("id") || localStorage.getItem("appear-id");
 
-  // If a template row ID (rec-) is passed, resolve to next occurrence in-place
-  if (id.startsWith("rec-")) {
-    try {
-      const sheetData = await jsonp({ t: Date.now() });
-      const allRows = (sheetData.events || []).filter(r => r.id);
-      const tmpl = allRows.find(r => String(r.id) === id);
-      if (tmpl && tmpl.dayOfWeek) {
-        const slug = (tmpl.title || "").toLowerCase().replace(/\s+/g, "-");
-        const nextDate = getNextDate(parseInt(tmpl.dayOfWeek));
-        const occId = `recurring-${slug}-${nextDate}`;
-        const recEv = { ...toEv(tmpl), dayOfWeek: parseInt(tmpl.dayOfWeek) || 0, time: parseSheetTime(tmpl.startTime), endtime: parseSheetTime(tmpl.endTime), id: occId };
-        const ev = recurToEv(recEv);
-        ev.id = occId;
-        ev.date = nextDate;
-        const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + occId);
-        if (noteRow) {
-          const _today = new Date(); _today.setHours(0,0,0,0);
-          if (new Date(nextDate + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
-        }
-        render(ev);
-        return;
-      }
-    } catch(e) {}
-    showError("Event not found.");
+  if (!_appearId) {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("not-found").style.display = "block";
     return;
   }
-  // Check recurring events (IDs are dynamic: recurring-{slug}-{YYYY-MM-DD})
-  if (id.startsWith("recurring-")) {
-    const dateStr = id.slice(-10);
-    const slug    = id.slice("recurring-".length, id.length - 11);
-    try {
-      const sheetData = await jsonp({ t: Date.now() });
-      const allRows = (sheetData.events || []).filter(r => r.id);
-      // Build RECURRING_EVENTS from rec- rows in sheet
-      RECURRING_EVENTS = allRows
-        .filter(r => String(r.id).startsWith("rec-") && r.recurFreq && r.dayOfWeek)
-        .map(r => ({ ...toEv(r), dayOfWeek: parseInt(r.dayOfWeek) || 0, time: parseSheetTime(r.startTime), endtime: parseSheetTime(r.endTime) }));
-      const recurMatch = RECURRING_EVENTS.find(r =>
-        r.title.toLowerCase().replace(/\s+/g, "-") === slug
-      );
-      if (recurMatch) {
-        const ev = recurToEv(recurMatch);
-        ev.id = id;
-        ev.date = dateStr;
-        const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + id);
-        if (noteRow && dateStr) {
-          const _today = new Date(); _today.setHours(0,0,0,0);
-          if (new Date(dateStr + "T00:00:00") >= _today) ev.occurrenceNote = noteRow.description;
-        }
-        render(ev);
-        return;
-      }
-    } catch(e) {
-      showError("Could not load event. Please try again.");
-      return;
-    }
+
+  // Update URL if came from localStorage
+  if (!params.get("id")) {
+    history.replaceState(null, "", "myevents.html?id=" + encodeURIComponent(_appearId));
   }
 
+  // Load profile
   try {
-    const data = await jsonp({ t: Date.now() });
-    const ev = (data.events||[]).filter(r=>r.id).map(toEv).find(e=>e.id===id);
-    if (!ev) { showError("Event not found."); return; }
-    render(ev);
+    const profileRes = await fetch(`${GS_URL}?action=lookupProfile&appearId=${encodeURIComponent(_appearId)}`);
+    const profile = await profileRes.json();
+    if (profile.found && profile.photo) {
+      document.getElementById("profile-photo").src = profile.photo;
+    } else {
+      document.getElementById("profile-photo").src = "https://ui-avatars.com/api/?name=" + _appearId + "&size=48";
+    }
   } catch(e) {
-    showError("Could not load event. Please try again.");
+    document.getElementById("profile-photo").src = "https://ui-avatars.com/api/?name=" + _appearId + "&size=48";
+  }
+  document.getElementById("profile-id").textContent = "Appear ID: " + _appearId;
+  document.getElementById("profile-link").href = APPEAR_BASE + encodeURIComponent(_appearId);
+  document.getElementById("profile-bar").style.display = "flex";
+
+  // Load registrations + all events in parallel
+  try {
+    const [regRes, evRes] = await Promise.all([
+      fetch(`${GS_URL}?action=getRegistrations&appearId=${encodeURIComponent(_appearId)}`),
+      fetch(`${GS_URL}?t=${Date.now()}`)
+    ]);
+    const regData = await regRes.json();
+    const evData = await evRes.json();
+    renderEvents(regData.registrations || [], evData.events || []);
+  } catch(e) {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("empty").style.display = "block";
   }
 }
 
-
-const PREVIEW_EVENT = {
-  id: "preview", title: "Monday CoWorking",
-  date: new Date().toISOString().slice(0,10),
-  time: "09:00", endtime: "12:00",
-  format: "both", room: "The Commons", location: "23000 Lakeview Dr, Mountlake Terrace, WA 98043",
-  host: "Jessie Upp", hostlink: "https://appear.network/dl/page/s/e13594/r/w.hssQR.Q7CnpNDnVJ6DwQ",
-  contactEmail: "jessie@appear.network",
-  description: "Creators create. Start your week with other independents. Share what you're working on, what you offer, and what you need. Compatible people and opportunities show up from there. Stay for open coworking - or keep circulating what you brought into the room. Login virtually or join in person, right off the light rail.",
-  experience: "connected,expressed,energized", exchangeType: "spread,feedback", showLinks: "contact", recurFreq: "weekly",
-  imageUrl: "https://lh3.googleusercontent.com/d/1cNqWkDAo6RfZDetJ0bkAM9x0UWbHImNC",
-  detailImageUrl: "", categories: ["arts","learning","professional","creative","resources","care","social","wealth"], otherExchange: "",
-  contactPhone: "", cooplink: "", paymentlink: "", meetinglink: "",
-  lifeStage: "", keywords: "", isPrivate: false,
-  interestedEnabled: "off", interested: "", sharedNotesEnabled: false, sharedNotes: "",
-};
-
 init();
 </script>
-<!-- event.html v4.59 -->
+
+<!-- myevents.html v1.0 -->
 </body>
 </html>
