@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.60
-  v4.60 - normalize Appear ID (strip dots); fix modal title; accessible help text; anon copy
+  event.html Version 4.61
+  v4.60 - normalize Member Card number (strip dots); fix modal title; accessible help text; anon copy
   v4.59 - new RSVP flow: Appear vs anonymous steps; name/email for anon; Appear help link
   -->
   <meta charset="UTF-8">
@@ -153,7 +153,7 @@
         <div class="modal-title" style="margin-bottom:0;">Register for this event</div>
         <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
       </div>
-      <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Appear code</button>
+      <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Member Card</button>
       <button class="btn btn-outline" onclick="showStep('anon')" style="width:100%;justify-content:center;">Register anonymously</button>
     </div>
     <!-- Step 1a: Appear options -->
@@ -162,12 +162,12 @@
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">Register with Appear</div>
       </div>
-      <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Appear QR code</button>
-      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Appear ID</button>
+      <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Member Card QR</button>
+      <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Member Card number</button>
       <div style="text-align:center;">
-        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:#374151;font-size:14px;cursor:pointer;text-decoration:underline;font-weight:600;">How do I find my Appear ID?</button>
+        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:#374151;font-size:14px;cursor:pointer;text-decoration:underline;font-weight:600;">How do I find my Member Card number?</button>
         <div id="appear-help" style="display:none;margin-top:8px;padding:12px 14px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:14px;color:#374151;text-align:left;line-height:1.7;">
-          Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and copy your code under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
+          Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and find your Member Card number under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
         </div>
       </div>
     </div>
@@ -207,10 +207,10 @@
     <div id="rsvp-step-manual" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Enter your Appear ID</div>
+        <div class="modal-title" style="margin-bottom:0;">Enter your Member Card number</div>
       </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Your short ID from your Appear profile (e.g. w.hss or 0VfHB).</p>
-      <input class="modal-input" id="rsvp-manual-input" type="text" placeholder="Your Appear ID" autocomplete="off" style="margin-bottom:8px;">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Your Member Card number from your Appear Network profile (e.g. w.hss or 0VfHB).</p>
+      <input class="modal-input" id="rsvp-manual-input" type="text" placeholder="Your Member Card number" autocomplete="off" style="margin-bottom:8px;">
       <p class="error-msg" id="rsvp-manual-error"></p>
       <div class="modal-actions" style="margin-top:8px;">
         <button class="btn btn-primary" style="flex:1;" onclick="submitManualId()">Look me up</button>
@@ -238,7 +238,7 @@
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">ID not found</div>
       </div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Appear ID in our community. You can still register anonymously.</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Member Card number in our community. You can still register anonymously.</p>
       <div class="modal-actions">
         <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register anonymously</button>
         <button class="btn btn-outline" onclick="showStep(1)">Try again</button>
@@ -790,7 +790,7 @@ async function startQrScan() {
       setTimeout(resolve, 2000);
     });
 
-    document.getElementById("rsvp-scan-status").textContent = "Point at your Appear QR code";
+    document.getElementById("rsvp-scan-status").textContent = "Point at your Member Card QR code";
     _qrScanInterval = setInterval(() => scanFrame(video), 250);
   } catch(e) {
     document.getElementById("rsvp-scan-status").textContent = "Camera not available. Please enter your ID manually.";
@@ -850,7 +850,7 @@ function submitManualId() {
   const errEl = document.getElementById("rsvp-manual-error");
   const id = extractAppearId(raw);
   if (!id) {
-    if (errEl) { errEl.textContent = "Please enter a valid Appear ID."; errEl.style.display = "block"; }
+    if (errEl) { errEl.textContent = "Please enter a valid Member Card number."; errEl.style.display = "block"; }
     return;
   }
   if (errEl) errEl.style.display = "none";
@@ -874,7 +874,7 @@ async function lookupAndConfirm(appearId) {
       if (data.found && data.photo) {
         _rsvpAppearId = appearId; // store original
         document.getElementById("rsvp-confirm-photo").src = data.photo;
-        document.getElementById("rsvp-confirm-id").textContent = "Appear ID: " + appearId;
+        document.getElementById("rsvp-confirm-id").textContent = "Member Card: " + appearId;
         showStep("confirm");
         found = true;
         break;
@@ -1187,6 +1187,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.60 -->
+<!-- event.html v4.61 -->
 </body>
 </html>
