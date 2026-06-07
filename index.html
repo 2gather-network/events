@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.85
+  index.html Version 2.86
+  v2.86 - add Find my event button to header linking to myevents.html
   v2.85 - 2gather logo + favicon; replace house SVG with logo image
 
 -->
@@ -125,7 +126,7 @@
     </a>
     <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
-
+  <button onclick="goToMyEvents()" style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🔍 Find my event</button>
 </div>
 
 <div class="page-body">
@@ -780,6 +781,11 @@ renderPills();
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
+
+function goToMyEvents() {
+  const savedId = localStorage.getItem("appear-id");
+  window.location.href = savedId ? "myevents.html?id=" + encodeURIComponent(savedId) : "myevents.html";
+}
 </script>
 <!-- Event view modal (iframe) -->
 <div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;overscroll-behavior:none;" id="event-view-modal">
