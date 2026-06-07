@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.54
+  event.html Version 4.55
+  v4.55 - fix jsQR timing: load library before camera, wait for loadeddata before scanning
   v4.54 - Cancel RSVP button; cancelRsvp writes to sheet + clears localStorage
-  v4.53 - addToCalendar: single occurrence skips RRULE; description trimmed to 400 chars
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -701,28 +701,40 @@ function showManualEntry() {
 // ── QR scanning ──
 async function startQrScan() {
   showStep("qr");
-  document.getElementById("rsvp-scan-status").textContent = "Starting camera...";
-  // Load jsQR if not already loaded (works on iOS Safari + all browsers)
+  document.getElementById("rsvp-scan-status").textContent = "Loading scanner...";
+
+  // Load jsQR first, wait for it to be ready before touching camera
   if (!window.jsQR) {
-    await new Promise((resolve, reject) => {
+    const loaded = await new Promise((resolve) => {
       const s = document.createElement("script");
       s.src = "https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js";
-      s.onload = resolve;
-      s.onerror = reject;
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
       document.head.appendChild(s);
-    }).catch(() => {
+    });
+    if (!loaded) {
       document.getElementById("rsvp-scan-status").textContent = "Could not load scanner. Enter your ID manually.";
       setTimeout(() => showManualEntry(), 1500);
       return;
-    });
+    }
   }
+
+  document.getElementById("rsvp-scan-status").textContent = "Starting camera...";
   try {
     _qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     const video = document.getElementById("rsvp-video");
     video.srcObject = _qrStream;
-    await video.play();
+
+    // Wait for video to have actual frame data before scanning
+    await new Promise((resolve) => {
+      video.onloadeddata = resolve;
+      video.play();
+      // Fallback in case loadeddata never fires
+      setTimeout(resolve, 2000);
+    });
+
     document.getElementById("rsvp-scan-status").textContent = "Point at your Appear QR code";
-    _qrScanInterval = setInterval(() => scanFrame(video), 300);
+    _qrScanInterval = setInterval(() => scanFrame(video), 250);
   } catch(e) {
     document.getElementById("rsvp-scan-status").textContent = "Camera not available. Please enter your ID manually.";
     setTimeout(() => showManualEntry(), 1500);
@@ -1074,6 +1086,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.54 -->
+<!-- event.html v4.55 -->
 </body>
 </html>
