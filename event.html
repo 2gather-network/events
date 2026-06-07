@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.59
+  event.html Version 4.60
+  v4.60 - normalize Appear ID (strip dots); fix modal title; accessible help text; anon copy
   v4.59 - new RSVP flow: Appear vs anonymous steps; name/email for anon; Appear help link
-  v4.58 - public RSVP flag; post-RSVP my events link; who's going section
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -150,7 +150,7 @@
     <!-- Step 1: Choose method -->
     <div id="rsvp-step-1">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div class="modal-title" style="margin-bottom:0;">+1 I'm going!</div>
+        <div class="modal-title" style="margin-bottom:0;">Register for this event</div>
         <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
       </div>
       <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Appear code</button>
@@ -165,8 +165,8 @@
       <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Appear QR code</button>
       <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Appear ID</button>
       <div style="text-align:center;">
-        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;">How do I find my Appear ID?</button>
-        <div id="appear-help" style="display:none;margin-top:8px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:12px;color:var(--muted);text-align:left;line-height:1.6;">
+        <button onclick="toggleAppearHelp()" style="background:none;border:none;color:#374151;font-size:14px;cursor:pointer;text-decoration:underline;font-weight:600;">How do I find my Appear ID?</button>
+        <div id="appear-help" style="display:none;margin-top:8px;padding:12px 14px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:14px;color:#374151;text-align:left;line-height:1.7;">
           Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and copy your code under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
         </div>
       </div>
@@ -180,8 +180,8 @@
       <input class="modal-input" id="anon-name" type="text" placeholder="Name (optional)" autocomplete="name" style="margin-bottom:10px;">
       <input class="modal-input" id="anon-email" type="email" placeholder="Email (optional)" autocomplete="email" style="margin-bottom:14px;">
       <div style="padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;margin-bottom:14px;">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Register on Appear once. Show up anywhere.</p>
-        <a href="http://appear.network" target="_blank" class="btn btn-outline" style="font-size:13px;padding:8px 14px;width:100%;justify-content:center;display:flex;">Sign up for Appear</a>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">Alternatively, register on Appear to get your unique code. Register anywhere.</p>
+        <a href="http://appear.network/" target="_blank" class="btn btn-outline" style="font-size:13px;padding:8px 14px;width:100%;justify-content:center;display:flex;">Sign up for Appear Network</a>
       </div>
       <div class="modal-actions">
         <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register</button>
@@ -829,6 +829,11 @@ function cancelQrScan() {
   if (video) { video.srcObject = null; }
 }
 
+function normalizeAppearId(id) {
+  // Normalize: strip dots so w.hss matches whss in the sheet
+  return (id || "").replace(/\./g, "").toLowerCase();
+}
+
 function extractAppearId(url) {
   // Handles full URL: https://appear.network/dl/.../r/APPEAR_ID
   // or bare ID typed directly
@@ -856,20 +861,27 @@ function submitManualId() {
 async function lookupAndConfirm(appearId) {
   showStep("loading");
   document.getElementById("rsvp-loading-msg").textContent = "Looking up your profile...";
-  try {
-    const res = await fetch(`${GS_URL}?action=lookupProfile&appearId=${encodeURIComponent(appearId)}`);
-    const data = await res.json();
-    if (data.found && data.photo) {
-      _rsvpAppearId = appearId;
-      document.getElementById("rsvp-confirm-photo").src = data.photo;
-      document.getElementById("rsvp-confirm-id").textContent = "Appear ID: " + appearId;
-      showStep("confirm");
-    } else {
-      showStep("notfound");
-    }
-  } catch(e) {
-    showStep("notfound");
+  // Try original ID first, then normalized (dots stripped) as fallback
+  const ids = [appearId];
+  const normalized = normalizeAppearId(appearId);
+  if (normalized !== appearId.toLowerCase()) ids.push(normalized);
+
+  let found = false;
+  for (const id of ids) {
+    try {
+      const res = await fetch(`${GS_URL}?action=lookupProfile&appearId=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.found && data.photo) {
+        _rsvpAppearId = appearId; // store original
+        document.getElementById("rsvp-confirm-photo").src = data.photo;
+        document.getElementById("rsvp-confirm-id").textContent = "Appear ID: " + appearId;
+        showStep("confirm");
+        found = true;
+        break;
+      }
+    } catch(e) {}
   }
+  if (!found) showStep("notfound");
 }
 
 // ── Confirm and save RSVP ──
@@ -1175,6 +1187,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.59 -->
+<!-- event.html v4.60 -->
 </body>
 </html>
