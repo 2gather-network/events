@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.63
+  Events.html Version 11.64
+  v11.64 - Find my event button links to myevents.html with Member Card
   v11.63 - handle ?venue= URL param to pre-set venue filter
-  v11.62 - add venue to recurToEv in events.html
 
 -->
 <html lang="en">
@@ -211,7 +211,7 @@
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()" ontouchstart="openRoomSchedule()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🏠 Room schedules</button>
     <button class="btn btn-white btn-sm" onclick="openChoiceModal()" ontouchstart="openChoiceModal()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">+ Post an event</button>
-    <button class="btn btn-white btn-sm" onclick="openFindModal()" ontouchstart="openFindModal()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🔍 Find my event</button>
+    <button class="btn btn-white btn-sm" onclick="goToMyEvents()" ontouchstart="goToMyEvents()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🔍 Find my event</button>
   </div>
 </div>
 
@@ -2054,6 +2054,11 @@ function closeModal() { formDirty = false; document.getElementById("post-modal")
 
 let findTargetId = null;
 
+function goToMyEvents() {
+  const savedId = localStorage.getItem("appear-id");
+  window.location.href = savedId ? "myevents.html?id=" + encodeURIComponent(savedId) : "myevents.html";
+}
+
 function openFindModal() {
   document.getElementById("find-modal").classList.add("open");
   const pinEl = document.getElementById("find-pin-search");
@@ -3121,6 +3126,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.63 -->
+<!-- Events.html v11.64 -->
 </body>
 </html>
