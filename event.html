@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.63
+  event.html Version 4.64
   v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
@@ -120,7 +120,7 @@
 </head>
 <body>
 <div style="width:100%;max-width:560px;">
-  <a class="back-link" href="https://gather.2gather.network/">← All events</a>
+  <a class="back-link" href="https://appear.network/dl/gather">← All events</a>
 </div>
 <div class="card" id="card">
   <div class="loading"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#1b6896;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>Loading event...</div>
@@ -529,7 +529,7 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" target="_blank" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" target="_blank" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
@@ -542,7 +542,7 @@ function render(ev) {
 
     </div>
     <div style="padding:14px 24px 148px;background:#f9fafb;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted);">
-      <a href="https://gather.2gather.network/" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
+      <a href="https://appear.network/dl/gather" target="_blank" style="color:var(--primary);font-weight:700;">Discover more events →</a>
     </div>`;
 
   document.title = ev.title || "Event";
@@ -1160,6 +1160,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.63 -->
+<!-- event.html v4.64 -->
 </body>
 </html>
