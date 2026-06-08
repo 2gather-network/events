@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.61
-  v4.60 - normalize Member Card number (strip dots); fix modal title; accessible help text; anon copy
-  v4.59 - new RSVP flow: Appear vs anonymous steps; name/email for anon; Appear help link
+  event.html Version 4.63
+  v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -154,7 +153,9 @@
         <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
       </div>
       <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Member Card</button>
-      <button class="btn btn-outline" onclick="showStep('anon')" style="width:100%;justify-content:center;">Register anonymously</button>
+      <div style="text-align:center;margin-top:12px;">
+        <span style="font-size:13px;color:var(--muted);">Don't have one? </span><a href="https://appear.network" target="_blank" style="font-size:13px;color:var(--primary);font-weight:700;text-decoration:underline;">Get your Member Card on Appear</a>
+      </div>
     </div>
     <!-- Step 1a: Appear options -->
     <div id="rsvp-step-appear" style="display:none;">
@@ -171,23 +172,7 @@
         </div>
       </div>
     </div>
-    <!-- Step 1b: Anonymous -->
-    <div id="rsvp-step-anon" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Register anonymously</div>
-      </div>
-      <input class="modal-input" id="anon-name" type="text" placeholder="Name (optional)" autocomplete="name" style="margin-bottom:10px;">
-      <input class="modal-input" id="anon-email" type="email" placeholder="Email (optional)" autocomplete="email" style="margin-bottom:14px;">
-      <div style="padding:10px 12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;margin-bottom:14px;">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">Alternatively, register on Appear to get your unique code. Register anywhere.</p>
-        <a href="http://appear.network/" target="_blank" class="btn btn-outline" style="font-size:13px;padding:8px 14px;width:100%;justify-content:center;display:flex;">Sign up for Appear Network</a>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register</button>
-        <button class="btn btn-outline" onclick="closeRsvpModal()">Cancel</button>
-      </div>
-    </div>
+
     <!-- Step 1b: QR scanner -->
     <div id="rsvp-step-qr" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
@@ -238,9 +223,9 @@
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">ID not found</div>
       </div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Member Card number in our community. You can still register anonymously.</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Member Card number. Please check your number or get your Member Card on Appear Network.</p>
       <div class="modal-actions">
-        <button class="btn btn-primary" style="flex:1;" onclick="submitRsvpAnonymous()">Register anonymously</button>
+        <a href="https://appear.network" target="_blank" class="btn btn-primary" style="flex:1;justify-content:center;">Get Member Card on Appear</a>
         <button class="btn btn-outline" onclick="showStep(1)">Try again</button>
       </div>
     </div>
@@ -731,13 +716,12 @@ function closeRsvpModal() {
 }
 
 function showStep(n) {
-  ["rsvp-step-1","rsvp-step-appear","rsvp-step-anon","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
+  ["rsvp-step-1","rsvp-step-appear","rsvp-step-qr","rsvp-step-manual","rsvp-step-confirm","rsvp-step-notfound","rsvp-step-loading"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });
   if (n === 1) document.getElementById("rsvp-step-1").style.display = "block";
   else if (n === "appear") document.getElementById("rsvp-step-appear").style.display = "block";
-  else if (n === "anon") document.getElementById("rsvp-step-anon").style.display = "block";
   else if (n === "qr") document.getElementById("rsvp-step-qr").style.display = "block";
   else if (n === "manual") document.getElementById("rsvp-step-manual").style.display = "block";
   else if (n === "confirm") document.getElementById("rsvp-step-confirm").style.display = "block";
@@ -896,18 +880,7 @@ async function confirmRsvp() {
   finishRsvp();
 }
 
-async function submitRsvpAnonymous() {
-  if (!_currentEv) return;
-  showStep("loading");
-  document.getElementById("rsvp-loading-msg").textContent = "Registering...";
-  const name = (document.getElementById("anon-name")?.value || "").trim();
-  const email = (document.getElementById("anon-email")?.value || "").trim();
-  const entry = [name, email].filter(Boolean).join(" · ") || "Anonymous";
-  try {
-    await jsonp({ action:"interest", id:_currentEv.id, entry });
-  } catch(e) {}
-  finishRsvp();
-}
+
 
 function finishRsvp() {
   closeRsvpModal();
@@ -1187,6 +1160,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.61 -->
+<!-- event.html v4.63 -->
 </body>
 </html>
