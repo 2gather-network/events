@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.66
+  Events.html Version 11.67
+  v11.67 - auto-open post modal on #post hash; redirect to myevents after submit
   v11.66 - restore 2Gather logo to header
-  v11.65 - remove header logo and Find my event button; Glide handles navigation
 
 -->
 <html lang="en">
@@ -2333,6 +2333,12 @@ document.querySelector(".modal-scroll-body")?.addEventListener("input", () => { 
 document.querySelector(".modal-scroll-body")?.addEventListener("change", () => { formDirty = true; });
 safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   closeNotesModal(); });
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
+
+// Auto-open post modal if URL has #post
+if (window.location.hash === "#post") {
+  window.location.hash = "";
+  setTimeout(function() { openChoiceModal(); }, 500);
+}
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
 // Handle edit requests from event.html iframe
@@ -2383,7 +2389,13 @@ function showSummary(ev) {
 }
 
 function addToCalendarFromSummary() { if (summaryEventId) addToCalendar(summaryEventId); }
-function closeSummaryModal() { document.getElementById("summary-modal").classList.remove("open"); }
+function closeSummaryModal() {
+  document.getElementById("summary-modal").classList.remove("open");
+  const savedId = localStorage.getItem("appear-id");
+  if (savedId && window.location.hash !== "#nomy") {
+    window.location.href = "myevents.html?id=" + encodeURIComponent(savedId);
+  }
+}
 
 let _notesEventId = null;
 
@@ -3119,6 +3131,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.66 -->
+<!-- Events.html v11.67 -->
 </body>
 </html>
