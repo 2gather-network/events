@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.64
-  v11.64 - Find my event button links to myevents.html with Member Card
-  v11.63 - handle ?venue= URL param to pre-set venue filter
+  Events.html Version 11.66
+  v11.66 - restore 2Gather logo to header
+  v11.65 - remove header logo and Find my event button; Glide handles navigation
 
 -->
 <html lang="en">
@@ -203,15 +203,13 @@
 <div id="loading-bar" class="loading-bar"></div>
 <div class="header">
   <div style="flex:1;display:flex;align-items:center;gap:8px;">
-    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0;" title="Back to home">
-      <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
-    </a>
+    <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
     <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()" ontouchstart="openRoomSchedule()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🏠 Room schedules</button>
     <button class="btn btn-white btn-sm" onclick="openChoiceModal()" ontouchstart="openChoiceModal()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">+ Post an event</button>
-    <button class="btn btn-white btn-sm" onclick="goToMyEvents()" ontouchstart="goToMyEvents()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🔍 Find my event</button>
+    
   </div>
 </div>
 
@@ -2054,11 +2052,6 @@ function closeModal() { formDirty = false; document.getElementById("post-modal")
 
 let findTargetId = null;
 
-function goToMyEvents() {
-  const savedId = localStorage.getItem("appear-id");
-  window.location.href = savedId ? "myevents.html?id=" + encodeURIComponent(savedId) : "myevents.html";
-}
-
 function openFindModal() {
   document.getElementById("find-modal").classList.add("open");
   const pinEl = document.getElementById("find-pin-search");
@@ -3126,6 +3119,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.64 -->
+<!-- Events.html v11.66 -->
 </body>
 </html>
