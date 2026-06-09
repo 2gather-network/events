@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.5
+  myevents.html Version 1.6
+  v1.6 - remove header logo and Browse events links; Glide handles navigation
   v1.5 - Browse events links to appear.network/dl/gather
-  v1.4 - all Member Card registration links point to appear.network
 -->
 <html lang="en">
 <head>
@@ -53,9 +53,8 @@
 <body>
 
 <header>
-  <a href="events.html"><img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather"></a>
   <h1>My Events</h1>
-  <div id="header-card-badge" style="display:none;margin-left:auto;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#166534;white-space:nowrap;">🪪 <span id="header-card-number"></span></div>
+  <div id="header-card-badge" style="display:none;margin-left:auto;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#166534;white-space:nowrap;">💳 <span id="header-card-number"></span></div>
 </header>
 
 <div class="container">
@@ -74,18 +73,16 @@
   </div>
 
   <div id="not-found" style="display:none;" class="empty">
-    <p style="font-size:32px;margin-bottom:12px;">🪪</p>
+    <p style="font-size:32px;margin-bottom:12px;">💳</p>
     <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">No Member Card found</p>
     <p style="margin-bottom:16px;">Register for an event first, or get your Member Card on Appear Network.</p>
     <a href="https://appear.network" target="_blank" style="display:inline-block;margin-bottom:10px;padding:10px 20px;background:var(--primary);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;">Get your Member Card on Appear</a><br>
     <p style="font-size:13px;color:var(--muted);margin:8px 0 12px;">Register on <a href="https://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">Appear Network</a>. One code. RSVP anywhere.</p>
-    <a href="https://appear.network/dl/gather" style="display:inline-block;margin-top:4px;color:var(--primary);font-weight:700;">← Browse events</a>
   </div>
 
   <div id="empty" style="display:none;" class="empty">
     <p style="font-size:32px;margin-bottom:12px;">📅</p>
     <p>No upcoming events registered yet.</p>
-    <a href="https://appear.network/dl/gather" style="display:inline-block;margin-top:16px;color:var(--primary);font-weight:700;">← Browse events</a>
   </div>
 
   <div id="events-list"></div>
@@ -337,6 +334,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.5 -->
+<!-- myevents.html v1.6 -->
 </body>
 </html>
