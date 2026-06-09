@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.69
+  Events.html Version 11.70
+  v11.70 - save memberCard URL param to localStorage on page load
   v11.69 - patch occurrence rows with rec- template data; append memberCard to event URL
-  v11.68 - fix #post URL detection; raise event view modal higher
 
 -->
 <html lang="en">
@@ -3056,6 +3056,14 @@ if (savedFilter) activeFilter = savedFilter;
 
 renderPills();
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
+// Save memberCard from URL to localStorage on page load
+(function() {
+  const mc = new URLSearchParams(window.location.search).get("memberCard");
+  if (mc) {
+    try { localStorage.setItem("appear-id", mc); } catch(e) {}
+  }
+})();
+
 loadEvents().then(() => {
   // auto-open edit if redirected from event.html with verified PIN
   const editId = new URLSearchParams(window.location.search).get("edit");
@@ -3159,6 +3167,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.69 -->
+<!-- Events.html v11.70 -->
 </body>
-</html> 
+</html>
