@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.88
+  index.html Version 2.89
+  v2.89 - raise event view modal height to 90vh
   v2.88 - restore 2Gather logo to header
-  v2.87 - remove header logo and Find my event button; Glide handles navigation
 
 -->
 <html lang="en">
@@ -781,7 +781,7 @@ loadEvents();
 </script>
 <!-- Event view modal (iframe) -->
 <div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;overscroll-behavior:none;" id="event-view-modal">
-  <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
+  <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);max-height:90vh;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
       <span id="event-view-title" style="font-size:14px;font-weight:700;color:#1a1a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
       <div style="display:flex;gap:8px;flex-shrink:0;">
