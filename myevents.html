@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.9
+  myevents.html Version 1.10
+  v1.10 - fix header logo size; fix 12:00 AM time; hosting tabs upcoming/past; add event btn
   v1.9 - include recurring hosted events in hosting section
-  v1.8 - match header style to events.html; blue bg, white btn-white badge
 -->
 <html lang="en">
 <head>
@@ -44,6 +44,9 @@
     .loading { text-align: center; padding: 40px 20px; color: var(--muted); }
     .spinner { width: 28px; height: 28px; border: 3px solid #e5e7eb; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+    .tab-btn { background: none; border: none; padding: 7px 14px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-radius: 8px; font-family: inherit; }
+    .tab-btn.active { background: var(--primary); color: #fff; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 700; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
   </style>
@@ -51,11 +54,9 @@
 <body>
 
 <div class="header">
-  <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather">
-  <span style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:700;">My Events</span>
-  <div style="margin-left:auto;">
-    <button id="header-card-badge" onclick="copyMemberCard()" class="btn-white" style="display:none;">💳 &nbsp;<span id="header-card-number"></span></button>
-  </div>
+  <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;flex-shrink:0;">
+  <span style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:700;flex:1;">My Events</span>
+  <button id="header-card-badge" onclick="copyMemberCard()" class="btn-white" style="display:none;">💳 &nbsp;<span id="header-card-number"></span></button>
 </div>
 
 <div class="container">
@@ -111,11 +112,12 @@ function formatDate(dateStr, time) {
   const d = new Date(dateStr + "T12:00");
   const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  let s = `${dayNames[d.getDay()]}, ${monthNames[d.getMonth()]} ${d.getDate()}`;
-  if (time) {
-    const [h, m] = time.split(":").map(Number);
+  let s = dayNames[d.getDay()] + ", " + monthNames[d.getMonth()] + " " + d.getDate();
+  if (time && time !== "00:00" && time !== "0:00") {
+    const parts = time.split(":").map(Number);
+    const h = parts[0], m = parts[1];
     const ampm = h >= 12 ? "PM" : "AM";
-    s += ` · ${h % 12 || 12}:${String(m).padStart(2,"0")} ${ampm}`;
+    s += " · " + (h % 12 || 12) + ":" + String(m).padStart(2,"0") + " " + ampm;
   }
   return s;
 }
@@ -128,6 +130,13 @@ function addToCalendar(ev) {
   const desc = (ev.description || "").length > 400 ? (ev.description||"").slice(0,400)+"..." : (ev.description||"");
   const params = new URLSearchParams({ text: ev.title, dates: start+"/"+end, details: desc, location: ev.location||ev.meetinglink||"" });
   window.open("https://calendar.google.com/calendar/r/eventedit?" + params.toString(), "_blank");
+}
+
+function switchHostTab(tab) {
+  document.getElementById("host-upcoming").style.display = tab === "upcoming" ? "block" : "none";
+  document.getElementById("host-past").style.display = tab === "past" ? "block" : "none";
+  document.getElementById("host-tab-upcoming").className = "tab-btn" + (tab === "upcoming" ? " active" : "");
+  document.getElementById("host-tab-past").className = "tab-btn" + (tab === "past" ? " active" : "");
 }
 
 async function cancelRsvp(eventId) {
@@ -217,14 +226,39 @@ function renderEvents(registrations, events) {
   const list = document.getElementById("events-list");
   list.innerHTML = "";
 
-  // Hosting section
-  if (hosted.length > 0) {
-    const hostTitle = document.createElement("div");
-    hostTitle.className = "section-title";
-    hostTitle.textContent = `Hosting (${hosted.length})`;
-    list.appendChild(hostTitle);
+  // Hosting section - split upcoming/past
+  const hostedUpcoming = hosted.filter(function(ev) { return new Date(ev.date + "T23:59") >= now; });
+  const hostedPast = events
+    .filter(function(ev) {
+      return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard;
+    })
+    .filter(function(ev) { return ev.date && new Date(ev.date + "T23:59") < now; })
+    .sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
 
-    hosted.forEach(ev => {
+  if (hostedUpcoming.length > 0 || hostedPast.length > 0) {
+    // Section title + Add event button
+    const hostHeader = document.createElement("div");
+    hostHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;";
+    hostHeader.innerHTML = `
+      <div class="section-title" style="margin-bottom:0;">Hosting</div>
+      <a href="https://gather.2gather.network/events.html" target="_blank" class="btn btn-outline" style="font-size:12px;padding:5px 10px;">+ Add event</a>`;
+    list.appendChild(hostHeader);
+
+    // Tab bar
+    const tabBar = document.createElement("div");
+    tabBar.className = "tab-bar";
+    tabBar.innerHTML = `
+      <button class="tab-btn active" id="host-tab-upcoming" onclick="switchHostTab('upcoming')">Upcoming (${hostedUpcoming.length})</button>
+      <button class="tab-btn" id="host-tab-past" onclick="switchHostTab('past')">Past (${hostedPast.length})</button>`;
+    list.appendChild(tabBar);
+
+    // Upcoming container
+    const upcomingContainer = document.createElement("div");
+    upcomingContainer.id = "host-upcoming";
+    if (hostedUpcoming.length === 0) {
+      upcomingContainer.innerHTML = '<p style="font-size:13px;color:var(--muted);padding:12px 0;">No upcoming hosted events.</p>';
+    }
+    hostedUpcoming.forEach(function(ev) {
       const card = document.createElement("div");
       card.className = "event-card";
       card.style.borderLeft = "3px solid var(--primary)";
@@ -234,12 +268,29 @@ function renderEvents(registrations, events) {
         <div class="event-actions">
           <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
           <a href="event.html?id=${encodeURIComponent(ev.id)}" class="btn btn-outline">✏️ Manage</a>
-        </div>
-        <div id="who-${ev.id}" class="who-going"></div>
-      `;
-      list.appendChild(card);
+        </div>`;
+      upcomingContainer.appendChild(card);
       loadAttendees(ev.id);
     });
+    list.appendChild(upcomingContainer);
+
+    // Past container
+    const pastContainer = document.createElement("div");
+    pastContainer.id = "host-past";
+    pastContainer.style.display = "none";
+    if (hostedPast.length === 0) {
+      pastContainer.innerHTML = '<p style="font-size:13px;color:var(--muted);padding:12px 0;">No past hosted events.</p>';
+    }
+    hostedPast.forEach(function(ev) {
+      const card = document.createElement("div");
+      card.className = "event-card";
+      card.style.opacity = "0.7";
+      card.innerHTML = `
+        <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
+        <div class="event-meta">${formatDate(ev.date, ev.startTime||ev.time)}${ev.location ? " · " + ev.location : ""}</div>`;
+      pastContainer.appendChild(card);
+    });
+    list.appendChild(pastContainer);
   }
 
   // Going section
@@ -355,6 +406,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.9 -->
+<!-- myevents.html v1.10 -->
 </body>
 </html>
