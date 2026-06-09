@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.14
+  myevents.html Version 1.15
+  v1.15 - fix Post an event URL format
   v1.14 - toast moves to top; Post an event button in hosting header
-  v1.13 - fix date parsing for ISO date strings from Apps Script
 -->
 <html lang="en">
 <head>
@@ -259,7 +259,7 @@ function renderEvents(registrations, events) {
     const savedId = localStorage.getItem("appear-id") || _appearId || "";
     hostHeader.innerHTML = `
       <div class="section-title" style="margin-bottom:0;">Hosting</div>
-      <a href="https://gather.2gather.network/events.html#post${savedId ? '?memberCard=' + encodeURIComponent(savedId) : ''}" class="btn-white" style="border:1.5px solid #1B6896;color:#1B6896;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">+ Post an event</a>`;
+      <a href="https://gather.2gather.network/events.html?action=post${savedId ? '&memberCard=' + encodeURIComponent(savedId) : ''}" class="btn-white" style="border:1.5px solid #1B6896;color:#1B6896;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">+ Post an event</a>`;
     list.appendChild(hostHeader);
 
     // Tab bar
@@ -424,6 +424,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.14 -->
+<!-- myevents.html v1.15 -->
 </body>
 </html>
