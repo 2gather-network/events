@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.71
+  Events.html Version 11.72
+  v11.72 - fix cat duplication/HTML; weekly in date line; remove weekly badge
   v11.71 - View button below date on card; categories capped at 5 with expand
-  v11.70 - save memberCard URL param to localStorage on page load
 
 -->
 <html lang="en">
@@ -1263,6 +1263,16 @@ function resetFilters() {
 
 function setFilter(id) { activeFilter = id; localStorage.setItem("db-filter", id); renderPills(); renderEvents(); }
 
+function expandCats(evId) {
+  const allEv = [...events, ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
+  const ev = allEv.find(e => e.id === evId);
+  if (!ev) return;
+  let cats = Array.isArray(ev.categories) ? ev.categories : [];
+  const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
+  const container = document.querySelector('[data-event-id="' + evId + '"] .event-cats');
+  if (container) container.innerHTML = catObjs.map(function(c) { return '<span class="event-cat-tag">' + c.emoji + ' ' + c.label + '</span>'; }).join("");
+}
+
 function renderEvents() {
   const evPageBase = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
   const grid = document.getElementById("event-grid");
@@ -1349,9 +1359,8 @@ function renderEvents() {
       return partial ? partial.id : c;
     });
     const catObjs = cats.map(id => CATEGORIES.find(c => c.id === id)).filter(Boolean);
-    const catTagsAll = catObjs.map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
     const catTagsVisible = catObjs.slice(0,5).map(c => `<span class="event-cat-tag">${c.emoji} ${c.label}</span>`).join("");
-    const catTagsMore = catObjs.length > 5 ? `<span class="event-cat-tag" style="cursor:pointer;background:#f3f4f6;color:var(--muted);" onclick="this.parentElement.innerHTML='${catTagsAll.replace(/'/g,"\\'")}'" title="Show all">+${catObjs.length - 5} more</span>` : "";
+    const catTagsMore = catObjs.length > 5 ? `<span class="event-cat-tag" style="cursor:pointer;background:#f3f4f6;color:var(--muted);" onclick="expandCats('${ev.id}')" id="cat-more-${ev.id}">+${catObjs.length - 5} more</span>` : "";
     const catTags = catTagsVisible + catTagsMore;
     const roomObj = ROOMS.find(r => r.name === ev.room);
     const formatBadge = ev.format === "virtual"
@@ -1384,7 +1393,7 @@ function renderEvents() {
       ${ev.imageUrl ? `<div class="event-card-img" id="img-wrap-${ev.id}"><img src="${esc(ev.imageUrl)}" alt="" style="width:100%;height:130px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ""}
       <div class="event-card-body">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
-          ${ev.date ? `<div style="font-size:13px;color:var(--muted);">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}</div>` : "<div></div>"}
+          ${ev.date ? `<div style="font-size:13px;color:var(--muted);">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}${ev.recurFreq ? " (Weekly)" : ""}</div>` : "<div></div>"}
           <button class="btn btn-sm" onclick="openEventView('${ev.id}')" style="padding:7px 16px;font-weight:700;background:var(--primary);color:#fff;border-radius:8px;border:none;cursor:pointer;flex-shrink:0;">View</button>
         </div>
         ${catTags ? `<div class="event-cats" style="margin-bottom:8px;">${catTags}</div>` : ""}
@@ -1392,7 +1401,6 @@ function renderEvents() {
         ${descHtml ? `<div class="event-desc" style="font-size:14px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
       </div>
       <div class="event-card-footer" style="flex-direction:column;align-items:flex-start;gap:10px;">
-        ${recurringBadge ? `<div>${recurringBadge}</div>` : ""}
         ${(ev.format === "virtual" || ev.format === "both") ? (() => { const roomObj = ROOMS.find(r => r.name === ev.room); const meetUrl = ev.meetinglink || (roomObj?.url || ""); if (!meetUrl || !ev.date || !ev.time) return ""; const today = new Date(); const evDay = new Date(ev.date+"T00:00:00"); if (today.toDateString() !== evDay.toDateString()) return ""; const d = new Date(ev.date+"T"+ev.time); const ts = d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); const tz = d.toLocaleTimeString("en-US",{timeZoneName:"short"}).split(" ").pop(); const endStr = ev.endtime ? " - "+new Date(ev.date+"T"+ev.endtime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""; return `<a href="${esc(meetUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's Gather · ${ts}${endStr} ${tz}</a>`; })() : ""}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;justify-content:flex-end;">
           ${ev.sharedNotesEnabled && isRegistered(ev.id) ? `<button class="btn btn-sm btn-outline" onclick="openNotesModal('${ev.id}')" title="Shared notes" style="padding:8px 10px;">📝</button>` : ""}
@@ -3172,6 +3180,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.71 -->
+<!-- Events.html v11.72 -->
 </body>
 </html>
