@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.8
+  myevents.html Version 1.9
+  v1.9 - include recurring hosted events in hosting section
   v1.8 - match header style to events.html; blue bg, white btn-white badge
-  v1.7 - remove profile bar; clickable member card badge copies code; fix copy/labels
 -->
 <html lang="en">
 <head>
@@ -144,11 +144,47 @@ function renderEvents(registrations, events) {
   const now = new Date();
   now.setHours(0,0,0,0);
 
-  // Hosted events - upcoming
-  const hosted = events
-    .filter(ev => ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === _appearId.replace(/\./g,"").toLowerCase())
-    .filter(ev => ev.date && new Date(ev.date + "T23:59") >= now)
-    .sort((a,b) => new Date(a.date) - new Date(b.date));
+  // Hosted events - upcoming (includes recurring occurrences)
+  const normalCard = _appearId.replace(/\./g,"").toLowerCase();
+
+  // One-time hosted events
+  const hostedOnce = events
+    .filter(function(ev) {
+      return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard;
+    })
+    .filter(function(ev) { return ev.date && new Date(ev.date + "T23:59") >= now; });
+
+  // Recurring hosted events - generate next 8 occurrences each
+  const hostedRec = [];
+  events
+    .filter(function(ev) {
+      return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard
+        && ev.recurFreq && ev.id && ev.id.startsWith("rec-");
+    })
+    .forEach(function(rec) {
+      const dayOfWeek = parseInt(rec.dayOfWeek) || 0;
+      const freq = rec.recurFreq;
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      let found = 0;
+      for (let i = 0; i < 60 && found < 4; i++) {
+        const check = new Date(d);
+        check.setDate(d.getDate() + i);
+        const match = freq === "weekly" ? check.getDay() === dayOfWeek :
+                      freq === "monthly" ? check.getDate() === (new Date(now).getDate()) : false;
+        if (match && check >= now) {
+          const dateStr = check.toISOString().slice(0,10);
+          hostedRec.push(Object.assign({}, rec, {
+            id: "recurring-" + rec.id.replace(/^rec-/,"") + "-" + dateStr,
+            date: dateStr
+          }));
+          found++;
+        }
+      }
+    });
+
+  const hosted = hostedOnce.concat(hostedRec)
+    .sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
 
   // RSVPd events - active, upcoming
   const active = registrations
@@ -319,6 +355,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.8 -->
+<!-- myevents.html v1.9 -->
 </body>
 </html>
