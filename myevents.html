@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.15
-  v1.15 - fix Post an event URL format
-  v1.14 - toast moves to top; Post an event button in hosting header
+  myevents.html Version 1.17
+  v1.17 - remove all target=_blank to keep links within Glide webview
+  v1.16 - My Interests section with keyword matching, location, autocomplete
 -->
 <html lang="en">
 <head>
@@ -71,8 +71,8 @@
     <p style="font-size:32px;margin-bottom:12px;">💳</p>
     <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">No Member Card found</p>
     <p style="margin-bottom:16px;">Register for an event using your member card, or get one on Appear Network.</p>
-    <a href="https://appear.network" target="_blank" style="display:inline-block;margin-bottom:10px;padding:10px 20px;background:var(--primary);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;">Get your Member Card on Appear</a><br>
-    <p style="font-size:13px;color:var(--muted);margin:8px 0 12px;">Register on <a href="https://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">Appear Network</a>. One code. RSVP anywhere.</p>
+    <a href="https://appear.network" style="display:inline-block;margin-bottom:10px;padding:10px 20px;background:var(--primary);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;">Get your Member Card on Appear</a><br>
+    <p style="font-size:13px;color:var(--muted);margin:8px 0 12px;">Register on <a href="https://appear.network" style="color:var(--primary);font-weight:700;">Appear Network</a>. One code. RSVP anywhere.</p>
   </div>
 
   <div id="empty" style="display:none;" class="empty">
@@ -81,6 +81,32 @@
   </div>
 
   <div id="events-list"></div>
+
+  <!-- My Interests Section -->
+  <div id="interests-section" style="margin-top:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="section-title" style="margin-bottom:0;">My Interests</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add topics to find matching upcoming events near you.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;position:relative;">
+      <input id="interest-input" type="text" placeholder="Add a topic (e.g. music, coding, wellness)" autocomplete="off"
+        style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;"
+        oninput="onInterestInput(event)" onkeydown="onInterestKeydown(event)">
+      <button class="btn-white" onclick="addInterestFromInput()" style="border:1.5px solid #1B6896;color:#1B6896;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Add</button>
+      <div id="interest-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:60px;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;max-height:180px;overflow-y:auto;"></div>
+    </div>
+    <div id="interest-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+    <div id="interests-results">
+      <div id="interests-empty" style="display:none;font-size:13px;color:var(--muted);padding:12px 0;">No matching upcoming events found. Try different topics.</div>
+      <div id="interests-show-all" style="display:none;text-align:center;margin-bottom:12px;">
+        <label style="font-size:13px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="interests-all-toggle" onchange="renderInterestResults()" style="margin-right:6px;">
+          Show all upcoming (not just next 2 weeks)
+        </label>
+      </div>
+      <div id="interests-list"></div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -414,16 +440,176 @@ async function init() {
     ]);
     const regData = await regRes.json();
     const evData = await evRes.json();
-    renderEvents(regData.registrations || [], evData.events || []);
+    const allEvents = (evData.events || []).filter(function(r) { return r.id; });
+    renderEvents(regData.registrations || [], allEvents);
+    initInterests(allEvents);
   } catch(e) {
     document.getElementById("loading").style.display = "none";
     document.getElementById("empty").style.display = "block";
   }
 }
 
+// ── My Interests ────────────────────────────────────────────────
+let _allEventsCache = [];
+let _userLat = null, _userLng = null;
+
+function loadInterests() {
+  try { return JSON.parse(localStorage.getItem("my-interests") || "[]"); } catch(e) { return []; }
+}
+function saveInterests(arr) {
+  try { localStorage.setItem("my-interests", JSON.stringify(arr)); } catch(e) {}
+}
+
+function renderInterestChips() {
+  const chips = document.getElementById("interest-chips");
+  if (!chips) return;
+  const interests = loadInterests();
+  chips.innerHTML = interests.map(function(kw) {
+    return `<span style="display:inline-flex;align-items:center;gap:6px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:#1B6896;">
+      ${kw}
+      <button onclick="removeInterest('${kw.replace(/'/g,"\\'")}') " style="background:none;border:none;color:#1B6896;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>
+    </span>`;
+  }).join("");
+}
+
+function removeInterest(kw) {
+  const arr = loadInterests().filter(function(k) { return k !== kw; });
+  saveInterests(arr);
+  renderInterestChips();
+  renderInterestResults();
+}
+
+function addInterestFromInput() {
+  const input = document.getElementById("interest-input");
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  const arr = loadInterests();
+  if (!arr.includes(val)) { arr.push(val); saveInterests(arr); }
+  input.value = "";
+  document.getElementById("interest-autocomplete").style.display = "none";
+  renderInterestChips();
+  renderInterestResults();
+}
+
+function onInterestKeydown(e) {
+  if (e.key === "Enter") { e.preventDefault(); addInterestFromInput(); }
+  if (e.key === "Escape") { document.getElementById("interest-autocomplete").style.display = "none"; }
+}
+
+function onInterestInput(e) {
+  const val = e.target.value.trim().toLowerCase();
+  const ac = document.getElementById("interest-autocomplete");
+  if (!val || val.length < 2) { ac.style.display = "none"; return; }
+  // Build suggestions from all events
+  const suggestions = new Set();
+  _allEventsCache.forEach(function(ev) {
+    [ev.title, ev.keywords, ev.categories, ev.description].forEach(function(field) {
+      if (!field) return;
+      String(field).split(/[,\s]+/).forEach(function(word) {
+        const w = word.trim().toLowerCase();
+        if (w.length > 2 && w.includes(val)) suggestions.add(word.trim());
+      });
+    });
+  });
+  const filtered = Array.from(suggestions).slice(0, 8);
+  if (filtered.length === 0) { ac.style.display = "none"; return; }
+  ac.innerHTML = filtered.map(function(s) {
+    return `<div onclick="selectSuggestion('${s.replace(/'/g,"\\'")}') " style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--dark);border-bottom:1px solid var(--border);">${s}</div>`;
+  }).join("");
+  ac.style.display = "block";
+}
+
+function selectSuggestion(val) {
+  document.getElementById("interest-input").value = val;
+  document.getElementById("interest-autocomplete").style.display = "none";
+  addInterestFromInput();
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function renderInterestResults() {
+  const interests = loadInterests();
+  const list = document.getElementById("interests-list");
+  const emptyEl = document.getElementById("interests-empty");
+  const showAllWrap = document.getElementById("interests-show-all");
+  if (!list) return;
+
+  if (interests.length === 0) {
+    list.innerHTML = "";
+    if (emptyEl) emptyEl.style.display = "none";
+    if (showAllWrap) showAllWrap.style.display = "none";
+    return;
+  }
+
+  const showAll = document.getElementById("interests-all-toggle")?.checked;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const twoWeeks = new Date(now); twoWeeks.setDate(twoWeeks.getDate() + 14);
+  const RADIUS_KM = 80;
+
+  const matched = _allEventsCache.filter(function(ev) {
+    const d = parseEvDate(ev.date);
+    if (!d) return false;
+    if (d < now) return false;
+    if (!showAll && d > twoWeeks) return false;
+
+    // Location filter - include virtual always
+    const isVirtual = (ev.format || "").toLowerCase().includes("virtual");
+    if (!isVirtual && _userLat && _userLng && ev.lat && ev.lng) {
+      const dist = haversineKm(_userLat, _userLng, parseFloat(ev.lat), parseFloat(ev.lng));
+      if (dist > RADIUS_KM) return false;
+    }
+
+    // Keyword match
+    const haystack = [ev.title, ev.keywords, ev.categories, ev.description, ev.host, ev.location]
+      .filter(Boolean).join(" ").toLowerCase();
+    return interests.some(function(kw) { return haystack.includes(kw.toLowerCase()); });
+  }).sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
+
+  if (showAllWrap) showAllWrap.style.display = interests.length > 0 ? "block" : "none";
+
+  if (matched.length === 0) {
+    list.innerHTML = "";
+    if (emptyEl) emptyEl.style.display = "block";
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = "none";
+
+  list.innerHTML = matched.map(function(ev) {
+    return `<div class="event-card" style="margin-bottom:10px;">
+      <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
+      <div class="event-meta">${formatDate(ev.date, safeTime(ev))}${ev.location ? " · " + ev.location : ""}${ev.format && ev.format.includes("virtual") ? " · 💻 Virtual" : ""}</div>
+    </div>`;
+  }).join("");
+}
+
+function initInterests(allEvents) {
+  _allEventsCache = allEvents;
+  renderInterestChips();
+  // Get location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      _userLat = pos.coords.latitude;
+      _userLng = pos.coords.longitude;
+      renderInterestResults();
+    }, function() {
+      renderInterestResults(); // fallback without location
+    }, { timeout: 5000 });
+  } else {
+    renderInterestResults();
+  }
+}
+
 init();
 </script>
 
-<!-- myevents.html v1.15 -->
+<!-- myevents.html v1.17 -->
 </body>
 </html>
