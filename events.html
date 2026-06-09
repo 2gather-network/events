@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.68
+  Events.html Version 11.69
+  v11.69 - patch occurrence rows with rec- template data; append memberCard to event URL
   v11.68 - fix #post URL detection; raise event view modal higher
-  v11.67 - auto-open post modal on #post hash; redirect to myevents after submit
 
 -->
 <html lang="en">
@@ -1034,6 +1034,32 @@ async function loadEvents() {
     const allRows = (data.events || []).filter(r => r.id).map(sheetToEv);
     RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
     events = allRows.filter(e => !e.id.startsWith("rec-"));
+    // Patch occurrence rows with rec- template data for missing fields
+    events = events.map(function(ev) {
+      if (!ev.id.startsWith("recurring-")) return ev;
+      // Find matching rec- template
+      const slug = ev.id.replace(/^recurring-/, "").replace(/-\d{4}-\d{2}-\d{2}$/, "");
+      const template = RECURRING_EVENTS.find(function(r) {
+        return r.id === "rec-" + slug || r.title.toLowerCase().replace(/\s+/g,"-") === slug;
+      });
+      if (!template) return ev;
+      return Object.assign({}, ev, {
+        title: ev.title && ev.title !== slug.replace(/-/g," ") ? ev.title : (template.title || ev.title),
+        imageUrl: ev.imageUrl || template.imageUrl,
+        detailImageUrl: ev.detailImageUrl || template.detailImageUrl,
+        location: ev.location || template.location,
+        lat: ev.lat || template.lat,
+        lng: ev.lng || template.lng,
+        room: ev.room || template.room,
+        categories: (ev.categories && ev.categories.length) ? ev.categories : template.categories,
+        description: ev.description || template.description,
+        host: ev.host || template.host,
+        hostlink: ev.hostlink || template.hostlink,
+        format: ev.format || template.format,
+        experience: ev.experience || template.experience,
+        meetinglink: ev.meetinglink || template.meetinglink,
+      });
+    });
     syncCancelledOccurrences(events);
   } catch(e) {
     console.warn("Events load failed, retrying...", e);
@@ -2128,7 +2154,9 @@ function openEventView(id) {
   const ev = allEv.find(e => e.id === id);
   const title = ev ? ev.title : "";
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  const url = base + "event.html?id=" + id;
+  const savedMemberCard = localStorage.getItem("appear-id") || "";
+  const mcParam = savedMemberCard ? "&memberCard=" + encodeURIComponent(savedMemberCard) : "";
+  const url = base + "event.html?id=" + id + mcParam;
   document.getElementById("event-view-frame").src = url;
   document.getElementById("event-view-share-url").value = url;
   document.getElementById("event-view-title").textContent = title;
@@ -3131,6 +3159,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.68 -->
+<!-- Events.html v11.69 -->
 </body>
-</html>
+</html> 
