@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.73
+  event.html Version 4.74
   v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
@@ -455,16 +455,13 @@ function render(ev) {
   const lines = [
     ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
     (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${fmtBadge}${recurBadge}</div>` : "",
-    ev.experience ? `<div class="meta-item"><span></span><div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong>Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : "",
-    (ev.categories && ev.categories.length) ? `<div class="meta-item" style="margin-top:2px;align-items:flex-start;"><span>🏷️</span><span style="font-size:13px;color:var(--muted);white-space:normal;word-break:break-word;flex:1;">${ev.categories.map(c=>catMap[c]||c).join(", ")}</span></div>` : "",
     meetingRoomLine,
+    ev.venue ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
-    ev.venue ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
     ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
     ev.host ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
-
     (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span></span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
     (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
   ].filter(Boolean).join("");
@@ -536,6 +533,8 @@ function render(ev) {
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
+      ${ev.experience ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;"><strong style="font-size:13px;color:var(--dark);margin-right:4px;">Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div>` : ""}
+      ${(ev.categories && ev.categories.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
@@ -1188,6 +1187,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.73 -->
+<!-- event.html v4.74 -->
 </body>
 </html>
