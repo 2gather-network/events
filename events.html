@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.67
+  Events.html Version 11.68
+  v11.68 - fix #post URL detection; raise event view modal higher
   v11.67 - auto-open post modal on #post hash; redirect to myevents after submit
-  v11.66 - restore 2Gather logo to header
 
 -->
 <html lang="en">
@@ -2335,9 +2335,9 @@ safeOn("notes-modal",   "click", e => { if (e.target.id === "notes-modal")   clo
 safeOn("summary-modal", "click", e => { if (e.target.id === "summary-modal")  closeSummaryModal(); });
 
 // Auto-open post modal if URL has #post
-if (window.location.hash === "#post") {
+if (window.location.hash === "#post" || new URLSearchParams(window.location.search).get("action") === "post") {
   window.location.hash = "";
-  setTimeout(function() { openChoiceModal(); }, 500);
+  setTimeout(function() { openChoiceModal(); }, 800);
 }
 safeOn("room-modal",    "click", e => { if (e.target.id === "room-modal")     closeRoomModal(); });
 
@@ -3116,7 +3116,7 @@ loadEvents().then(() => {
 
 <!-- Event view modal (iframe) -->
 <div class="modal-overlay" id="event-view-modal" style="z-index:200;align-items:flex-end;padding:0;overscroll-behavior:none;">
-  <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);">
+  <div id="event-view-inner" style="background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:900px;display:flex;flex-direction:column;overflow:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.2);max-height:90vh;">
     <div style="flex-shrink:0;position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);">
         <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
@@ -3131,6 +3131,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.67 -->
+<!-- Events.html v11.68 -->
 </body>
 </html>
