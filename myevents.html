@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.17
+  myevents.html Version 1.18
+  v1.18 - add Find/Edit event by PIN at bottom
   v1.17 - remove all target=_blank to keep links within Glide webview
-  v1.16 - My Interests section with keyword matching, location, autocomplete
 -->
 <html lang="en">
 <head>
@@ -81,6 +81,26 @@
   </div>
 
   <div id="events-list"></div>
+
+  <!-- Find/Edit Event by PIN -->
+  <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+    <button onclick="openFindByPin()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">🔑 Edit an event with a PIN</button>
+  </div>
+
+  <!-- PIN Modal -->
+  <div id="pin-find-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:24px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">Find your event</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Enter the 4-digit PIN you set when posting your event.</p>
+      <input id="pin-find-input" type="number" maxlength="4" placeholder="4-digit PIN"
+        style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:16px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:8px;letter-spacing:4px;text-align:center;">
+      <p id="pin-find-error" style="display:none;font-size:12px;color:#dc2626;margin-bottom:8px;"></p>
+      <div style="display:flex;gap:8px;">
+        <button onclick="submitFindPin()" class="btn-white" style="flex:1;background:#1B6896;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Find event</button>
+        <button onclick="closeFindPin()" class="btn-white" style="border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer;font-family:inherit;">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- My Interests Section -->
   <div id="interests-section" style="margin-top:32px;">
@@ -607,9 +627,44 @@ function initInterests(allEvents) {
   }
 }
 
+// ── Find event by PIN ───────────────────────────────────────────
+function openFindByPin() {
+  const modal = document.getElementById("pin-find-modal");
+  if (modal) { modal.style.display = "flex"; document.getElementById("pin-find-input").value = ""; document.getElementById("pin-find-error").style.display = "none"; setTimeout(() => document.getElementById("pin-find-input").focus(), 100); }
+}
+
+function closeFindPin() {
+  const modal = document.getElementById("pin-find-modal");
+  if (modal) modal.style.display = "none";
+}
+
+async function submitFindPin() {
+  const pin = (document.getElementById("pin-find-input").value || "").trim();
+  const errEl = document.getElementById("pin-find-error");
+  if (!pin || pin.length < 4) { errEl.textContent = "Please enter your 4-digit PIN."; errEl.style.display = "block"; return; }
+  errEl.style.display = "none";
+  // Find event with this PIN in events list
+  const matched = _allEventsCache.filter(function(ev) { return String(ev.passcode || "").trim() === pin; });
+  if (matched.length === 0) { errEl.textContent = "No event found with that PIN."; errEl.style.display = "block"; return; }
+  // If one match go straight to edit, if multiple show list
+  if (matched.length === 1) {
+    closeFindPin();
+    window.location.href = "events.html?edit=" + encodeURIComponent(matched[0].id) + "&pin=" + encodeURIComponent(pin);
+  } else {
+    // Multiple events - show titles to pick
+    const pick = matched.map(function(ev) { return ev.title + " (" + (ev.date||"recurring") + ")"; }).join("\n");
+    errEl.textContent = "Multiple events found. Opening first match.";
+    errEl.style.display = "block";
+    setTimeout(function() {
+      closeFindPin();
+      window.location.href = "events.html?edit=" + encodeURIComponent(matched[0].id) + "&pin=" + encodeURIComponent(pin);
+    }, 1500);
+  }
+}
+
 init();
 </script>
 
-<!-- myevents.html v1.17 -->
+<!-- myevents.html v1.18 -->
 </body>
 </html>
