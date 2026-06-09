@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.69
+  event.html Version 4.70
   v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
@@ -155,7 +155,7 @@
         💳 Your Member Card: <strong id="rsvp-card-hint-id"></strong>
       </div>
       <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Member Card</button>
-      <div style="text-align:center;margin-top:12px;">
+      <div id="rsvp-no-card-hint" style="text-align:center;margin-top:12px;">
         <span style="font-size:13px;color:var(--muted);">Don't have one? </span><a href="https://appear.network/dl/page" style="font-size:13px;color:var(--primary);font-weight:700;text-decoration:underline;">Get your member card</a>
       </div>
     </div>
@@ -163,7 +163,7 @@
     <div id="rsvp-step-appear" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
-        <div class="modal-title" style="margin-bottom:0;">Register with Appear</div>
+        <div class="modal-title" style="margin-bottom:0;">Find your Member Card</div>
       </div>
       <button class="btn btn-primary" onclick="startQrScan()" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">📷 Scan my Member Card QR</button>
       <button class="btn btn-outline" onclick="showManualEntry()" style="width:100%;justify-content:center;margin-bottom:10px;">⌨️ Enter my Member Card number</button>
@@ -206,17 +206,17 @@
     </div>
     <!-- Step 2: Photo confirmation -->
     <div id="rsvp-step-confirm" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
       </div>
-      <div style="text-align:center;margin-bottom:20px;">
-        <img id="rsvp-confirm-photo" src="" alt="" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin-bottom:12px;">
-        <p id="rsvp-confirm-id" style="font-size:13px;color:var(--muted);"></p>
-      </div>
-      <div class="modal-actions">
+      <div class="modal-actions" style="margin-bottom:16px;">
         <button class="btn btn-primary" style="flex:1;" onclick="confirmRsvp()">✓ Yes, that's me</button>
         <button class="btn btn-outline" onclick="showStep(1)">Not me</button>
+      </div>
+      <div style="text-align:center;">
+        <img id="rsvp-confirm-photo" src="" alt="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin-bottom:8px;">
+        <p id="rsvp-confirm-id" style="font-size:13px;color:var(--muted);"></p>
       </div>
     </div>
     <!-- Step 2b: ID not found -->
@@ -722,6 +722,9 @@ function openRsvpModal() {
     const hint = document.getElementById("rsvp-card-hint");
     const hintId = document.getElementById("rsvp-card-hint-id");
     if (hint && hintId) { hintId.textContent = savedId; hint.style.display = "block"; }
+    // Hide "don't have one" link
+    const noCard = document.getElementById("rsvp-no-card-hint");
+    if (noCard) noCard.style.display = "none";
     lookupAndConfirm(savedId);
   } else {
     showStep(1);
@@ -1181,6 +1184,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.69 -->
+<!-- event.html v4.70 -->
 </body>
 </html>
