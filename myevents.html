@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.7
+  myevents.html Version 1.8
+  v1.8 - match header style to events.html; blue bg, white btn-white badge
   v1.7 - remove profile bar; clickable member card badge copies code; fix copy/labels
-  v1.6 - remove header logo and Browse events links; Glide handles navigation
 -->
 <html lang="en">
 <head>
@@ -21,9 +21,11 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
-    header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; width: 100%; }
-    header img { height: 32px; }
-    header h1 { font-size: 18px; font-weight: 800; color: var(--dark); }
+    header { background: #1B6896; padding: 14px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; }
+    header img { height: 28px; width: auto; display: block; }
+    header h1 { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); }
+    .btn-white { background: rgba(255,255,255,0.95); color: #154F74; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .btn-white:hover { background: white; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
     .save-btn { margin-left: auto; background: none; border: 1.5px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 700; color: var(--dark); cursor: pointer; white-space: nowrap; }
     .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; }
@@ -48,10 +50,13 @@
 </head>
 <body>
 
-<header>
-  <h1>My Events</h1>
-  <button id="header-card-badge" onclick="copyMemberCard()" style="display:none;margin-left:auto;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:#166534;white-space:nowrap;cursor:pointer;font-family:inherit;">💳 &nbsp;<span id="header-card-number"></span></button>
-</header>
+<div class="header">
+  <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather">
+  <span style="color:rgba(255,255,255,0.85);font-size:13px;font-weight:700;">My Events</span>
+  <div style="margin-left:auto;">
+    <button id="header-card-badge" onclick="copyMemberCard()" class="btn-white" style="display:none;">💳 &nbsp;<span id="header-card-number"></span></button>
+  </div>
+</div>
 
 <div class="container">
 
@@ -314,6 +319,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.7 -->
+<!-- myevents.html v1.8 -->
 </body>
 </html>
