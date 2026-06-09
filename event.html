@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.70
+  event.html Version 4.71
   v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
@@ -209,6 +209,10 @@
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
+      </div>
+      <div style="margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="rsvp-public-toggle" checked style="width:16px;height:16px;cursor:pointer;">
+        <label for="rsvp-public-toggle" style="font-size:13px;color:var(--dark);cursor:pointer;">Show me as going to this event</label>
       </div>
       <div class="modal-actions" style="margin-bottom:16px;">
         <button class="btn btn-primary" style="flex:1;" onclick="confirmRsvp()">✓ Yes, that's me</button>
@@ -489,7 +493,7 @@ function render(ev) {
           </div>
         </div>
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-          ✓ You're registered! If you can't make it, reach out to ${contactLink}.
+          ✓ You're registered! If you can't make it, <a href="https://appear.network/dl/my-events" style="color:var(--primary);font-weight:700;">cancel your registration</a> under My events.
         </div>
         <div id="post-rsvp-actions" style="display:none;margin-top:12px;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid var(--border);">
           <a id="my-events-link" href="myevents.html" style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;">📅 View my events page</a>
@@ -894,7 +898,7 @@ async function confirmRsvp() {
   if (!_rsvpAppearId || !_currentEv) return;
   showStep("loading");
   document.getElementById("rsvp-loading-msg").textContent = "Registering you...";
-  const isPublic = confirm("Would you like others to see you're going to this event?");
+  const isPublic = document.getElementById("rsvp-public-toggle")?.checked !== false;
   try {
     await fetch(`${GS_URL}?action=rsvp&appearId=${encodeURIComponent(_rsvpAppearId)}&eventId=${encodeURIComponent(_currentEv.id)}&public=${isPublic}`);
   } catch(e) { /* best effort */ }
@@ -1184,6 +1188,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.70 -->
+<!-- event.html v4.71 -->
 </body>
 </html>
