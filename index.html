@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.86
-  v2.86 - add Find my event button to header linking to myevents.html
-  v2.85 - 2gather logo + favicon; replace house SVG with logo image
+  index.html Version 2.88
+  v2.88 - restore 2Gather logo to header
+  v2.87 - remove header logo and Find my event button; Glide handles navigation
 
 -->
 <html lang="en">
@@ -121,12 +121,9 @@
 
 <div class="header">
   <div style="flex:1;display:flex;align-items:center;gap:8px;">
-    <a href="https://gather.2gather.network/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none;flex-shrink:0;" title="Back to home">
-      <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
-    </a>
+    <img src="https://raw.githubusercontent.com/2Gather-Network/events/main/images/2gather_logo.png" alt="2Gather" style="height:28px;width:auto;display:block;">
     <div style="color:rgba(255,255,255,0.85);font-size:13px;">Gathering for the common good.</div>
   </div>
-  <button onclick="goToMyEvents()" style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🔍 Find my event</button>
 </div>
 
 <div class="page-body">
@@ -781,11 +778,6 @@ renderPills();
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 loadEvents();
 
-
-function goToMyEvents() {
-  const savedId = localStorage.getItem("appear-id");
-  window.location.href = savedId ? "myevents.html?id=" + encodeURIComponent(savedId) : "myevents.html";
-}
 </script>
 <!-- Event view modal (iframe) -->
 <div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;overscroll-behavior:none;" id="event-view-modal">
