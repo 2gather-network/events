@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.11
+  myevents.html Version 1.12
+  v1.12 - fix 12:00 AM showing for events with no start time
   v1.11 - fix header CSS selector; remove add event button
-  v1.10 - fix header logo size; fix 12:00 AM time; hosting tabs upcoming/past; add event btn
 -->
 <html lang="en">
 <head>
@@ -107,17 +107,26 @@ function copyMemberCard() {
   });
 }
 
+function safeTime(ev) {
+  // Apps Script returns raw sheet columns - startTime is the column name
+  const t = ev.startTime || ev.time || "";
+  if (!t || String(t).trim() === "" || String(t).trim() === "00:00") return "";
+  return String(t).trim();
+}
+
 function formatDate(dateStr, time) {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00");
   const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   let s = dayNames[d.getDay()] + ", " + monthNames[d.getMonth()] + " " + d.getDate();
-  if (time && time !== "00:00" && time !== "0:00") {
-    const parts = time.split(":").map(Number);
-    const h = parts[0], m = parts[1];
-    const ampm = h >= 12 ? "PM" : "AM";
-    s += " · " + (h % 12 || 12) + ":" + String(m).padStart(2,"0") + " " + ampm;
+  if (time && String(time).trim() !== "00:00" && String(time).trim() !== "0:00" && String(time).trim() !== "") {
+    const parts = String(time).split(":").map(Number);
+    const h = parts[0], m = parts[1] || 0;
+    if (h > 0 || m > 0) {
+      const ampm = h >= 12 ? "PM" : "AM";
+      s += " · " + (h % 12 || 12) + ":" + String(m).padStart(2,"0") + " " + ampm;
+    }
   }
   return s;
 }
@@ -262,7 +271,7 @@ function renderEvents(registrations, events) {
       card.style.borderLeft = "3px solid var(--primary)";
       card.innerHTML = `
         <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
-        <div class="event-meta">${formatDate(ev.date, ev.startTime||ev.time)}${ev.location ? " · " + ev.location : ""}</div>
+        <div class="event-meta">${formatDate(ev.date, safeTime(ev))}${ev.location ? " · " + ev.location : ""}</div>
         <div class="event-actions">
           <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
           <a href="event.html?id=${encodeURIComponent(ev.id)}" class="btn btn-outline">✏️ Manage</a>
@@ -285,7 +294,7 @@ function renderEvents(registrations, events) {
       card.style.opacity = "0.7";
       card.innerHTML = `
         <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
-        <div class="event-meta">${formatDate(ev.date, ev.startTime||ev.time)}${ev.location ? " · " + ev.location : ""}</div>`;
+        <div class="event-meta">${formatDate(ev.date, safeTime(ev))}${ev.location ? " · " + ev.location : ""}</div>`;
       pastContainer.appendChild(card);
     });
     list.appendChild(pastContainer);
@@ -304,7 +313,7 @@ function renderEvents(registrations, events) {
       card.className = "event-card";
       card.innerHTML = `
         <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
-        <div class="event-meta">${formatDate(ev.date, ev.startTime||ev.time)}${ev.location ? " · " + ev.location : ""}</div>
+        <div class="event-meta">${formatDate(ev.date, safeTime(ev))}${ev.location ? " · " + ev.location : ""}</div>
         <div class="event-actions">
           <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
           <button class="btn btn-danger" onclick="cancelRsvp('${ev.id}')">✕ Cancel RSVP</button>
@@ -330,7 +339,7 @@ function renderEvents(registrations, events) {
       card.style.opacity = "0.5";
       card.innerHTML = `
         <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}" style="text-decoration:line-through;">${ev.title || "Untitled"}</a>
-        <div class="event-meta">${formatDate(ev.date, ev.startTime||ev.time)}</div>
+        <div class="event-meta">${formatDate(ev.date, safeTime(ev))}</div>
       `;
       list.appendChild(card);
     });
@@ -404,6 +413,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.11 -->
+<!-- myevents.html v1.12 -->
 </body>
 </html>
