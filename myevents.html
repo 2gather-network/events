@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.12
+  myevents.html Version 1.13
+  v1.13 - fix date parsing for ISO date strings from Apps Script
   v1.12 - fix 12:00 AM showing for events with no start time
-  v1.11 - fix header CSS selector; remove add event button
 -->
 <html lang="en">
 <head>
@@ -107,6 +107,14 @@ function copyMemberCard() {
   });
 }
 
+function parseEvDate(dateVal) {
+  if (!dateVal) return null;
+  // Handle both "2026-05-24" and "2026-05-24T00:00:00.000Z"
+  const str = String(dateVal).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+  return new Date(str + "T23:59:00");
+}
+
 function safeTime(ev) {
   // Apps Script returns raw sheet columns - startTime is the column name
   const t = ev.startTime || ev.time || "";
@@ -116,7 +124,7 @@ function safeTime(ev) {
 
 function formatDate(dateStr, time) {
   if (!dateStr) return "";
-  const d = new Date(dateStr + "T12:00");
+  const d = new Date(String(dateStr).slice(0,10) + "T12:00");
   const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   let s = dayNames[d.getDay()] + ", " + monthNames[d.getMonth()] + " " + d.getDate();
@@ -170,7 +178,7 @@ function renderEvents(registrations, events) {
     .filter(function(ev) {
       return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard;
     })
-    .filter(function(ev) { return ev.date && new Date(ev.date + "T23:59") >= now; });
+    .filter(function(ev) { return ev.date && parseEvDate(ev.date) >= now; });
 
   // Recurring hosted events - generate next 8 occurrences each
   const hostedRec = [];
@@ -212,7 +220,7 @@ function renderEvents(registrations, events) {
       return ev ? { ...ev, _rsvp: r } : null;
     })
     .filter(Boolean)
-    .filter(ev => ev.date && new Date(ev.date + "T23:59") >= now)
+    .filter(ev => ev.date && parseEvDate(ev.date) >= now)
     .sort((a,b) => new Date(a.date) - new Date(b.date));
 
   // Cancelled RSVPs
@@ -236,12 +244,12 @@ function renderEvents(registrations, events) {
   list.innerHTML = "";
 
   // Hosting section - split upcoming/past
-  const hostedUpcoming = hosted.filter(function(ev) { return new Date(ev.date + "T23:59") >= now; });
+  const hostedUpcoming = hosted.filter(function(ev) { return parseEvDate(ev.date) >= now; });
   const hostedPast = events
     .filter(function(ev) {
       return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard;
     })
-    .filter(function(ev) { return ev.date && new Date(ev.date + "T23:59") < now; })
+    .filter(function(ev) { return ev.date && parseEvDate(ev.date) < now; })
     .sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
 
   if (hostedUpcoming.length > 0 || hostedPast.length > 0) {
@@ -413,6 +421,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.12 -->
+<!-- myevents.html v1.13 -->
 </body>
 </html>
