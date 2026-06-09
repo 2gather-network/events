@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.67
+  event.html Version 4.69
   v4.61 - rename Appear ID to Member Card number throughout
   -->
   <meta charset="UTF-8">
@@ -151,9 +151,12 @@
         <div class="modal-title" style="margin-bottom:0;">Register for this event</div>
         <button onclick="closeRsvpModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px;">×</button>
       </div>
+      <div id="rsvp-card-hint" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#166534;">
+        💳 Your Member Card: <strong id="rsvp-card-hint-id"></strong>
+      </div>
       <button class="btn btn-primary" onclick="showStep('appear')" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:14px;">Register with my Member Card</button>
       <div style="text-align:center;margin-top:12px;">
-        <span style="font-size:13px;color:var(--muted);">Don't have one? </span><a href="https://appear.network" target="_blank" style="font-size:13px;color:var(--primary);font-weight:700;text-decoration:underline;">Get your Member Card on Appear</a>
+        <span style="font-size:13px;color:var(--muted);">Don't have one? </span><a href="https://appear.network/dl/page" style="font-size:13px;color:var(--primary);font-weight:700;text-decoration:underline;">Get your member card</a>
       </div>
     </div>
     <!-- Step 1a: Appear options -->
@@ -167,7 +170,7 @@
       <div style="text-align:center;">
         <button onclick="toggleAppearHelp()" style="background:none;border:none;color:#374151;font-size:14px;cursor:pointer;text-decoration:underline;font-weight:600;">How do I find my Member Card number?</button>
         <div id="appear-help" style="display:none;margin-top:8px;padding:12px 14px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);font-size:14px;color:#374151;text-align:left;line-height:1.7;">
-          Sign in to <a href="http://appear.network" target="_blank" style="color:var(--primary);font-weight:700;">appear.network</a> and find your Member Card number under <a href="http://appear.network/dl/page" target="_blank" style="color:var(--primary);font-weight:700;">My page</a>.
+          Sign in to <a href="http://appear.network" style="color:var(--primary);font-weight:700;">appear.network</a> and find your Member Card number under <a href="http://appear.network/dl/page" style="color:var(--primary);font-weight:700;">My page</a>.
         </div>
       </div>
     </div>
@@ -224,7 +227,7 @@
       </div>
       <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">We couldn't find that Member Card number. Please check your number or get your Member Card on Appear Network.</p>
       <div class="modal-actions">
-        <a href="https://appear.network" target="_blank" class="btn btn-primary" style="flex:1;justify-content:center;">Get Member Card on Appear</a>
+        <a href="https://appear.network" class="btn btn-primary" style="flex:1;justify-content:center;">Get Member Card on Appear</a>
         <button class="btn btn-outline" onclick="showStep(1)">Try again</button>
       </div>
     </div>
@@ -431,17 +434,17 @@ function render(ev) {
   const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
   const isToday = eventDay && eventDay.toDateString() === today.toDateString();
   const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday
-    ? `<a href="${esc(ev.meetinglink || roomUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
+    ? `<a href="${esc(ev.meetinglink || roomUrl)}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
     : "";
   const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room
-    ? `<div class="meta-item"><span>${roomEmoji}</span><span>Meeting room: <a href="${esc(roomUrl)}" target="_blank" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
+    ? `<div class="meta-item"><span>${roomEmoji}</span><span>Meeting room: <a href="${esc(roomUrl)}" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
     : "";
 
   const locLink = ev.location
-    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`
+    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" rel="noopener">${esc(ev.location)}</a>`
     : "In-person";
 
-  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" target="_blank" rel="noopener">${esc(ev.host)}</a>` : esc(ev.host);
+  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" rel="noopener">${esc(ev.host)}</a>` : esc(ev.host);
   const firstName = (ev.host||"").trim().split(/\s+/)[0]||"Host";
 
   const sl = ev.showLinks||"";
@@ -454,9 +457,9 @@ function render(ev) {
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span>📍</span>${locLink}</div>` : "",
     ev.venue ? `<div class="meta-item"><span>🏛️</span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
-    ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
+    ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
     ev.host ? `<div class="meta-item"><span>👤</span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
-    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" target="_blank" rel="noopener">Register / Pay</a></div>` : "",
+    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
 
     (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span>✉️</span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
     (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
@@ -528,7 +531,7 @@ function render(ev) {
       ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" target="_blank" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" target="_blank" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
+      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
@@ -697,11 +700,28 @@ let _qrScanInterval = null;
 
 function openRsvpModal() {
   _rsvpAppearId = null;
+
+  // Check URL param first, then localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlMemberCard = urlParams.get("memberCard");
+  const savedId = urlMemberCard || localStorage.getItem("appear-id");
+  const confirmed = localStorage.getItem("appear-confirmed");
+
+  // If already confirmed on this device — 1 click register
+  if (savedId && confirmed === "true") {
+    _rsvpAppearId = savedId;
+    finishRsvp();
+    return;
+  }
+
+  // Otherwise open modal
   document.getElementById("rsvp-modal").classList.add("open");
 
-  // Check if we already know who this person is
-  const savedId = localStorage.getItem("appear-id");
   if (savedId) {
+    // Show hint on step 1 before confirming
+    const hint = document.getElementById("rsvp-card-hint");
+    const hintId = document.getElementById("rsvp-card-hint-id");
+    if (hint && hintId) { hintId.textContent = savedId; hint.style.display = "block"; }
     lookupAndConfirm(savedId);
   } else {
     showStep(1);
@@ -883,7 +903,10 @@ async function confirmRsvp() {
 function finishRsvp() {
   closeRsvpModal();
   if (_rsvpAppearId) {
-    try { localStorage.setItem("appear-id", _rsvpAppearId); } catch(e) {}
+    try {
+      localStorage.setItem("appear-id", _rsvpAppearId);
+      localStorage.setItem("appear-confirmed", "true");
+    } catch(e) {}
   }
   const btn = document.getElementById("interest-btn");
   if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
@@ -917,7 +940,7 @@ async function loadWhoIsGoing() {
     const section = document.getElementById("who-is-going");
     if (!list || !section) return;
     list.innerHTML = data.attendees.map(a => `
-      <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" target="_blank" title="${a.appearId}" style="display:block;width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--border);">
+      <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" title="${a.appearId}" style="display:block;width:44px;height:44px;border-radius:50%;overflow:hidden;border:2px solid var(--border);">
         <img src="${a.photo}" alt="${a.appearId}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${a.appearId}&size=44'">
       </a>`).join("");
     section.style.display = "block";
@@ -1158,6 +1181,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.67 -->
+<!-- event.html v4.69 -->
 </body>
 </html>
