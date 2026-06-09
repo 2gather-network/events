@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.10
+  myevents.html Version 1.11
+  v1.11 - fix header CSS selector; remove add event button
   v1.10 - fix header logo size; fix 12:00 AM time; hosting tabs upcoming/past; add event btn
-  v1.9 - include recurring hosted events in hosting section
 -->
 <html lang="en">
 <head>
@@ -21,9 +21,9 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
-    header { background: #1B6896; padding: 14px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; }
+    .header { background: #1B6896; padding: 14px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; }
     header img { height: 28px; width: auto; display: block; }
-    header h1 { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.85); }
+
     .btn-white { background: rgba(255,255,255,0.95); color: #154F74; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
     .btn-white:hover { background: white; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
@@ -239,9 +239,7 @@ function renderEvents(registrations, events) {
     // Section title + Add event button
     const hostHeader = document.createElement("div");
     hostHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;";
-    hostHeader.innerHTML = `
-      <div class="section-title" style="margin-bottom:0;">Hosting</div>
-      <a href="https://gather.2gather.network/events.html" target="_blank" class="btn btn-outline" style="font-size:12px;padding:5px 10px;">+ Add event</a>`;
+    hostHeader.innerHTML = `<div class="section-title" style="margin-bottom:0;">Hosting</div>`;
     list.appendChild(hostHeader);
 
     // Tab bar
@@ -406,6 +404,6 @@ async function init() {
 init();
 </script>
 
-<!-- myevents.html v1.10 -->
+<!-- myevents.html v1.11 -->
 </body>
 </html>
