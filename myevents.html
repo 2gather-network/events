@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.18
-  v1.18 - add Find/Edit event by PIN at bottom
-  v1.17 - remove all target=_blank to keep links within Glide webview
+  myevents.html Version 1.21
+  v1.21 - fix others going photo field (profileUrl); shorten edit PIN label
+  v1.18 - prior version
 -->
 <html lang="en">
 <head>
@@ -84,7 +84,7 @@
 
   <!-- Find/Edit Event by PIN -->
   <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
-    <button onclick="openFindByPin()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">🔑 Edit an event with a PIN</button>
+    <button onclick="openFindByPin()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">🔑 Edit event</button>
   </div>
 
   <!-- PIN Modal -->
@@ -418,9 +418,8 @@ async function loadAttendees(eventId) {
       if (a.appearId === _appearId) return; // skip self
       const link = document.createElement("a");
       link.href = APPEAR_BASE + encodeURIComponent(a.appearId);
-      link.target = "_blank";
       const img = document.createElement("img");
-      img.src = a.photo;
+      img.src = a.profileUrl || a.photo || "";
       img.alt = a.appearId;
       img.title = a.appearId;
       img.onerror = () => { img.src = "https://ui-avatars.com/api/?name=" + a.appearId + "&size=36"; };
@@ -665,6 +664,6 @@ async function submitFindPin() {
 init();
 </script>
 
-<!-- myevents.html v1.18 -->
+<!-- myevents.html v1.21 -->
 </body>
 </html>
