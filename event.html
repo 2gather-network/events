@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.76
-  v4.76 - share button hidden on mobile; chips above date; remove calendar emoji; format/weekly chips match experience style; experience after host; meeting room label update
-  v4.74 - prior version
+  event.html Version 4.77
+  v4.77 - remove link emoji on cooplink; remove Optional from interest label; save/delete button swap; delete confirmation; chip spacing; This event represents; exchange below categories; back closes modal if card known; checkbox copy update; Let's gather here today; remove View my events; fix registered text; edit same window; venue hidden virtual; modal scroll top
+  v4.76 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -209,12 +209,15 @@
     <!-- Step 2: Photo confirmation -->
     <div id="rsvp-step-confirm" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <button onclick="showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <button onclick="localStorage.getItem('appear-id') ? closeRsvpModal() : showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
       </div>
-      <div style="margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;gap:10px;">
-        <input type="checkbox" id="rsvp-public-toggle" checked style="width:16px;height:16px;cursor:pointer;">
-        <label for="rsvp-public-toggle" style="font-size:13px;color:var(--dark);cursor:pointer;">Show me as going to this event</label>
+      <div style="margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <input type="checkbox" id="rsvp-public-toggle" checked style="width:16px;height:16px;cursor:pointer;">
+          <label for="rsvp-public-toggle" style="font-size:13px;color:var(--dark);cursor:pointer;font-weight:600;">Show me as going (uncheck to stay private)</label>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-left:26px;">Staying private removes you from in-room matching.</p>
       </div>
       <div class="modal-actions" style="margin-bottom:16px;">
         <button class="btn btn-primary" style="flex:1;" onclick="confirmRsvp()">✓ Yes, that's me</button>
@@ -439,11 +442,11 @@ function render(ev) {
   const roomUrl = ROOMS[ev.room] || "https://events.2gather.network/events/yvrgej/zkxbzq";
   const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
   const isToday = eventDay && eventDay.toDateString() === today.toDateString();
-  const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday
-    ? `<a href="${esc(ev.meetinglink || roomUrl)}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
-    : "";
-  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room && isToday
-    ? `<div class="meta-item"><span></span><span><a href="${esc(ev.meetinglink || roomUrl)}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's gather today · ${ev.time ? new Date("1970-01-01T"+ev.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""}</a></span></div>`
+  const gatherUrl = esc(ev.meetinglink || roomUrl);
+  const gatherTimeStr = ev.time ? new Date("1970-01-01T"+ev.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "";
+  const joinBtn = ""; // removed - replaced by Let's gather here today in meta
+  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && isToday
+    ? `<div class="meta-item"><span></span><span><a href="${gatherUrl}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's gather here today${gatherTimeStr ? " at " + gatherTimeStr : ""}</a></span></div>`
     : (ev.format === "virtual" || ev.format === "both") && ev.room
     ? `<div class="meta-item"><span></span><span>Meeting room: <a href="${esc(roomUrl)}" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
     : "";
@@ -463,7 +466,7 @@ function render(ev) {
     ev.venue ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
-    ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
+    ev.cooplink ? `<div class="meta-item"><span></span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
     ev.host ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
     ev.experience ? `<div class="meta-item"><span></span><span style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong style="font-size:13px;color:var(--dark);margin-right:4px;">Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
@@ -495,10 +498,7 @@ function render(ev) {
           </div>
         </div>
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-          ✓ You're registered! If you can't make it, cancel your registration under My events ↑
-        </div>
-        <div id="post-rsvp-actions" style="display:none;margin-top:12px;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid var(--border);">
-          <a id="my-events-link" href="myevents.html" style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--primary);text-decoration:none;">📅 View my events page</a>
+          ✓ You're registered! Manage your registrations anytime under My events.
         </div>
         <div id="who-is-going" style="display:none;margin-top:16px;">
           <p style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;">Others going</p>
@@ -534,12 +534,12 @@ function render(ev) {
         ${joinBtn}
       </div>
       <div class="meta">${lines}</div>
-      ${exchange}
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
-      ${(ev.categories && ev.categories.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div>` : ""}
-      ${engagementSection}
+      ${(ev.categories && ev.categories.length) ? `<div style="margin-top:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">This event represents</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div></div>` : ""}
+      ${exchange}
+      <div style="margin-top:20px;">${engagementSection}</div>
       <hr class="divider">
       <div class="actions">
         <button class="btn btn-primary btn-share-desktop" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
@@ -575,13 +575,6 @@ function render(ev) {
         if (btn) { btn.textContent = "✓ Going"; btn.disabled = true; btn.style.opacity = "0.7"; }
         const cancelArea = document.getElementById("cancel-rsvp-area");
         if (cancelArea) cancelArea.style.display = "block";
-        // Show my events link
-        const postRsvp = document.getElementById("post-rsvp-actions");
-        const savedId = localStorage.getItem("appear-id");
-        if (postRsvp && savedId) {
-          document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(savedId);
-          postRsvp.style.display = "block";
-        }
         loadWhoIsGoing();
         const confirmed = document.getElementById("interest-confirmed");
         if (confirmed) confirmed.style.display = "block";
@@ -929,13 +922,6 @@ function finishRsvp() {
   const hostNoteSection = document.getElementById("host-note-section");
   if (hostNoteSection) hostNoteSection.style.display = "block";
   try { localStorage.setItem("db-interested-" + _currentEv.id, "1"); } catch(e) {}
-  if (_rsvpAppearId) {
-    const postRsvp = document.getElementById("post-rsvp-actions");
-    if (postRsvp) {
-      document.getElementById("my-events-link").href = "myevents.html?id=" + encodeURIComponent(_rsvpAppearId);
-      postRsvp.style.display = "block";
-    }
-  }
   loadWhoIsGoing();
   showToast("✓ You're registered!");
 }
@@ -1080,9 +1066,8 @@ function submitEditPin() {
   const urlId = new URLSearchParams(window.location.search).get("id") || ev.id;
   try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
   closeEditPin();
-  // v4.40: open edit in new tab - simpler, avoids modal stacking issues
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  window.open(base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin), "_blank");
+  window.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
 }
 
 function openReadNotes() {
@@ -1191,6 +1176,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.76 -->
+<!-- event.html v4.77 -->
 </body>
 </html>
