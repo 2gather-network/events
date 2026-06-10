@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.76
-  v11.76 - save/delete button swap; delete type confirmation + archive; venue hidden virtual; cancel occurrence fix; modal scroll top; edit same window
-  v11.75 - prior version
+  Events.html Version 11.77
+  v11.77 - cancel occurrence feedback + navigate; Cancel button dirty check
+  v11.76 - prior version
 
 -->
 <html lang="en">
@@ -661,7 +661,7 @@ A weekly conversation about money, values, and what abundance looks like. Bring 
             <option value="4">4</option>
           </select>
         </span>
-        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-outline" onclick="if(!formDirty||confirm('You have unsaved changes. Close anyway?'))closeModal()">Cancel</button>
         <button class="btn btn-green" style="flex:1;" id="submit-btn" onclick="submitEvent()">Post event</button>
       </div>
     </div>
@@ -2614,6 +2614,12 @@ async function submitEvent() {
         localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
         const occDate = editingId.slice(-10);
         apiAdd({ id:"cancelled-"+editingId, title:(title||"")+" [CANCELLED]", date:occDate, host:eventData.host||host, passcode:MASTER_PASSCODE, going:0, cancelled:true, categories:"", format:"", description:"" }).catch(()=>{});
+        closeModal(); renderEvents(); showToast("This occurrence has been cancelled.");
+        setTimeout(() => {
+          const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
+          window.location.href = base + "event.html?id=" + encodeURIComponent(editingId);
+        }, 1200);
+        return;
       } else if (!document.getElementById("f-cancel-occurrence")?.checked && cancelledOccurrences.has(editingId)) {
         cancelledOccurrences.delete(editingId);
         localStorage.setItem("db-cancelled-occurrences", JSON.stringify([...cancelledOccurrences]));
@@ -3187,6 +3193,6 @@ loadEvents().then(() => {
   </div>
 </div>
 
-<!-- Events.html v11.76 -->
+<!-- Events.html v11.77 -->
 </body>
 </html>
