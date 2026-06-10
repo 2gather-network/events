@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.74
-  v4.61 - rename Appear ID to Member Card number throughout
+  event.html Version 4.76
+  v4.76 - share button hidden on mobile; chips above date; remove calendar emoji; format/weekly chips match experience style; experience after host; meeting room label update
+  v4.74 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -114,6 +115,7 @@
       .modal-overlay { align-items:flex-end; justify-content:stretch; padding:0; }
       .modal { border-radius:20px 20px 0 0; max-width:100%; max-height:90vh; padding:8px 20px 32px; }
       .modal::before { content:""; display:block; width:40px; height:4px; background:var(--border); border-radius:2px; margin:8px auto 20px; }
+      .btn-share-desktop { display:none; }
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
@@ -428,11 +430,11 @@ function render(ev) {
   const catMap = {arts:"Arts/culture",movement:"Physical health/wellness",learning:"Learning/discovery",nature:"Nature/outdoors",professional:"Work/skills",creative:"Creative making",faith:"Inner life",resources:"Resource sharing",care:"Mental health/wellness",social:"Social gathering",family:"Family/caregiving/home",food:"Food/drink",wealth:"Wealth/abundance"};
   const typeMap = {spread:"📣 Spread the word",time:"⏰ Time",connections:"🌐 Referrals/Connections",feedback:"💬 Feedback",food:"🥘 Food/drink",skills:"🛠️ Skills",stuff:"🎁 Stuff",space:"📍 Space",money:"💵 Money",care:"💛 Care",noask:"🤝 No ask",free:"🎁 Free",testimonial:"⭐ Testimonial",share:"🔗 Share"};
 
-  const fmtBadge = ev.format==="virtual" ? `<span class="format-badge badge-virtual">💻 Virtual</span>`
-    : ev.format==="inperson" ? `<span class="format-badge badge-inperson">📍 In-person</span>`
-    : ev.format==="both" ? `<span class="format-badge badge-hybrid">🔀 Hybrid</span>` : "";
+  const fmtBadge = ev.format==="virtual" ? `<span class="format-badge" style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;color:var(--dark);">💻 Virtual</span>`
+    : ev.format==="inperson" ? `<span class="format-badge" style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;color:var(--dark);">📍 In-person</span>`
+    : ev.format==="both" ? `<span class="format-badge" style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;color:var(--dark);">🔀 Hybrid</span>` : "";
 
-  const recurBadge = ev.recurFreq ? `<span class="format-badge badge-recurring">🔁 ${ev.recurFreq==="monthly"?"Monthly":"Weekly"}</span>` : "";
+  const recurBadge = ev.recurFreq ? `<span class="format-badge" style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;color:var(--dark);">🔁 ${ev.recurFreq==="monthly"?"Monthly":"Weekly"}</span>` : "";
 
   const roomUrl = ROOMS[ev.room] || "https://events.2gather.network/events/yvrgej/zkxbzq";
   const roomEmoji = ROOM_EMOJI[ev.room] || "🏠";
@@ -440,7 +442,9 @@ function render(ev) {
   const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday
     ? `<a href="${esc(ev.meetinglink || roomUrl)}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join virtual meeting</a>`
     : "";
-  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room
+  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room && isToday
+    ? `<div class="meta-item"><span></span><span><a href="${esc(ev.meetinglink || roomUrl)}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's gather today · ${ev.time ? new Date("1970-01-01T"+ev.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : ""}</a></span></div>`
+    : (ev.format === "virtual" || ev.format === "both") && ev.room
     ? `<div class="meta-item"><span></span><span>Meeting room: <a href="${esc(roomUrl)}" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
     : "";
 
@@ -453,14 +457,15 @@ function render(ev) {
 
   const sl = ev.showLinks||"";
   const lines = [
-    ev.date ? `<div class="meta-item"><span>🗓️</span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
-    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${fmtBadge}${recurBadge}</div>` : "",
+    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">${fmtBadge}${recurBadge}</div>` : "",
+    ev.date ? `<div class="meta-item"><span></span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
     meetingRoomLine,
     ev.venue ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
     (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
     ev.cooplink ? `<div class="meta-item"><span>🔗</span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
     ev.host ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
+    ev.experience ? `<div class="meta-item"><span></span><span style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong style="font-size:13px;color:var(--dark);margin-right:4px;">Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</span></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
     (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span></span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
     (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
@@ -533,12 +538,11 @@ function render(ev) {
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
       ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
-      ${ev.experience ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;"><strong style="font-size:13px;color:var(--dark);margin-right:4px;">Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div>` : ""}
       ${(ev.categories && ev.categories.length) ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div>` : ""}
       ${engagementSection}
       <hr class="divider">
       <div class="actions">
-        <button class="btn btn-primary" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
+        <button class="btn btn-primary btn-share-desktop" onclick="share()" ontouchstart="share()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Share</button>
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
         <button class="btn btn-outline" onclick="openQrModal()" title="Get QR code" style="padding:10px 14px;">⊞ QR</button>
@@ -1187,6 +1191,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.74 -->
+<!-- event.html v4.76 -->
 </body>
 </html>
