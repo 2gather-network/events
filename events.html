@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.79
-  v11.79 - For You above tabs; Upcoming events label; full card clickable; no View button; smaller For You cards no images; cancelled hidden from For You; edit icon hidden on cancelled cards
-  v11.78 - prior version
+  Events.html Version 11.80
+  v11.80 - force links blue; My interests header; pencil on edit; no-wrap message
+  v11.79 - prior version
 
 -->
 <html lang="en">
@@ -195,6 +195,8 @@
     .event-grid { grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); }
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  a { color: var(--primary); }
+  a:visited { color: var(--primary); }
   </style>
 </head>
 <body>
@@ -227,9 +229,9 @@
     <!-- State 2: has keywords -->
     <div id="for-you-active" style="display:none;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">For you</span>
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">My interests</span>
         <div id="for-you-chips" style="display:flex;flex-wrap:wrap;gap:6px;flex:1;"></div>
-        <button onclick="openInterestsModal()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;">Edit my interests</button>
+        <button onclick="openInterestsModal()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap;">✏️ Edit my interests</button>
       </div>
       <div id="for-you-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:8px;"></div>
     </div>
@@ -3223,7 +3225,7 @@ function renderForYou() {
   const resultsEl = document.getElementById("for-you-results");
   if (!resultsEl) return;
   if (matched.length === 0) {
-    resultsEl.innerHTML = `<p style="font-size:13px;color:var(--muted);padding:8px 0;">When new events match your interests, they will appear here.</p>`;
+    resultsEl.innerHTML = `<p style="font-size:13px;color:var(--muted);padding:8px 0;white-space:nowrap;">When new events match your interests, they will appear here.</p>`;
     return;
   }
   resultsEl.innerHTML = matched.map(ev => {
@@ -3382,6 +3384,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.79 -->
+<!-- Events.html v11.80 -->
 </body>
 </html>
