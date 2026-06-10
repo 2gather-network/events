@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.80
-  v4.80 - pin emoji on address; email same blue as name; experience after categories; divider before exchange; space improvements
-  v4.79 - prior version
+  event.html Version 4.82
+  v4.82 - force host link color; divider above This event represents; remove divider above exchange
+  v4.81 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -455,7 +455,7 @@ function render(ev) {
     ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" rel="noopener">${esc(ev.location)}</a>`
     : "In-person";
 
-  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" rel="noopener">${esc(ev.host)}</a>` : esc(ev.host);
+  const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" rel="noopener" style="color:var(--primary);">${esc(ev.host)}</a>` : esc(ev.host);
   const firstName = (ev.host||"").trim().split(/\s+/)[0]||"Host";
 
   const sl = ev.showLinks||"";
@@ -484,20 +484,21 @@ function render(ev) {
     ? `<a href="${contactDisplay.includes("@") ? "mailto:" : "tel:"}${esc(contactDisplay)}" style="color:var(--primary);font-weight:600;">${esc(contactDisplay)}</a>`
     : "the host directly";
 
-  const engagementSection = (hasInterest || hasNotes) ? `
+  const engagementSection = (hasInterest || hasNotes) && !ev.cancelled ? `
     <div id="engagement-section" style="margin:0 0 18px;">
       ${hasInterest ? `
         <div id="interest-area">
           <button class="btn btn-primary" onclick="openRsvpModal()" id="interest-btn">+1 I'm going</button>
-          <div id="cancel-rsvp-area" style="display:none;margin-top:8px;">
-            <button onclick="cancelRsvp()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">Cancel RSVP</button>
+          <div id="cancel-rsvp-area" style="display:none;margin-top:12px;">
+            <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px;">Cancel RSVP</p>
+            <button onclick="cancelRsvp()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">Cancel my registration</button>
           </div>
         </div>
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
           ✓ You're registered! Manage your registrations anytime under My events.
         </div>
         <div id="who-is-going" style="display:none;margin-top:16px;">
-          <p style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;">Others going</p>
+          <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Others going</p>
           <div id="who-is-going-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
         </div>
       ` : ""}
@@ -533,10 +534,11 @@ function render(ev) {
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
       ${ev.description ? `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0 14px;"><p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
-      ${(ev.categories && ev.categories.length) ? `<div style="margin-top:18px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">This event represents</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div></div>` : ""}
-      ${ev.experience ? `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:14px;font-weight:600;color:var(--dark);">Experience:</span>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div>` : ""}
-      ${ev.host ? `<div style="margin-top:14px;font-size:14px;"><div style="margin-bottom:4px;"><strong>Event host:</strong> ${hostHtml}</div>${(ev.contactEmail&&sl.includes("contact")) ? `<div style="margin-bottom:4px;"><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);">${esc(ev.contactEmail)}</a></div>` : ""}${(ev.contactPhone&&sl.includes("contact")) ? `<div style="margin-bottom:4px;">${esc(ev.contactPhone)}</div>` : ""}</div>` : ""}
-      ${ev.exchangeType ? `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0 14px;">${exchange}` : ""}
+      <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 14px;">
+      ${(ev.categories && ev.categories.length) ? `<div><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">This event represents</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div></div>` : ""}
+      ${ev.experience ? `<div style="margin-top:12px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Event experience</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div></div>` : ""}
+      ${ev.host ? `<div style="margin-top:14px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Event host</p><div style="font-size:14px;margin-bottom:4px;">${hostHtml}</div>${(ev.contactEmail&&sl.includes("contact")) ? `<div style="margin-bottom:4px;"><a href="mailto:${esc(ev.contactEmail)}" style="font-size:14px;color:var(--primary);">${esc(ev.contactEmail)}</a></div>` : ""}${(ev.contactPhone&&sl.includes("contact")) ? `<div style="font-size:14px;margin-bottom:4px;">${esc(ev.contactPhone)}</div>` : ""}</div>` : ""}
+      ${ev.exchangeType ? `${exchange}` : ""}
       <div style="margin-top:20px;">${engagementSection}</div>
       <hr class="divider">
       <div class="actions">
@@ -1106,6 +1108,8 @@ async function init() {
         const ev = recurToEv(recEv);
         ev.id = occId;
         ev.date = nextDate;
+        const cancelRow = allRows.find(r => String(r.id) === "cancelled-" + occId);
+        if (cancelRow) ev.cancelled = true;
         const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + occId);
         if (noteRow) {
           const _today = new Date(); _today.setHours(0,0,0,0);
@@ -1136,6 +1140,9 @@ async function init() {
         const ev = recurToEv(recurMatch);
         ev.id = id;
         ev.date = dateStr;
+        // Check if this specific occurrence was cancelled
+        const cancelRow = allRows.find(r => String(r.id) === "cancelled-" + id);
+        if (cancelRow) ev.cancelled = true;
         const noteRow = allRows.map(toEv).find(e => e.id === "occ-note-" + id);
         if (noteRow && dateStr) {
           const _today = new Date(); _today.setHours(0,0,0,0);
@@ -1179,6 +1186,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.80 -->
+<!-- event.html v4.82 -->
 </body>
 </html>
