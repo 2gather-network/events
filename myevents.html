@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.21
-  v1.21 - fix others going photo field (profileUrl); shorten edit PIN label
-  v1.18 - prior version
+  myevents.html Version 1.23
+  v1.23 - recurring events show one card + date dropdown
+  v1.22 - prior version
 -->
 <html lang="en">
 <head>
@@ -82,8 +82,8 @@
 
   <div id="events-list"></div>
 
-  <!-- Find/Edit Event by PIN -->
-  <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+  <!-- Find/Edit Event by PIN - logged in only -->
+  <div id="edit-event-section" style="display:none;margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
     <button onclick="openFindByPin()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;">🔑 Edit event</button>
   </div>
 
@@ -103,7 +103,7 @@
   </div>
 
   <!-- My Interests Section -->
-  <div id="interests-section" style="margin-top:32px;">
+  <div id="interests-section" style="display:none;margin-top:32px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="section-title" style="margin-bottom:0;">My Interests</div>
     </div>
@@ -226,8 +226,8 @@ function renderEvents(registrations, events) {
     })
     .filter(function(ev) { return ev.date && parseEvDate(ev.date) >= now; });
 
-  // Recurring hosted events - generate next 8 occurrences each
-  const hostedRec = [];
+  // Recurring hosted events - generate next 8 occurrences, grouped by event
+  const hostedRecByTitle = {};
   events
     .filter(function(ev) {
       return ev.hostMemberCard && ev.hostMemberCard.toString().replace(/\./g,"").toLowerCase() === normalCard
@@ -238,24 +238,22 @@ function renderEvents(registrations, events) {
       const freq = rec.recurFreq;
       const d = new Date();
       d.setHours(0,0,0,0);
-      let found = 0;
-      for (let i = 0; i < 60 && found < 4; i++) {
+      const dates = [];
+      for (let i = 0; i < 60 && dates.length < 8; i++) {
         const check = new Date(d);
         check.setDate(d.getDate() + i);
         const match = freq === "weekly" ? check.getDay() === dayOfWeek :
                       freq === "monthly" ? check.getDate() === (new Date(now).getDate()) : false;
         if (match && check >= now) {
-          const dateStr = check.toISOString().slice(0,10);
-          hostedRec.push(Object.assign({}, rec, {
-            id: "recurring-" + rec.id.replace(/^rec-/,"") + "-" + dateStr,
-            date: dateStr
-          }));
-          found++;
+          dates.push(check.toISOString().slice(0,10));
         }
+      }
+      if (dates.length > 0) {
+        hostedRecByTitle[rec.title || rec.id] = { rec, dates };
       }
     });
 
-  const hosted = hostedOnce.concat(hostedRec)
+  const hosted = hostedOnce
     .sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
 
   // RSVPd events - active, upcoming
@@ -311,8 +309,9 @@ function renderEvents(registrations, events) {
     // Tab bar
     const tabBar = document.createElement("div");
     tabBar.className = "tab-bar";
+    const recCount = Object.keys(hostedRecByTitle).length;
     tabBar.innerHTML = `
-      <button class="tab-btn active" id="host-tab-upcoming" onclick="switchHostTab('upcoming')">Upcoming (${hostedUpcoming.length})</button>
+      <button class="tab-btn active" id="host-tab-upcoming" onclick="switchHostTab('upcoming')">Upcoming (${hostedUpcoming.length + recCount})</button>
       <button class="tab-btn" id="host-tab-past" onclick="switchHostTab('past')">Past (${hostedPast.length})</button>`;
     list.appendChild(tabBar);
 
@@ -335,6 +334,28 @@ function renderEvents(registrations, events) {
         </div>`;
       upcomingContainer.appendChild(card);
       loadAttendees(ev.id);
+    });
+
+    // Recurring events - one card per event with date dropdown
+    Object.values(hostedRecByTitle).forEach(function(group) {
+      const rec = group.rec;
+      const dates = group.dates;
+      const slug = rec.id.replace(/^rec-/,"");
+      const selectId = "rec-date-" + slug;
+      const card = document.createElement("div");
+      card.className = "event-card";
+      card.style.borderLeft = "3px solid #AED6F1";
+      card.innerHTML = `
+        <div class="event-title" style="margin-bottom:8px;">${rec.title || "Untitled"} <span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:20px;margin-left:4px;">🔁 Weekly</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <select id="${selectId}" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;color:var(--dark);cursor:pointer;">
+            ${dates.map(function(d) { return `<option value="recurring-${slug}-${d}">${formatDate(d, rec.startTime || "")}</option>`; }).join("")}
+          </select>
+        </div>
+        <div class="event-actions">
+          <button class="btn btn-outline" onclick="window.location.href='event.html?id='+document.getElementById('${selectId}').value">✏️ Manage</button>
+        </div>`;
+      upcomingContainer.appendChild(card);
     });
     list.appendChild(upcomingContainer);
 
@@ -450,6 +471,12 @@ async function init() {
   const badge = document.getElementById("header-card-badge");
   const badgeNum = document.getElementById("header-card-number");
   if (badge && badgeNum) { badgeNum.textContent = _appearId; badge.style.display = "flex"; }
+
+  // Show logged-in only sections
+  const editSection = document.getElementById("edit-event-section");
+  if (editSection) editSection.style.display = "block";
+  const interestsSection = document.getElementById("interests-section");
+  if (interestsSection) interestsSection.style.display = "block";
 
   // Load registrations + all events in parallel
   try {
@@ -664,6 +691,6 @@ async function submitFindPin() {
 init();
 </script>
 
-<!-- myevents.html v1.21 -->
+<!-- myevents.html v1.23 -->
 </body>
 </html>
