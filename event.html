@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.77
-  v4.77 - remove link emoji on cooplink; remove Optional from interest label; save/delete button swap; delete confirmation; chip spacing; This event represents; exchange below categories; back closes modal if card known; checkbox copy update; Let's gather here today; remove View my events; fix registered text; edit same window; venue hidden virtual; modal scroll top
-  v4.76 - prior version
+  event.html Version 4.80
+  v4.80 - pin emoji on address; email same blue as name; experience after categories; divider before exchange; space improvements
+  v4.79 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -444,11 +444,11 @@ function render(ev) {
   const isToday = eventDay && eventDay.toDateString() === today.toDateString();
   const gatherUrl = esc(ev.meetinglink || roomUrl);
   const gatherTimeStr = ev.time ? new Date("1970-01-01T"+ev.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "";
-  const joinBtn = ""; // removed - replaced by Let's gather here today in meta
-  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && isToday
-    ? `<div class="meta-item"><span></span><span><a href="${gatherUrl}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;">🏠 Let's gather here today${gatherTimeStr ? " at " + gatherTimeStr : ""}</a></span></div>`
-    : (ev.format === "virtual" || ev.format === "both") && ev.room
-    ? `<div class="meta-item"><span></span><span>Meeting room: <a href="${esc(roomUrl)}" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></span></div>`
+  const joinBtn = (ev.format === "virtual" || ev.format === "both") && isToday && !ev.cancelled
+    ? `<a href="${gatherUrl}" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;padding:8px 18px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;flex-shrink:0;">🏠 Let's gather here today${gatherTimeStr ? " at " + gatherTimeStr : ""}</a>`
+    : "";
+  const meetingRoomLine = (ev.format === "virtual" || ev.format === "both") && ev.room && !isToday
+    ? `<div style="font-size:14px;margin-bottom:4px;">Meeting room: <a href="${esc(roomUrl)}" rel="noopener" style="color:var(--primary);">${esc(ev.room)}</a></div>`
     : "";
 
   const locLink = ev.location
@@ -460,18 +460,14 @@ function render(ev) {
 
   const sl = ev.showLinks||"";
   const lines = [
-    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">${fmtBadge}${recurBadge}</div>` : "",
-    ev.date ? `<div class="meta-item"><span></span><span>${esc(fmtDate(ev.date,ev.time,ev.endtime))}</span></div>` : "",
+    (fmtBadge||recurBadge) ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">${fmtBadge}${recurBadge}</div>` : "",
+    ev.date ? `<div style="font-size:14px;font-weight:600;color:var(--dark);margin-bottom:6px;">${esc(fmtDate(ev.date,ev.time,ev.endtime))}</div>` : "",
     meetingRoomLine,
-    ev.venue ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></span></div>` : "",
-    (ev.format==="inperson"||ev.format==="both") ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
-    (!ev.format&&ev.location) ? `<div class="meta-item"><span></span>${locLink}</div>` : "",
-    ev.cooplink ? `<div class="meta-item"><span></span><span style="font-size:14px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></span></div>` : "",
-    ev.host ? `<div class="meta-item"><span></span><span style="font-size:14px;"><strong>Event host:</strong> ${hostHtml}</span></div>` : "",
-    ev.experience ? `<div class="meta-item"><span></span><span style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;"><strong style="font-size:13px;color:var(--dark);margin-right:4px;">Experience:</strong>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</span></div>` : "",
-    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div class="meta-item"><span>💳</span><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
-    (ev.contactEmail&&sl.includes("contact")) ? `<div class="meta-item"><span></span><a href="mailto:${esc(ev.contactEmail)}">${esc(ev.contactEmail)}</a></div>` : "",
-    (ev.contactPhone&&sl.includes("contact")) ? `<div class="meta-item"><span>📞</span><span>${esc(ev.contactPhone)}</span></div>` : "",
+    ev.venue ? `<div style="font-size:14px;color:var(--dark);margin-bottom:4px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></div>` : "",
+    (ev.format==="inperson"||ev.format==="both") ? `<div style="font-size:14px;margin-bottom:4px;">📍 ${locLink}</div>` : "",
+    (!ev.format&&ev.location) ? `<div style="font-size:14px;margin-bottom:4px;">📍 ${locLink}</div>` : "",
+    ev.cooplink ? `<div style="font-size:14px;margin-bottom:4px;"><a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></div>` : "",
+    (ev.paymentlink&&sl.includes("paymentlink")) ? `<div style="font-size:14px;margin-bottom:4px;"><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
   ].filter(Boolean).join("");
 
   const exchange = ev.exchangeType
@@ -536,9 +532,11 @@ function render(ev) {
       <div class="meta">${lines}</div>
       ${ev.detailImageUrl ? `<img class="detail-img" src="${esc(ev.detailImageUrl)}" alt="" onerror="this.style.display='none'">` : ""}
       ${ev.occurrenceNote ? `<div style="background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:14px 16px;margin-bottom:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#7B5800;margin-bottom:6px;">Note from the host - this event only</p><p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-wrap;">${esc(ev.occurrenceNote)}</p></div>` : ""}
-      ${ev.description ? `<p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
-      ${(ev.categories && ev.categories.length) ? `<div style="margin-top:16px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">This event represents</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div></div>` : ""}
-      ${exchange}
+      ${ev.description ? `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0 14px;"><p class="description">${esc(ev.description).replace(/\[the calendar\]/g, '<a href="https://appear.network/dl/gather" rel="noopener" style="color:var(--primary);font-weight:600;">the calendar</a>').replace(/creating\.works/gi, '<a href="http://creating.works" rel="noopener" style="color:var(--primary);">creating.works</a>')}</p>` : ""}
+      ${(ev.categories && ev.categories.length) ? `<div style="margin-top:18px;"><p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">This event represents</p><div style="display:flex;flex-wrap:wrap;gap:6px;">${ev.categories.map(c=>{const cat=catMap&&catMap[c]?catMap[c]:c; const catObj=typeof CATEGORIES!=="undefined"?CATEGORIES.find(x=>x.id===c):null; return `<span style="font-size:12px;font-weight:600;padding:4px 10px;background:#EBF5FB;border:1px solid #AED6F1;border-radius:20px;color:#1B6896;">${catObj?catObj.emoji+' '+catObj.label:cat}</span>`;}).join("")}</div></div>` : ""}
+      ${ev.experience ? `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:14px;font-weight:600;color:var(--dark);">Experience:</span>${ev.experience.split(",").filter(Boolean).map(t=>`<span style="font-size:12px;padding:3px 9px;background:#f3f4f6;border-radius:20px;white-space:nowrap;">${expMap[t]||t}</span>`).join("")}</div>` : ""}
+      ${ev.host ? `<div style="margin-top:14px;font-size:14px;"><div style="margin-bottom:4px;"><strong>Event host:</strong> ${hostHtml}</div>${(ev.contactEmail&&sl.includes("contact")) ? `<div style="margin-bottom:4px;"><a href="mailto:${esc(ev.contactEmail)}" style="color:var(--primary);">${esc(ev.contactEmail)}</a></div>` : ""}${(ev.contactPhone&&sl.includes("contact")) ? `<div style="margin-bottom:4px;">${esc(ev.contactPhone)}</div>` : ""}</div>` : ""}
+      ${ev.exchangeType ? `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0 14px;">${exchange}` : ""}
       <div style="margin-top:20px;">${engagementSection}</div>
       <hr class="divider">
       <div class="actions">
@@ -546,7 +544,7 @@ function render(ev) {
         ${ev.date ? `<button class="btn btn-outline" onclick="addToCalendarById('${ev.id}')" style="gap:6px;">📅 Add to calendar</button>` : ""}
         <button class="btn btn-outline" onclick="copyLink()" id="copy-btn">🔗 Copy link</button>
         <button class="btn btn-outline" onclick="openQrModal()" title="Get QR code" style="padding:10px 14px;">⊞ QR</button>
-        <button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>
+        ${!ev.cancelled ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
       </div>
 
     </div>
@@ -1067,7 +1065,12 @@ function submitEditPin() {
   try { sessionStorage.setItem("ev-edit-verified-" + urlId, pin); } catch(e) {}
   closeEditPin();
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  window.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
+  // If inside the event-view iframe, tell parent to close modal and open edit
+  if (window.self !== window.top) {
+    try { window.parent.postMessage({ type: "openEdit", id: urlId, pin }, "*"); } catch(e) {}
+  } else {
+    window.location.href = base + "events.html?edit=" + encodeURIComponent(urlId) + "&pin=" + encodeURIComponent(pin);
+  }
 }
 
 function openReadNotes() {
@@ -1176,6 +1179,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.77 -->
+<!-- event.html v4.80 -->
 </body>
 </html>
