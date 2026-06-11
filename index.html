@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.93
-  v2.93 - reset filters white; blue links; interests prompt with register CTA; full card clickable; no View button; Upcoming events label
-  v2.92 - prior version
+  index.html Version 2.94
+  v2.94 - interests prompt above format tabs; Upcoming events label below cats
+  v2.93 - prior version
 
 -->
 <html lang="en">
@@ -129,6 +129,15 @@
 </div>
 
 <div class="page-body">
+  <!-- My interests prompt for signed-out users -->
+  <div style="background:#EEF4F9;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div>
+      <p style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px;">🎯 Find events for you</p>
+      <p style="font-size:13px;color:#6b7280;">Register to save your interests and see matching events.</p>
+    </div>
+    <a href="https://appear.network" style="background:#1b6896;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;text-decoration:none;">Register</a>
+  </div>
+
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
     <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
@@ -177,14 +186,6 @@
     <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:#fff;color:var(--dark);border:1.5px solid var(--border);">Reset filters</button>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
-  <!-- My interests prompt for signed-out users -->
-  <div style="background:#EEF4F9;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-    <div>
-      <p style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px;">🎯 Find events for you</p>
-      <p style="font-size:13px;color:#6b7280;">Register to save your interests and see matching events.</p>
-    </div>
-    <a href="https://appear.network" style="background:#1b6896;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;text-decoration:none;">Register</a>
-  </div>
   <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:10px;">Upcoming events</div>
   <div class="event-grid" id="event-grid"></div>
 </div>
@@ -816,6 +817,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v2.93 -->
+<!-- index.html v2.94 -->
 </body>
 </html>
