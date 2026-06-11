@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.84
-  v4.84 - force links primary blue; link emoji on Associated group
-  v4.83 - prior version
+  event.html Version 4.85
+  v4.85 - fix back button for Glide localStorage block
+  v4.84 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -211,7 +211,7 @@
     <!-- Step 2: Photo confirmation -->
     <div id="rsvp-step-confirm" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <button onclick="localStorage.getItem('appear-id') ? closeRsvpModal() : showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
+        <button onclick="(localStorage.getItem('appear-id')||new URLSearchParams(window.location.search).get('memberCard')) ? closeRsvpModal() : showStep(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:0;">←</button>
         <div class="modal-title" style="margin-bottom:0;">Is this you?</div>
       </div>
       <div style="margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:8px;border:1px solid var(--border);">
@@ -1188,6 +1188,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.84 -->
+<!-- event.html v4.85 -->
 </body>
 </html>
