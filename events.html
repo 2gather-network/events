@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.81
-  v11.81 - interests saved to Profile Sheet; MY INTERESTS row horizontal scroll; Filters+Reset compact side by side
-  v11.80 - prior version
+  Events.html Version 11.82
+  v11.82 - getMemberId() fixes Glide localStorage block; white card; square image For You cards; no Add button; Enter/comma to add
+  v11.81 - prior version
 
 -->
 <html lang="en">
@@ -219,7 +219,7 @@
   <!-- For You section - shows when logged in, above all filters -->
   <div id="for-you-section" style="display:none;margin-bottom:24px;">
     <!-- State 1: no keywords -->
-    <div id="for-you-empty" style="display:none;background:#EEF4F9;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div id="for-you-empty" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <div>
         <p style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:4px;">🎯 Find events for you</p>
         <p style="font-size:13px;color:var(--muted);">Add topics to see matching upcoming events.</p>
@@ -245,11 +245,10 @@
       </div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add topics to find matching upcoming events.</p>
       <div style="display:flex;gap:8px;margin-bottom:10px;position:relative;">
-        <input id="interests-input" type="text" placeholder="e.g. music, coding, wellness" autocomplete="off"
+        <input id="interests-input" type="text" placeholder="Type a topic, press Enter or comma to add" autocomplete="off"
           style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;"
           oninput="onInterestsInput(event)" onkeydown="onInterestsKeydown(event)">
-        <button onclick="addInterestFromModal()" style="background:#1b6896;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Add</button>
-        <div id="interests-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:60px;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;max-height:180px;overflow-y:auto;"></div>
+        <div id="interests-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;max-height:180px;overflow-y:auto;"></div>
       </div>
       <div id="interests-chips-modal" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;min-height:32px;"></div>
       <button onclick="closeInterestsModal()" style="width:100%;background:#1b6896;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Done</button>
@@ -2215,7 +2214,7 @@ function openEventView(id) {
   const ev = allEv.find(e => e.id === id);
   const title = ev ? ev.title : "";
   const base = window.location.href.replace(/\/[^/]*(\?.*)?$/, "/");
-  const savedMemberCard = localStorage.getItem("appear-id") || "";
+  const savedMemberCard = getMemberId() || "";
   const mcParam = savedMemberCard ? "&memberCard=" + encodeURIComponent(savedMemberCard) : "";
   const url = base + "event.html?id=" + id + mcParam;
   document.getElementById("event-view-frame").src = url;
@@ -2483,7 +2482,7 @@ function showSummary(ev) {
 function addToCalendarFromSummary() { if (summaryEventId) addToCalendar(summaryEventId); }
 function closeSummaryModal() {
   document.getElementById("summary-modal").classList.remove("open");
-  const savedId = localStorage.getItem("appear-id");
+  const savedId = getMemberId();
   if (savedId && window.location.hash !== "#nomy") {
     window.location.href = "myevents.html?id=" + encodeURIComponent(savedId);
   }
@@ -3129,10 +3128,14 @@ if (savedFilter) activeFilter = savedFilter;
 renderPills();
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
 // Save memberCard from URL to localStorage on page load
+// Also keep URL param in memory for Glide (which blocks localStorage)
+const _MC_PARAM = new URLSearchParams(window.location.search).get("memberCard");
+function getMemberId() {
+  return _MC_PARAM || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })();
+}
 (function() {
-  const mc = new URLSearchParams(window.location.search).get("memberCard");
-  if (mc) {
-    try { localStorage.setItem("appear-id", mc); } catch(e) {}
+  if (_MC_PARAM) {
+    try { localStorage.setItem("appear-id", _MC_PARAM); } catch(e) {}
   }
 })();
 
@@ -3179,19 +3182,17 @@ function loadInterests() {
 }
 function saveInterests(arr) {
   try { localStorage.setItem("my-interests", JSON.stringify(arr)); } catch(e) {}
-  // Also save to sheet if logged in
-  const memberId = localStorage.getItem("appear-id");
+  const memberId = getMemberId();
   if (memberId) {
     fetch(GS_URL + "?action=saveInterests&appearId=" + encodeURIComponent(memberId) + "&interests=" + encodeURIComponent(arr.join(","))).catch(()=>{});
   }
 }
 
 async function initForYou() {
-  const memberId = localStorage.getItem("appear-id");
+  const memberId = getMemberId();
   if (!memberId) return;
   const section = document.getElementById("for-you-section");
   if (section) section.style.display = "block";
-  // Try loading interests from sheet first
   try {
     const res = await fetch(GS_URL + "?action=getInterests&appearId=" + encodeURIComponent(memberId));
     const data = await res.json();
@@ -3245,11 +3246,12 @@ function renderForYou() {
     return;
   }
   resultsEl.innerHTML = matched.map(ev => {
-    const descHtml = ev.description ? escNl(trunc(ev.description, 100)) + ` <a href="javascript:void(0)" onclick="openEventView('${ev.id}')" style="color:var(--primary);font-weight:700;white-space:nowrap;">[read more]</a>` : "";
-    return `<div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;cursor:pointer;" onclick="openEventView('${ev.id}')">
-      <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:4px;">${esc(ev.title)}</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}${ev.recurFreq ? " (Weekly)" : ""}</div>
-      ${descHtml ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${descHtml}</div>` : ""}
+    return `<div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px;" onclick="openEventView('${ev.id}')">
+      ${ev.imageUrl ? `<img src="${esc(ev.imageUrl)}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:48px;height:48px;border-radius:8px;background:#EEF4F9;flex-shrink:0;"></div>`}
+      <div style="min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ev.title)}</div>
+        <div style="font-size:12px;color:var(--muted);">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}${ev.recurFreq ? " (Weekly)" : ""}</div>
+      </div>
     </div>`;
   }).join("");
 }
@@ -3298,7 +3300,7 @@ function addInterestFromModal() {
 }
 
 function onInterestsKeydown(e) {
-  if (e.key === "Enter") { e.preventDefault(); addInterestFromModal(); }
+  if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addInterestFromModal(); }
   if (e.key === "Escape") { document.getElementById("interests-autocomplete").style.display = "none"; }
 }
 
@@ -3400,6 +3402,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.81 -->
+<!-- Events.html v11.82 -->
 </body>
 </html>
