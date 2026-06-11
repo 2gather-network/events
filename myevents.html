@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.23
-  v1.23 - recurring events show one card + date dropdown
-  v1.22 - prior version
+  myevents.html Version 1.24
+  v1.24 - fix Glide localStorage block; remove register text
+  v1.23 - prior version
 -->
 <html lang="en">
 <head>
@@ -72,7 +72,7 @@
     <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">No Member Card found</p>
     <p style="margin-bottom:16px;">Register for an event using your member card, or get one on Appear Network.</p>
     <a href="https://appear.network" style="display:inline-block;margin-bottom:10px;padding:10px 20px;background:var(--primary);color:#fff;border-radius:8px;font-weight:700;text-decoration:none;">Get your Member Card on Appear</a><br>
-    <p style="font-size:13px;color:var(--muted);margin:8px 0 12px;">Register on <a href="https://appear.network" style="color:var(--primary);font-weight:700;">Appear Network</a>. One code. RSVP anywhere.</p>
+
   </div>
 
   <div id="empty" style="display:none;" class="empty">
@@ -300,7 +300,7 @@ function renderEvents(registrations, events) {
     // Section title + Add event button
     const hostHeader = document.createElement("div");
     hostHeader.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;";
-    const savedId = localStorage.getItem("appear-id") || _appearId || "";
+    const savedId = _appearId || "";
     hostHeader.innerHTML = `
       <div class="section-title" style="margin-bottom:0;">Hosting</div>
       <a href="https://gather.2gather.network/events.html?action=post${savedId ? '&memberCard=' + encodeURIComponent(savedId) : ''}" class="btn-white" style="border:1.5px solid #1B6896;color:#1B6896;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">+ Post an event</a>`;
@@ -453,7 +453,7 @@ async function loadAttendees(eventId) {
 async function init() {
   // Get Member Card number from URL or localStorage
   const params = new URLSearchParams(window.location.search);
-  _appearId = params.get("id") || localStorage.getItem("appear-id");
+  _appearId = params.get("id") || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })() || params.get("memberCard");
 
   if (!_appearId) {
     document.getElementById("loading").style.display = "none";
@@ -691,6 +691,6 @@ async function submitFindPin() {
 init();
 </script>
 
-<!-- myevents.html v1.23 -->
+<!-- myevents.html v1.24 -->
 </body>
 </html>
