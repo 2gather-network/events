@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.80
-  v11.80 - force links blue; My interests header; pencil on edit; no-wrap message
-  v11.79 - prior version
+  Events.html Version 11.81
+  v11.81 - interests saved to Profile Sheet; MY INTERESTS row horizontal scroll; Filters+Reset compact side by side
+  v11.80 - prior version
 
 -->
 <html lang="en">
@@ -228,10 +228,10 @@
     </div>
     <!-- State 2: has keywords -->
     <div id="for-you-active" style="display:none;">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">My interests</span>
-        <div id="for-you-chips" style="display:flex;flex-wrap:wrap;gap:6px;flex:1;"></div>
-        <button onclick="openInterestsModal()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap;">✏️ Edit my interests</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;overflow:hidden;">
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;flex-shrink:0;">My interests</span>
+        <div id="for-you-chips" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+        <button onclick="openInterestsModal()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap;flex-shrink:0;">✏️ Edit</button>
       </div>
       <div id="for-you-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:8px;"></div>
     </div>
@@ -289,9 +289,11 @@
   </div>
 
   <div class="filter-row">
-    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()" style="flex:1;">
-    <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:#1b6896;color:#fff;border:1.5px solid #1b6896;">⚙️ Filters</button>
-    <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:#fff;color:var(--dark);border:1.5px solid var(--border);">Reset filters</button>
+    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()" style="flex:1;min-width:0;">
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;background:#1b6896;color:#fff;border:1.5px solid #1b6896;">⚙️ Filters</button>
+      <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;background:#fff;color:var(--dark);border:1.5px solid var(--border);">Reset</button>
+    </div>
   </div>
 
   <div id="filter-panel" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
@@ -3177,13 +3179,27 @@ function loadInterests() {
 }
 function saveInterests(arr) {
   try { localStorage.setItem("my-interests", JSON.stringify(arr)); } catch(e) {}
+  // Also save to sheet if logged in
+  const memberId = localStorage.getItem("appear-id");
+  if (memberId) {
+    fetch(GS_URL + "?action=saveInterests&appearId=" + encodeURIComponent(memberId) + "&interests=" + encodeURIComponent(arr.join(","))).catch(()=>{});
+  }
 }
 
-function initForYou() {
+async function initForYou() {
   const memberId = localStorage.getItem("appear-id");
-  if (!memberId) return; // not logged in - hide section
+  if (!memberId) return;
   const section = document.getElementById("for-you-section");
   if (section) section.style.display = "block";
+  // Try loading interests from sheet first
+  try {
+    const res = await fetch(GS_URL + "?action=getInterests&appearId=" + encodeURIComponent(memberId));
+    const data = await res.json();
+    if (data.interests && data.interests.trim()) {
+      const arr = data.interests.split(",").map(s => s.trim()).filter(Boolean);
+      try { localStorage.setItem("my-interests", JSON.stringify(arr)); } catch(e) {}
+    }
+  } catch(e) {}
   renderForYou();
 }
 
@@ -3384,6 +3400,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.80 -->
+<!-- Events.html v11.81 -->
 </body>
 </html>
