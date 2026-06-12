@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.83
-  v11.83 - getMemberId live URL read; temp debug display for Glide testing
-  v11.82 - prior version
+  Events.html Version 11.85
+  v11.85 - quote-aware phrase matching; search placeholder guidance; interests modal placeholder; index.html filter parity
+  v11.84 - prior version
 
 -->
 <html lang="en">
@@ -216,8 +216,6 @@
 </div>
 
 <div class="page-body">
-  <!-- Temporary debug - remove after testing -->
-  <div id="debug-mc" style="font-size:10px;color:#999;padding:2px 8px;"></div>
   <!-- For You section - shows when logged in, above all filters -->
   <div id="for-you-section" style="display:none;margin-bottom:24px;">
     <!-- State 1: no keywords -->
@@ -230,9 +228,9 @@
     </div>
     <!-- State 2: has keywords -->
     <div id="for-you-active" style="display:none;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;flex-shrink:0;">My interests</span>
-        <div id="for-you-chips" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+        <div id="for-you-chips" style="display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;"></div>
         <button onclick="openInterestsModal()" style="background:none;border:none;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;padding:0;font-family:inherit;white-space:nowrap;flex-shrink:0;">✏️ Edit</button>
       </div>
       <div id="for-you-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:8px;"></div>
@@ -247,7 +245,7 @@
       </div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add topics to find matching upcoming events.</p>
       <div style="display:flex;gap:8px;margin-bottom:10px;position:relative;">
-        <input id="interests-input" type="text" placeholder="Type a topic, press Enter or comma to add" autocomplete="off"
+        <input id="interests-input" type="text" placeholder='Topic or "exact phrase"' autocomplete="off"
           style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;"
           oninput="onInterestsInput(event)" onkeydown="onInterestsKeydown(event)">
         <div id="interests-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:200;max-height:180px;overflow-y:auto;"></div>
@@ -290,10 +288,10 @@
   </div>
 
   <div class="filter-row">
-    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()" style="flex:1;min-width:0;">
-    <div style="display:flex;gap:6px;flex-shrink:0;">
-      <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;background:#1b6896;color:#fff;border:1.5px solid #1b6896;">⚙️ Filters</button>
-      <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;background:#fff;color:var(--dark);border:1.5px solid var(--border);">Reset</button>
+    <input class="filter-search" id="search-input" placeholder='🔍  Search events... (use "quotes" for phrases)' oninput="renderEvents()" style="flex:1;min-width:0;">
+    <div style="display:flex;gap:6px;flex-shrink:0;width:auto;">
+      <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;background:#154F74;color:#fff;border:1.5px solid #154F74;flex:1;">⚙️ Filters</button>
+      <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;background:#fff;color:var(--dark);border:1.5px solid var(--border);flex:1;">Reset</button>
     </div>
   </div>
 
@@ -3140,9 +3138,6 @@ const _MC_PARAM = getMemberId();
   if (_MC_PARAM) {
     try { localStorage.setItem("appear-id", _MC_PARAM); } catch(e) {}
   }
-  // Temporary debug display
-  const dbg = document.getElementById("debug-mc");
-  if (dbg) dbg.textContent = "mc:" + (getMemberId() || "null") + " url:" + window.location.search.slice(0,40);
 })();
 
 loadEvents().then(() => {
@@ -3183,6 +3178,33 @@ loadEvents().then(() => {
 });
 
 // ── For You Section ─────────────────────────────────────────────
+function normalizeInterest(str) {
+  // Strip punctuation, trim, capitalize first letter only
+  const cleaned = str.replace(/[^a-zA-Z0-9\s]/g, "").trim();
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+}
+
+function getMatchWords(interests) {
+  // Returns array of {word/phrase, exact} objects
+  // Quoted topics match as exact phrase; unquoted split into words
+  const matchers = [];
+  interests.forEach(kw => {
+    const trimmed = kw.trim();
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      // Exact phrase match
+      matchers.push({ phrase: trimmed.slice(1,-1).toLowerCase(), exact: true });
+    } else {
+      // Split into words
+      trimmed.split(/\s+/).forEach(w => {
+        const clean = w.replace(/[^a-zA-Z0-9]/g,"").toLowerCase();
+        if (clean.length > 2) matchers.push({ phrase: clean, exact: false });
+      });
+    }
+  });
+  return matchers;
+}
+
 function loadInterests() {
   try { return JSON.parse(localStorage.getItem("my-interests") || "[]"); } catch(e) { return []; }
 }
@@ -3234,6 +3256,7 @@ function renderForYou() {
 
   // Match events
   const now = new Date(); now.setHours(0,0,0,0);
+  const matchers = getMatchWords(interests);
   const allEv = [...events, ...(typeof getAllRecurring === "function" ? getAllRecurring(2) : [])];
   const matched = allEv.filter(ev => {
     if (!ev.date) return false;
@@ -3242,7 +3265,7 @@ function renderForYou() {
     if (ev.cancelled || cancelledOccurrences.has(ev.id)) return false;
     const haystack = [ev.title, ev.keywords, ev.categories, ev.description, ev.host, ev.location, ev.venue, ev.experience]
       .filter(Boolean).join(" ").toLowerCase();
-    return interests.some(kw => haystack.includes(kw.toLowerCase()));
+    return matchers.some(m => haystack.includes(m.phrase));
   }).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(0, 6);
 
   const resultsEl = document.getElementById("for-you-results");
@@ -3252,11 +3275,22 @@ function renderForYou() {
     return;
   }
   resultsEl.innerHTML = matched.map(ev => {
+    const haystack = [ev.title, ev.keywords, ev.categories, ev.description, ev.host, ev.location, ev.venue, ev.experience]
+      .filter(Boolean).join(" ").toLowerCase();
+    const matchedLabels = interests.filter(kw => {
+      const trimmed = kw.trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return haystack.includes(trimmed.slice(1,-1).toLowerCase());
+      }
+      return trimmed.split(/\s+/).some(w => { const c = w.replace(/[^a-zA-Z0-9]/g,"").toLowerCase(); return c.length > 2 && haystack.includes(c); });
+    });
+    const matchTag = matchedLabels.length ? `<div style="font-size:11px;color:var(--primary);font-weight:700;margin-top:4px;">Matches: ${matchedLabels.join(", ")}</div>` : "";
     return `<div style="background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px;" onclick="openEventView('${ev.id}')">
       ${ev.imageUrl ? `<img src="${esc(ev.imageUrl)}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:48px;height:48px;border-radius:8px;background:#EEF4F9;flex-shrink:0;"></div>`}
       <div style="min-width:0;">
         <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ev.title)}</div>
         <div style="font-size:12px;color:var(--muted);">🗓️ ${fmtDate(ev.date, ev.time, ev.endtime)}${ev.recurFreq ? " (Weekly)" : ""}</div>
+        ${matchTag}
       </div>
     </div>`;
   }).join("");
@@ -3295,10 +3329,11 @@ function removeInterestModal(kw) {
 function addInterestFromModal() {
   const input = document.getElementById("interests-input");
   if (!input) return;
-  const vals = input.value.split(",").map(s => s.trim()).filter(Boolean);
+  const vals = input.value.split(",").map(s => normalizeInterest(s)).filter(Boolean);
   if (!vals.length) return;
   const arr = loadInterests();
-  vals.forEach(v => { if (!arr.includes(v)) arr.push(v); });
+  const existing = arr.map(s => s.toLowerCase());
+  vals.forEach(v => { if (!existing.includes(v.toLowerCase())) { arr.push(v); existing.push(v.toLowerCase()); } });
   saveInterests(arr);
   input.value = "";
   document.getElementById("interests-autocomplete").style.display = "none";
@@ -3408,6 +3443,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.83 -->
+<!-- Events.html v11.85 -->
 </body>
 </html>
