@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.82
-  v11.82 - getMemberId() fixes Glide localStorage block; white card; square image For You cards; no Add button; Enter/comma to add
-  v11.81 - prior version
+  Events.html Version 11.83
+  v11.83 - getMemberId live URL read; temp debug display for Glide testing
+  v11.82 - prior version
 
 -->
 <html lang="en">
@@ -216,6 +216,8 @@
 </div>
 
 <div class="page-body">
+  <!-- Temporary debug - remove after testing -->
+  <div id="debug-mc" style="font-size:10px;color:#999;padding:2px 8px;"></div>
   <!-- For You section - shows when logged in, above all filters -->
   <div id="for-you-section" style="display:none;margin-bottom:24px;">
     <!-- State 1: no keywords -->
@@ -3127,16 +3129,20 @@ if (savedFilter) activeFilter = savedFilter;
 
 renderPills();
 setMode(savedMode === 'virtual' ? 'all' : (savedMode || activeMode));
-// Save memberCard from URL to localStorage on page load
-// Also keep URL param in memory for Glide (which blocks localStorage)
-const _MC_PARAM = new URLSearchParams(window.location.search).get("memberCard");
+// getMemberId - reads memberCard from URL param live each call, falls back to localStorage
 function getMemberId() {
-  return _MC_PARAM || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })();
+  const urlParam = new URLSearchParams(window.location.search).get("memberCard");
+  if (urlParam) return urlParam;
+  try { return localStorage.getItem("appear-id"); } catch(e) { return null; }
 }
+const _MC_PARAM = getMemberId();
 (function() {
   if (_MC_PARAM) {
     try { localStorage.setItem("appear-id", _MC_PARAM); } catch(e) {}
   }
+  // Temporary debug display
+  const dbg = document.getElementById("debug-mc");
+  if (dbg) dbg.textContent = "mc:" + (getMemberId() || "null") + " url:" + window.location.search.slice(0,40);
 })();
 
 loadEvents().then(() => {
@@ -3402,6 +3408,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.82 -->
+<!-- Events.html v11.83 -->
 </body>
 </html>
