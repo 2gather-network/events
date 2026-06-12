@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.96
-  v2.96 - remove Register button; update sign up/sign in copy
-  v2.95 - prior version
+  index.html Version 2.98
+  v2.98 - match events.html filter UI; Filters button; hidden panel; search quote guidance; toggleFilterPanel
+  v2.97 - prior version
 
 -->
 <html lang="en">
@@ -168,19 +168,33 @@
   </div>
 
   <div class="filter-row">
-    <input class="filter-search" id="search-input" placeholder="🔍  Search events..." oninput="renderEvents()">
-    <select id="date-filter-select" onchange="setDateFilter(this.value)" class="filter-search" style="width:auto;cursor:pointer;font-weight:600;flex:0 0 auto;">
-        <option value="upcoming">All upcoming events</option>
-        <option value="week">Upcoming this week</option>
-        <option value="month">Upcoming this month</option>
-        <option value="past-week">Events past week</option>
-        <option value="past-month">Events past month</option>
-        <option value="past-quarter">Events past quarter</option>
-    </select>
-    <select class="filter-search" id="host-filter" onchange="renderEvents()" style="flex:0 0 auto;min-width:160px;cursor:pointer;">
-      <option value="">All hosts</option>
-    </select>
-    <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;flex:0 0 auto;background:#fff;color:var(--dark);border:1.5px solid var(--border);">Reset filters</button>
+    <input class="filter-search" id="search-input" placeholder='🔍  Search events... (use "quotes" for phrases)' oninput="renderEvents()" style="flex:1;min-width:0;">
+    <div style="display:flex;gap:6px;flex-shrink:0;width:auto;">
+      <button onclick="toggleFilterPanel()" id="filter-panel-btn" class="btn btn-sm" style="white-space:nowrap;background:#154F74;color:#fff;border:1.5px solid #154F74;flex:1;">⚙️ Filters</button>
+      <button onclick="resetFilters()" class="btn btn-sm" style="white-space:nowrap;background:#fff;color:var(--dark);border:1.5px solid var(--border);flex:1;">Reset</button>
+    </div>
+  </div>
+
+  <div id="filter-panel" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Host</label>
+        <select class="filter-search input" id="host-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="">All hosts</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Show</label>
+        <select class="filter-search input" id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="upcoming">All upcoming events</option>
+          <option value="week">Upcoming this week</option>
+          <option value="month">Upcoming this month</option>
+          <option value="past-week">Events past week</option>
+          <option value="past-month">Events past month</option>
+          <option value="past-quarter">Events past quarter</option>
+        </select>
+      </div>
+    </div>
   </div>
   <div class="cat-pills" id="cat-pills"></div>
   <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:10px;">Upcoming events</div>
@@ -350,6 +364,15 @@ function makeFilterBtn(text, isActive, onClick) {
   b.textContent = text; b.onclick = onClick;
   return b;
 }
+function toggleFilterPanel() {
+  const panel = document.getElementById("filter-panel");
+  const btn = document.getElementById("filter-panel-btn");
+  if (!panel) return;
+  const isOpen = panel.style.display !== "none";
+  panel.style.display = isOpen ? "none" : "block";
+  if (btn) { btn.style.background = isOpen ? "#154F74" : "#0d3a54"; btn.style.borderColor = isOpen ? "#154F74" : "#0d3a54"; }
+}
+
 function resetFilters() {
   document.getElementById("search-input").value = "";
   document.getElementById("host-filter").value = "";
@@ -814,6 +837,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v2.96 -->
+<!-- index.html v2.98 -->
 </body>
 </html>
