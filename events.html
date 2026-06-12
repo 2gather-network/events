@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.85
-  v11.85 - quote-aware phrase matching; search placeholder guidance; interests modal placeholder; index.html filter parity
-  v11.84 - prior version
+  Events.html Version 11.86
+  v11.86 - edit form shows Member Card RSVPs with profile photo + Appear link
+  v11.85 - prior version
 
 -->
 <html lang="en">
@@ -1802,13 +1802,40 @@ function loadEditForm(id) {
   const count = document.getElementById("registrations-count");
   if (panel && list && !found.isRecurring) {
     const entries = (ev.interested || "").split("|").map(s => s.trim()).filter(Boolean);
-    if (entries.length > 0) {
-      list.innerHTML = entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
-      count.textContent = entries.length + (entries.length === 1 ? " person" : " people");
-    } else {
-      list.innerHTML = `<p style="font-size:13px;color:#1d4ed8;margin:0;">Your event is ready. No sign-ups yet - keep sharing.</p>`;
-      count.textContent = "";
-    }
+    // Also fetch Member Card RSVPs
+    fetch(GS_URL + "?action=getAttendees&eventId=" + encodeURIComponent(ev.id))
+      .then(r => r.json())
+      .then(data => {
+        const attendees = (data.attendees || []);
+        let html = "";
+        // Show Member Card registrants with profile links
+        if (attendees.length > 0) {
+          html += attendees.map(a => `<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">
+            ${a.profileUrl ? `<img src="${esc(a.profileUrl)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : ""}
+            <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" rel="noopener" style="color:#1d4ed8;text-decoration:none;">${esc(a.appearId)}</a>
+          </div>`).join("");
+        }
+        // Show old free-text interested entries
+        if (entries.length > 0) {
+          html += entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
+        }
+        if (html) {
+          list.innerHTML = html;
+          const total = attendees.length + entries.length;
+          count.textContent = total + (total === 1 ? " person" : " people");
+        } else {
+          list.innerHTML = `<p style="font-size:13px;color:#1d4ed8;margin:0;">Your event is ready. No sign-ups yet - keep sharing.</p>`;
+          count.textContent = "";
+        }
+      })
+      .catch(() => {
+        if (entries.length > 0) {
+          list.innerHTML = entries.map(e => `<div style="font-size:13px;color:#1e3a8a;padding:6px 10px;background:rgba(255,255,255,0.7);border-radius:6px;">${esc(e)}</div>`).join("");
+          count.textContent = entries.length + (entries.length === 1 ? " person" : " people");
+        } else {
+          list.innerHTML = `<p style="font-size:13px;color:#1d4ed8;margin:0;">Your event is ready. No sign-ups yet - keep sharing.</p>`;
+        }
+      });
     panel.style.display = "block";
   }
 
@@ -3443,6 +3470,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.85 -->
+<!-- Events.html v11.86 -->
 </body>
 </html>
