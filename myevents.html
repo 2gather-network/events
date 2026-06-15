@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.24
-  v1.24 - fix Glide localStorage block; remove register text
-  v1.23 - prior version
+  myevents.html Version 1.26
+  v1.26 - attendee count + photos on hosting cards; loadAttendeesForHost
+  v1.25 - prior version
 -->
 <html lang="en">
 <head>
@@ -103,30 +103,6 @@
   </div>
 
   <!-- My Interests Section -->
-  <div id="interests-section" style="display:none;margin-top:32px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="section-title" style="margin-bottom:0;">My Interests</div>
-    </div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add topics to find matching upcoming events near you.</p>
-    <div style="display:flex;gap:8px;margin-bottom:12px;position:relative;">
-      <input id="interest-input" type="text" placeholder="Add a topic (e.g. music, coding, wellness)" autocomplete="off"
-        style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;"
-        oninput="onInterestInput(event)" onkeydown="onInterestKeydown(event)">
-      <button class="btn-white" onclick="addInterestFromInput()" style="border:1.5px solid #1B6896;color:#1B6896;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Add</button>
-      <div id="interest-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:60px;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;max-height:180px;overflow-y:auto;"></div>
-    </div>
-    <div id="interest-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
-    <div id="interests-results">
-      <div id="interests-empty" style="display:none;font-size:13px;color:var(--muted);padding:12px 0;">No matching upcoming events found. Try different topics.</div>
-      <div id="interests-show-all" style="display:none;text-align:center;margin-bottom:12px;">
-        <label style="font-size:13px;color:var(--muted);cursor:pointer;">
-          <input type="checkbox" id="interests-all-toggle" onchange="renderInterestResults()" style="margin-right:6px;">
-          Show all upcoming (not just next 2 weeks)
-        </label>
-      </div>
-      <div id="interests-list"></div>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -328,12 +304,13 @@ function renderEvents(registrations, events) {
       card.innerHTML = `
         <a class="event-title" href="event.html?id=${encodeURIComponent(ev.id)}">${ev.title || "Untitled"}</a>
         <div class="event-meta">${formatDate(ev.date, safeTime(ev))}${ev.location ? " · " + ev.location : ""}</div>
+        <div id="who-${ev.id}" class="who-going"></div>
         <div class="event-actions">
           <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
           <a href="event.html?id=${encodeURIComponent(ev.id)}" class="btn btn-outline">✏️ Manage</a>
         </div>`;
       upcomingContainer.appendChild(card);
-      loadAttendees(ev.id);
+      loadAttendeesForHost(ev.id);
     });
 
     // Recurring events - one card per event with date dropdown
@@ -348,14 +325,17 @@ function renderEvents(registrations, events) {
       card.innerHTML = `
         <div class="event-title" style="margin-bottom:8px;">${rec.title || "Untitled"} <span style="font-size:11px;font-weight:700;background:#E8F2F9;color:var(--primary);padding:2px 8px;border-radius:20px;margin-left:4px;">🔁 Weekly</span></div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <select id="${selectId}" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;color:var(--dark);cursor:pointer;">
+          <select id="${selectId}" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;color:var(--dark);cursor:pointer;" onchange="loadAttendeesForHost(this.value, 'who-rec-${slug}')">
             ${dates.map(function(d) { return `<option value="recurring-${slug}-${d}">${formatDate(d, rec.startTime || "")}</option>`; }).join("")}
           </select>
         </div>
+        <div id="who-rec-${slug}" class="who-going"></div>
         <div class="event-actions">
           <button class="btn btn-outline" onclick="window.location.href='event.html?id='+document.getElementById('${selectId}').value">✏️ Manage</button>
         </div>`;
       upcomingContainer.appendChild(card);
+      // Load attendees for first date
+      if (dates.length > 0) loadAttendeesForHost("recurring-" + slug + "-" + dates[0], "who-rec-" + slug);
     });
     list.appendChild(upcomingContainer);
 
@@ -424,6 +404,38 @@ function renderEvents(registrations, events) {
   }
 }
 
+async function loadAttendeesForHost(eventId, containerId) {
+  const container = document.getElementById(containerId || "who-" + eventId);
+  if (!container) return;
+  try {
+    const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(eventId)}`);
+    const data = await res.json();
+    if (!data.attendees || data.attendees.length === 0) {
+      container.innerHTML = `<p style="font-size:12px;color:var(--muted);margin-top:8px;">No registrations yet.</p>`;
+      return;
+    }
+    const count = data.attendees.length;
+    container.innerHTML = `<p style="font-size:12px;font-weight:700;color:var(--primary);margin:8px 0 6px;">${count} registered${count === 1 ? "" : ""}</p>`;
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;";
+    data.attendees.forEach(a => {
+      const link = document.createElement("a");
+      link.href = APPEAR_BASE + encodeURIComponent(a.appearId);
+      link.title = a.appearId;
+      const img = document.createElement("img");
+      img.src = a.profileUrl || a.photo || "";
+      img.alt = a.appearId;
+      img.style.cssText = "width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;";
+      img.onerror = () => { img.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(a.appearId) + "&size=36&background=EEF4F9&color=1B6896"; };
+      link.appendChild(img);
+      row.appendChild(link);
+    });
+    container.appendChild(row);
+  } catch(e) {
+    container.innerHTML = "";
+  }
+}
+
 async function loadAttendees(eventId) {
   try {
     const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(eventId)}`);
@@ -475,8 +487,6 @@ async function init() {
   // Show logged-in only sections
   const editSection = document.getElementById("edit-event-section");
   if (editSection) editSection.style.display = "block";
-  const interestsSection = document.getElementById("interests-section");
-  if (interestsSection) interestsSection.style.display = "block";
 
   // Load registrations + all events in parallel
   try {
@@ -691,6 +701,6 @@ async function submitFindPin() {
 init();
 </script>
 
-<!-- myevents.html v1.24 -->
+<!-- myevents.html v1.26 -->
 </body>
 </html>
