@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.86
-  v11.86 - edit form shows Member Card RSVPs with profile photo + Appear link
-  v11.85 - prior version
+  Events.html Version 11.87
+  v11.87 - Post an event opens form directly in Glide; modal scroll to top fix; openPostEvent
+  v11.86 - prior version
 
 -->
 <html lang="en">
@@ -210,7 +210,7 @@
   </div>
   <div class="header-right" style="display:flex;gap:10px;">
     <button class="btn btn-white btn-sm" onclick="openRoomSchedule()" ontouchstart="openRoomSchedule()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">🏠 Room schedules</button>
-    <button class="btn btn-white btn-sm" onclick="openChoiceModal()" ontouchstart="openChoiceModal()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">+ Post an event</button>
+    <button class="btn btn-white btn-sm" onclick="openPostEvent()" ontouchstart="openPostEvent()" style="touch-action:manipulation;-webkit-tap-highlight-color:transparent;">+ Post an event</button>
     
   </div>
 </div>
@@ -828,6 +828,15 @@ const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_
 
 // v6.72: AI Parse Feature
 const WORKER_URL = "https://findatime.jessieupp.workers.dev/";
+
+function openPostEvent() {
+  // In Glide webview, modals don't render correctly - open form directly
+  if (window.self !== window.top) {
+    try { window.top.location.href = "https://gather.2gather.network/events.html?action=post" + (getMemberId() ? "&memberCard=" + encodeURIComponent(getMemberId()) : ""); } catch(e) {}
+  } else {
+    openChoiceModal();
+  }
+}
 
 function openChoiceModal() {
   document.getElementById("choice-modal").classList.add("open");
@@ -2253,11 +2262,16 @@ function openEventView(id) {
   const inner = document.getElementById("event-view-inner");
   if (inner) inner.style.height = modalHeight + "px";
   const evModal = document.getElementById("event-view-modal");
-  evModal.style.display = ""; // clear any forced inline style from edit flow
+  evModal.style.display = "";
   evModal.classList.add("open");
-  // scroll iframe to top after load
+  evModal.scrollTop = 0;
   const frame = document.getElementById("event-view-frame");
-  frame.onload = () => { try { frame.contentWindow.scrollTo(0,0); } catch(e) {} };
+  if (frame) {
+    frame.onload = () => { 
+      try { frame.contentWindow.scrollTo(0,0); } catch(e) {}
+      evModal.scrollTop = 0;
+    };
+  }
 }
 
 function shareEventModal() {
@@ -3470,6 +3484,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.86 -->
+<!-- Events.html v11.87 -->
 </body>
 </html>
