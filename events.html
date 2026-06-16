@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.88
-  v11.88 - venue filter dropdown with populateVenueFilter; Share button hidden on mobile
-  v11.87 - prior version
+  Events.html Version 11.89
+  v11.89 - remove Share button from event modal header
+  v11.88 - prior version
 
 -->
 <html lang="en">
@@ -3493,7 +3493,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
         <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <input type="hidden" id="event-view-share-url" value="">
-          <button onclick="shareEventModal()" class="btn btn-sm btn-outline btn-share-desktop" style="font-size:12px;padding:6px 10px;">↗ Share</button>
           <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
         </div>
       </div>
@@ -3502,6 +3501,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.88 -->
+<!-- Events.html v11.89 -->
 </body>
 </html>
