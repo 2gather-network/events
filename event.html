@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.88
-  v4.88 - host link opens in new tab
-  v4.87 - prior version
+  event.html Version 4.89
+  v4.89 - associated group + address links open in new tab
+  v4.88 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -460,7 +460,7 @@ function render(ev) {
     : "";
 
   const locLink = ev.location
-    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" rel="noopener">${esc(ev.location)}</a>`
+    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" rel="noopener" target="_blank">${esc(ev.location)}</a>`
     : "In-person";
 
   const hostHtml = ev.hostlink ? `<a href="${esc(ev.hostlink)}" rel="noopener" target="_blank" style="color:var(--primary);">${esc(ev.host)}</a>` : esc(ev.host);
@@ -474,7 +474,7 @@ function render(ev) {
     ev.venue ? `<div style="font-size:14px;color:var(--dark);margin-bottom:4px;"><strong>Venue:</strong> <a href="events.html?venue=${encodeURIComponent(ev.venue)}" style="color:var(--primary);text-decoration:none;">${esc(ev.venue)}</a></div>` : "",
     (ev.format==="inperson"||ev.format==="both") ? `<div style="font-size:14px;margin-bottom:4px;">📍 ${locLink}</div>` : "",
     (!ev.format&&ev.location) ? `<div style="font-size:14px;margin-bottom:4px;">📍 ${locLink}</div>` : "",
-    ev.cooplink ? `<div style="font-size:14px;margin-bottom:4px;">🔗 <a href="${esc(ev.cooplink)}" rel="noopener" style="color:var(--primary);text-decoration:none;">Associated group</a></div>` : "",
+    ev.cooplink ? `<div style="font-size:14px;margin-bottom:4px;">🔗 <a href="${esc(ev.cooplink)}" rel="noopener" target="_blank" style="color:var(--primary);text-decoration:none;">Associated group</a></div>` : "",
     (ev.paymentlink&&sl.includes("paymentlink")) ? `<div style="font-size:14px;margin-bottom:4px;"><a href="${esc(ev.paymentlink)}" rel="noopener">Register / Pay</a></div>` : "",
   ].filter(Boolean).join("");
 
@@ -1203,6 +1203,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.88 -->
+<!-- event.html v4.89 -->
 </body>
 </html>
