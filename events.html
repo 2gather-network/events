@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.89
-  v11.89 - remove Share button from event modal header
-  v11.88 - prior version
+  Events.html Version 11.90
+  v11.90 - venue preload fix; keep URL param; button style fix
+  v11.89 - prior version
 
 -->
 <html lang="en">
@@ -3223,14 +3223,13 @@ loadEvents().then(() => {
   // pre-set venue filter if ?venue= param present
   const venueParam = new URLSearchParams(window.location.search).get("venue");
   if (venueParam) {
-    const venueInput = document.getElementById("venue-filter");
-    if (venueInput) venueInput.value = venueParam;
+    const venueEl = document.getElementById("venue-filter");
+    if (venueEl) venueEl.value = venueParam;
     const panel = document.getElementById("filter-panel");
     if (panel) panel.style.display = "block";
     const btn = document.getElementById("filter-panel-btn");
-    if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
+    if (btn) { btn.style.background = "#0d3a54"; btn.style.borderColor = "#0d3a54"; }
     renderEvents();
-    window.history.replaceState({}, "", window.location.pathname);
   }
   // Initialize For You section after events load
   initForYou();
@@ -3501,6 +3500,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.89 -->
+<!-- Events.html v11.90 -->
 </body>
 </html>
