@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.87
-  v11.87 - Post an event opens form directly in Glide; modal scroll to top fix; openPostEvent
-  v11.86 - prior version
+  Events.html Version 11.88
+  v11.88 - venue filter dropdown with populateVenueFilter; Share button hidden on mobile
+  v11.87 - prior version
 
 -->
 <html lang="en">
@@ -178,6 +178,7 @@
     .room-event-row { flex-direction:column; align-items:flex-start; gap:4px; }
     .btn-sm { font-size:12px; padding:6px 10px; }
     .modal-actions { flex-wrap:wrap; }
+    .btn-share-desktop { display:none; }
   }
   @media(max-width:420px) {
     .event-title { font-size:15px; }
@@ -299,7 +300,9 @@
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
       <div style="flex:1;min-width:160px;">
         <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Venue</label>
-        <input class="input" id="venue-filter" placeholder="Search venue..." oninput="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;">
+        <select class="input" id="venue-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="">All venues</option>
+        </select>
       </div>
       <div style="flex:1;min-width:160px;">
         <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Host</label>
@@ -1134,10 +1137,25 @@ async function loadEvents() {
     isLoadingData = false;
     showLoading(false);
     populateHostFilter();
+  populateVenueFilter();
     populateVenueSuggestions();
     renderEvents();
     checkEventLink();
   }
+}
+
+function populateVenueFilter() {
+  const sel = document.getElementById("venue-filter");
+  if (!sel) return;
+  const current = sel.value;
+  const venues = [...new Set(events.map(e => e.venue).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All venues</option>';
+  venues.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v; opt.textContent = v;
+    if (v === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
 
 function populateHostFilter() {
@@ -1383,8 +1401,8 @@ function renderEvents() {
     }
     const activeHost = document.getElementById("host-filter")?.value || "";
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    const activeVenue = (document.getElementById("venue-filter")?.value || "").trim().toLowerCase();
-    const matchVenue = !activeVenue || (e.venue||"").toLowerCase().includes(activeVenue);
+    const activeVenue = (document.getElementById("venue-filter")?.value || "").trim();
+    const matchVenue = !activeVenue || (e.venue||"") === activeVenue;
     return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate && matchVenue;
   });
 
@@ -3475,7 +3493,7 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
         <span id="event-view-title" style="font-size:14px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:12px;"></span>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <input type="hidden" id="event-view-share-url" value="">
-          <button onclick="shareEventModal()" class="btn btn-sm btn-outline" style="font-size:12px;padding:6px 10px;">↗ Share</button>
+          <button onclick="shareEventModal()" class="btn btn-sm btn-outline btn-share-desktop" style="font-size:12px;padding:6px 10px;">↗ Share</button>
           <button onclick="closeEventView()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:4px;line-height:1;">×</button>
         </div>
       </div>
@@ -3484,6 +3502,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.87 -->
+<!-- Events.html v11.88 -->
 </body>
 </html>
