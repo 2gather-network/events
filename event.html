@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.89
+  event.html Version 4.90
+  v4.90 - fix cancelRsvp appearId; Shared by attribution via ?via= param; logs socializer click
   v4.89 - associated group + address links open in new tab
-  v4.88 - prior version
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -506,6 +506,9 @@ function render(ev) {
         <div id="interest-confirmed" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);padding:10px 14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
           ✓ You're registered! Manage your registrations anytime under My events.
         </div>
+        <div id="rsvp-cancelled-msg" style="display:none;margin-top:12px;font-size:13px;color:#c0392b;padding:10px 14px;background:#FEE2E2;border-radius:8px;border:1px solid #FECACA;">
+          You're no longer registered for this event.
+        </div>
         <div id="who-is-going" style="display:none;margin-top:16px;">
           <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px;">Others going</p>
           <div id="who-is-going-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
@@ -558,6 +561,7 @@ function render(ev) {
         ${!ev.cancelled ? `<button class="btn btn-outline" onclick="openEditPin()" title="Edit this event" style="padding:10px 14px;">✏️</button>` : ""}
       </div>
       <div style="text-align:right;margin-top:24px;padding-top:12px;border-top:1px solid var(--border);">
+        ${window._sharedByCard ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Shared by <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(window._sharedByCard)}" rel="noopener" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:600;">${window._sharedByCard}</a></div>` : ""}
         <span style="font-size:11px;color:#9ca3af;">Brought to you by <a href="https://creating.works" rel="noopener" style="color:var(--primary);text-decoration:none;">Creating Works</a></span>
       </div>
 
@@ -958,8 +962,8 @@ async function loadWhoIsGoing() {
 async function cancelRsvp() {
   if (!_currentEv) return;
   if (!confirm("Cancel your RSVP for this event?")) return;
+  const appearId = _rsvpAppearId || getMemberId() || "";
   try {
-    const appearId = _rsvpAppearId || "";
     await fetch(`${GS_URL}?action=cancelRsvp&appearId=${encodeURIComponent(appearId)}&eventId=${encodeURIComponent(_currentEv.id)}`);
   } catch(e) { /* best effort */ }
   try { localStorage.removeItem("db-interested-" + _currentEv.id); } catch(e) {}
@@ -969,7 +973,9 @@ async function cancelRsvp() {
   if (cancelArea) cancelArea.style.display = "none";
   const confirmed = document.getElementById("interest-confirmed");
   if (confirmed) confirmed.style.display = "none";
-  showToast("RSVP cancelled.");
+  const cancelledMsg = document.getElementById("rsvp-cancelled-msg");
+  if (cancelledMsg) cancelledMsg.style.display = "block";
+  setTimeout(() => { if (cancelledMsg) cancelledMsg.style.display = "none"; }, 4000);
 }
 
 async function saveSharedNotes() {
@@ -1178,6 +1184,15 @@ async function init() {
     const data = await jsonp({ t: Date.now() });
     const ev = (data.events||[]).filter(r=>r.id).map(toEv).find(e=>e.id===id);
     if (!ev) { showError("Event not found."); return; }
+    // Handle ?via= socializer attribution
+    const viaCard = new URLSearchParams(window.location.search).get("via");
+    if (viaCard && ev.id) {
+      window._sharedByCard = viaCard;
+      // Log the click to socializers tab
+      try {
+        fetch(`${GS_URL}?action=saveSocializer&appearId=${encodeURIComponent(viaCard)}&eventId=${encodeURIComponent(ev.id)}&refCode=&via=link`);
+      } catch(e) {}
+    }
     render(ev);
   } catch(e) {
     showError("Could not load event. Please try again.");
@@ -1203,6 +1218,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.89 -->
+<!-- event.html v4.90 -->
 </body>
 </html>
