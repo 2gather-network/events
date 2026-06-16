@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 2.98
-  v2.98 - match events.html filter UI; Filters button; hidden panel; search quote guidance; toggleFilterPanel
-  v2.97 - prior version
+  index.html Version 2.99
+  v2.99 - venue filter added; populateVenueFilter; pre-select from URL param
+  v2.98 - prior version
 
 -->
 <html lang="en">
@@ -184,6 +184,12 @@
         </select>
       </div>
       <div style="flex:1;min-width:160px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Venue</label>
+        <select class="filter-search input" id="venue-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
+          <option value="">All venues</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px;">
         <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Show</label>
         <select class="filter-search input" id="date-filter-select" onchange="setDateFilter(this.value)" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
           <option value="upcoming">All upcoming events</option>
@@ -328,9 +334,34 @@ async function loadEvents() {
     isLoadingData = false;
     showLoading(false);
     populateHostFilter();
+  populateVenueFilter();
+  const venueParam = new URLSearchParams(window.location.search).get("venue");
+  if (venueParam) {
+    const venueEl = document.getElementById("venue-filter");
+    if (venueEl) venueEl.value = venueParam;
+    const panel = document.getElementById("filter-panel");
+    if (panel) panel.style.display = "block";
+    const btn = document.getElementById("filter-panel-btn");
+    if (btn) { btn.style.background = "#0d3a54"; btn.style.borderColor = "#0d3a54"; }
+    renderEvents();
+  }
     renderEvents();
     checkEventLink();
   }
+}
+
+function populateVenueFilter() {
+  const sel = document.getElementById("venue-filter");
+  if (!sel) return;
+  const current = sel.value;
+  const venues = [...new Set(events.map(e => e.venue).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All venues</option>';
+  venues.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v; opt.textContent = v;
+    if (v === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
 
 function populateHostFilter() {
@@ -376,6 +407,7 @@ function toggleFilterPanel() {
 function resetFilters() {
   document.getElementById("search-input").value = "";
   document.getElementById("host-filter").value = "";
+  const venueResetEl = document.getElementById("venue-filter"); if (venueResetEl) venueResetEl.value = "";
   setFilter("all");
   setDateFilter("upcoming");
   setMode("all");
@@ -422,7 +454,8 @@ function renderEvents() {
     else if (activeDateFilter === "past-week") matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
     else if (activeDateFilter === "past-month") matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
     else if (activeDateFilter === "past-quarter") matchDate = evEndMs >= now - MS_QUARTER && evEndMs < now;
-    const activeHost = document.getElementById("host-filter")?.value || "";
+    const activeHost  = document.getElementById("host-filter")?.value || "";
+    const activeVenue = document.getElementById("venue-filter")?.value || "";
     if (isPast && evEndMs < now - MS_QUARTER && !activeHost) matchDate = false;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
@@ -437,8 +470,9 @@ function renderEvents() {
       }
     }
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
+    const matchVenue = !activeVenue || (e.venue||"") === activeVenue;
     const effectiveMatchTab = activeHost ? true : matchTab;
-    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchDate;
+    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchVenue && matchDate;
   });
 
   list.sort((a, b) => {
@@ -837,6 +871,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v2.98 -->
+<!-- index.html v2.99 -->
 </body>
 </html>
