@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   index.html Version 2.99
-  v2.99 - venue filter added; populateVenueFilter; pre-select from URL param
-  v2.98 - prior version
+  v2.99 - Find events for you card with Add topics button; sign-in prompt modal; all modals high on page
+  v2.98 - match events.html filter UI; Filters button; hidden panel; search quote guidance; toggleFilterPanel
 
 -->
 <html lang="en">
@@ -130,9 +130,21 @@
 
 <div class="page-body">
   <!-- My interests prompt for signed-out users -->
-  <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-    <p style="font-size:14px;font-weight:700;color:#1a1a2e;margin:0 0 4px;">🎯 Find events for you</p>
-    <p style="font-size:13px;color:#6b7280;margin:0;">Sign up or sign in to save your interests and see matching events.</p>
+  <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div>
+      <p style="font-size:14px;font-weight:700;color:#1a1a2e;margin:0 0 4px;">🎯 Find events for you</p>
+      <p style="font-size:13px;color:#6b7280;margin:0;">Add topics to see matching upcoming events.</p>
+    </div>
+    <button onclick="document.getElementById('signin-interests-modal').style.display='flex'" style="background:#154F74;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Add topics</button>
+  </div>
+
+  <!-- Sign-in interests modal -->
+  <div id="signin-interests-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:flex-start;justify-content:center;padding-top:48px;">
+    <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);position:relative;">
+      <p style="font-size:16px;font-weight:700;color:#1a1a2e;margin:0 0 10px;">Add your interests</p>
+      <p style="font-size:14px;color:#6b7280;margin:0 0 20px;">Sign in or sign up to add your interests and see matching events.</p>
+      <button onclick="document.getElementById('signin-interests-modal').style.display='none'" style="width:100%;background:#154F74;color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;">Got it</button>
+    </div>
   </div>
 
   <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
@@ -181,12 +193,6 @@
         <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Host</label>
         <select class="filter-search input" id="host-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
           <option value="">All hosts</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:160px;">
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:5px;">Venue</label>
-        <select class="filter-search input" id="venue-filter" onchange="renderEvents()" style="padding:7px 12px;font-size:13px;width:100%;cursor:pointer;">
-          <option value="">All venues</option>
         </select>
       </div>
       <div style="flex:1;min-width:160px;">
@@ -334,34 +340,9 @@ async function loadEvents() {
     isLoadingData = false;
     showLoading(false);
     populateHostFilter();
-  populateVenueFilter();
-  const venueParam = new URLSearchParams(window.location.search).get("venue");
-  if (venueParam) {
-    const venueEl = document.getElementById("venue-filter");
-    if (venueEl) venueEl.value = venueParam;
-    const panel = document.getElementById("filter-panel");
-    if (panel) panel.style.display = "block";
-    const btn = document.getElementById("filter-panel-btn");
-    if (btn) { btn.style.background = "#0d3a54"; btn.style.borderColor = "#0d3a54"; }
-    renderEvents();
-  }
     renderEvents();
     checkEventLink();
   }
-}
-
-function populateVenueFilter() {
-  const sel = document.getElementById("venue-filter");
-  if (!sel) return;
-  const current = sel.value;
-  const venues = [...new Set(events.map(e => e.venue).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">All venues</option>';
-  venues.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v; opt.textContent = v;
-    if (v === current) opt.selected = true;
-    sel.appendChild(opt);
-  });
 }
 
 function populateHostFilter() {
@@ -407,7 +388,6 @@ function toggleFilterPanel() {
 function resetFilters() {
   document.getElementById("search-input").value = "";
   document.getElementById("host-filter").value = "";
-  const venueResetEl = document.getElementById("venue-filter"); if (venueResetEl) venueResetEl.value = "";
   setFilter("all");
   setDateFilter("upcoming");
   setMode("all");
@@ -454,8 +434,7 @@ function renderEvents() {
     else if (activeDateFilter === "past-week") matchDate = evEndMs >= now - MS_WEEK && evEndMs < now;
     else if (activeDateFilter === "past-month") matchDate = evEndMs >= now - MS_MONTH && evEndMs < now;
     else if (activeDateFilter === "past-quarter") matchDate = evEndMs >= now - MS_QUARTER && evEndMs < now;
-    const activeHost  = document.getElementById("host-filter")?.value || "";
-    const activeVenue = document.getElementById("venue-filter")?.value || "";
+    const activeHost = document.getElementById("host-filter")?.value || "";
     if (isPast && evEndMs < now - MS_QUARTER && !activeHost) matchDate = false;
     const isVirtual  = e.format === "virtual" || e.format === "both" || !e.format;
     const isInPerson = e.format === "inperson" || e.format === "both" || !e.format;
@@ -470,9 +449,8 @@ function renderEvents() {
       }
     }
     const matchHost  = !activeHost || (e.host||"").toLowerCase() === activeHost.toLowerCase();
-    const matchVenue = !activeVenue || (e.venue||"") === activeVenue;
     const effectiveMatchTab = activeHost ? true : matchTab;
-    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchVenue && matchDate;
+    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchDate;
   });
 
   list.sort((a, b) => {
