@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.26
-  v1.26 - attendee count + photos on hosting cards; loadAttendeesForHost
-  v1.25 - prior version
+  myevents.html Version 1.28
+  v1.28 - fix GS_URL typo (Wu→Wv); fix memberCard param order for Glide
+  v1.27 - RSVPs modal on hosted cards; Socializers modal on hosted cards; Events I've socialized section
 -->
 <html lang="en">
 <head>
@@ -108,7 +108,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWv1Fyhq9/exec";
 const APPEAR_BASE = "https://appear.network/dl/page/s/e13594/r/";
 let _appearId = null;
 let _allEvents = [];
@@ -308,6 +308,8 @@ function renderEvents(registrations, events) {
         <div class="event-actions">
           <button class="btn btn-outline" onclick='addToCalendar(${JSON.stringify({title:ev.title,date:ev.date,startTime:ev.startTime||ev.time,endTime:ev.endTime||ev.endtime,description:ev.description,location:ev.location,meetinglink:ev.meetinglink})})'>📅 Add to calendar</button>
           <a href="event.html?id=${encodeURIComponent(ev.id)}" class="btn btn-outline">✏️ Manage</a>
+          <button class="btn btn-outline" onclick="openRsvpsModal('${ev.id}', '${(ev.title||'').replace(/'/g,"\\'")}')">👥 RSVPs</button>
+          <button class="btn btn-outline" onclick="openSocializersModal('${ev.id}', '${(ev.title||'').replace(/'/g,"\\'")}')">📣 Socializers</button>
         </div>`;
       upcomingContainer.appendChild(card);
       loadAttendeesForHost(ev.id);
@@ -465,7 +467,7 @@ async function loadAttendees(eventId) {
 async function init() {
   // Get Member Card number from URL or localStorage
   const params = new URLSearchParams(window.location.search);
-  _appearId = params.get("id") || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })() || params.get("memberCard");
+  _appearId = params.get("memberCard") || params.get("id") || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })();
 
   if (!_appearId) {
     document.getElementById("loading").style.display = "none";
@@ -499,10 +501,54 @@ async function init() {
     const allEvents = (evData.events || []).filter(function(r) { return r.id; });
     renderEvents(regData.registrations || [], allEvents);
     initInterests(allEvents);
+    loadSocializedEvents(allEvents);
   } catch(e) {
     document.getElementById("loading").style.display = "none";
     document.getElementById("empty").style.display = "block";
   }
+}
+
+// ── Events I've socialized ───────────────────────────────────────
+async function loadSocializedEvents(allEvents) {
+  if (!_appearId) return;
+  try {
+    // We need to check socializers tab - fetch all events and look for this member's rows
+    // getSocializers is per-event; we use a workaround: fetch each hosted event is expensive
+    // Instead we scan via the sheet's socializers tab by fetching with appearId filter
+    const res = await fetch(`${GS_URL}?action=getSocializers&appearId=${encodeURIComponent(_appearId)}`);
+    const data = await res.json();
+    const rows = data.socializers || [];
+    if (rows.length === 0) return;
+
+    // Count clicks per eventId
+    const counts = {};
+    rows.forEach(r => { counts[r.eventId] = (counts[r.eventId] || 0) + 1; });
+
+    const list = document.getElementById("events-list");
+    if (!list) return;
+
+    const section = document.createElement("div");
+    section.style.marginTop = "24px";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "section-title";
+    titleEl.textContent = `Events I've shared (${Object.keys(counts).length})`;
+    section.appendChild(titleEl);
+
+    Object.entries(counts).sort((a,b) => b[1]-a[1]).forEach(([eventId, count]) => {
+      const ev = allEvents.find(e => e.id === eventId);
+      const card = document.createElement("div");
+      card.className = "event-card";
+      card.style.borderLeft = "3px solid #10B981";
+      card.innerHTML = `
+        <a class="event-title" href="event.html?id=${encodeURIComponent(eventId)}" style="color:var(--primary);">${ev ? (ev.title || "Untitled") : eventId}</a>
+        ${ev ? `<div class="event-meta">${formatDate(ev.date, ev.startTime || "")}</div>` : ""}
+        <div style="font-size:13px;color:#10B981;font-weight:600;margin-top:6px;">${count} click${count===1?"":"s"} from your share link</div>`;
+      section.appendChild(card);
+    });
+
+    list.appendChild(section);
+  } catch(e) {}
 }
 
 // ── My Interests ────────────────────────────────────────────────
@@ -701,6 +747,86 @@ async function submitFindPin() {
 init();
 </script>
 
-<!-- myevents.html v1.26 -->
+<!-- RSVPs Modal -->
+<div id="rsvps-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:flex-start;justify-content:center;padding-top:48px;">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:92%;max-height:70vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:16px;font-weight:700;color:#1a1a2e;margin:0;" id="rsvps-modal-title">RSVPs</p>
+      <button onclick="document.getElementById('rsvps-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:0;">×</button>
+    </div>
+    <div id="rsvps-modal-body" style="font-size:14px;color:var(--muted);">Loading...</div>
+  </div>
+</div>
+
+<!-- Socializers Modal -->
+<div id="socializers-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:flex-start;justify-content:center;padding-top:48px;">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:92%;max-height:70vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p style="font-size:16px;font-weight:700;color:#1a1a2e;margin:0;" id="socializers-modal-title">Socializers</p>
+      <button onclick="document.getElementById('socializers-modal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:0;">×</button>
+    </div>
+    <div id="socializers-modal-body" style="font-size:14px;color:var(--muted);">Loading...</div>
+  </div>
+</div>
+
+<script>
+async function openRsvpsModal(eventId, title) {
+  const modal = document.getElementById("rsvps-modal");
+  const body = document.getElementById("rsvps-modal-body");
+  const titleEl = document.getElementById("rsvps-modal-title");
+  titleEl.textContent = "RSVPs - " + (title || eventId);
+  body.innerHTML = "Loading...";
+  modal.style.display = "flex";
+  try {
+    const res = await fetch(`${GS_URL}?action=getAttendees&eventId=${encodeURIComponent(eventId)}`);
+    const data = await res.json();
+    const attendees = data.attendees || [];
+    if (attendees.length === 0) {
+      body.innerHTML = '<p style="color:var(--muted);font-size:14px;">No registrations yet.</p>';
+      return;
+    }
+    body.innerHTML = `<p style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;">${attendees.length} registered</p>` +
+      attendees.map(a => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <img src="${a.profileUrl||a.photo||''}" alt="${a.appearId}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(a.appearId)}&size=36&background=EEF4F9&color=1B6896'">
+          <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(a.appearId)}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px;font-weight:600;text-decoration:none;">${a.appearId}</a>
+        </div>`).join("");
+  } catch(e) {
+    body.innerHTML = '<p style="color:#c0392b;font-size:14px;">Could not load registrations.</p>';
+  }
+}
+
+async function openSocializersModal(eventId, title) {
+  const modal = document.getElementById("socializers-modal");
+  const body = document.getElementById("socializers-modal-body");
+  const titleEl = document.getElementById("socializers-modal-title");
+  titleEl.textContent = "Socializers - " + (title || eventId);
+  body.innerHTML = "Loading...";
+  modal.style.display = "flex";
+  try {
+    const res = await fetch(`${GS_URL}?action=getSocializers&eventId=${encodeURIComponent(eventId)}`);
+    const data = await res.json();
+    const rows = data.socializers || [];
+    if (rows.length === 0) {
+      body.innerHTML = '<p style="color:var(--muted);font-size:14px;">No one has shared this event yet.</p>';
+      return;
+    }
+    // Count clicks per member card
+    const counts = {};
+    rows.forEach(r => { counts[r.appearId] = (counts[r.appearId] || 0) + 1; });
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    body.innerHTML = `<p style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;">${sorted.length} socializer${sorted.length===1?'':'s'} · ${rows.length} click${rows.length===1?'':'s'} total</p>` +
+      sorted.map(([id, count]) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <a href="https://appear.network/dl/page/s/e13594/r/${encodeURIComponent(id)}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px;font-weight:600;text-decoration:none;">${id}</a>
+          <span style="font-size:13px;color:var(--muted);font-weight:600;">${count} click${count===1?'':'s'}</span>
+        </div>`).join("");
+  } catch(e) {
+    body.innerHTML = '<p style="color:#c0392b;font-size:14px;">Could not load socializers.</p>';
+  }
+}
+</script>
+
+<!-- myevents.html v1.28 -->
 </body>
 </html>
