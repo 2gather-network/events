@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 3.01
-  v3.01 - remove top-level format chips; Format chips inside filter panel; format filter logic
-  v3.00 - host autocomplete text input with suggestions
+  index.html Version 3.02
+  v3.02 - guard setMode against removed chip elements
+  v3.01 - remove top-level format chips; Format chips inside filter panel
 
 -->
 <html lang="en">
@@ -699,9 +699,9 @@ function setDateFilter(f) {
 
 function setMode(mode) {
   activeMode = mode;
-  document.getElementById("mode-virtual").classList.toggle("active", mode === "virtual");
-  document.getElementById("mode-inperson").classList.toggle("active", mode === "inperson");
-  document.getElementById("mode-all").classList.toggle("active", mode === "all");
+  const modeVirtual = document.getElementById("mode-virtual"); if(modeVirtual) modeVirtual.classList.toggle("active", mode === "virtual");
+  const modeInperson = document.getElementById("mode-inperson"); if(modeInperson) modeInperson.classList.toggle("active", mode === "inperson");
+  const modeAll = document.getElementById("mode-all"); if(modeAll) modeAll.classList.toggle("active", mode === "all");
   document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
   if (mode === "inperson") {
     const regionEl = document.getElementById("filter-region");
@@ -887,6 +887,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v3.01 -->
+<!-- index.html v3.02 -->
 </body>
 </html>
