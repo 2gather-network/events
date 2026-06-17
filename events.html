@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.94
-  v11.94 - fix isVirtual variable conflict breaking renderEvents
-  v11.93 - venue/host autocomplete text inputs; Format chips in filter panel
+  Events.html Version 11.95
+  v11.95 - remove top-level format chips; filter panel chips only
+  v11.94 - fix isVirtual variable conflict
 
 -->
 <html lang="en">
@@ -254,12 +254,6 @@
       <div id="interests-chips-modal" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;min-height:32px;"></div>
       <button onclick="closeInterestsModal()" style="width:100%;background:#1b6896;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Done</button>
     </div>
-  </div>
-
-  <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
-    <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
-    <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
   </div>
 
   <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
@@ -3645,6 +3639,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.94 -->
+<!-- Events.html v11.95 -->
 </body>
 </html>
