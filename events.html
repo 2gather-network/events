@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.93
+  Events.html Version 11.94
+  v11.94 - fix isVirtual variable conflict breaking renderEvents
   v11.93 - venue/host autocomplete text inputs; Format chips in filter panel
-  v11.92 - sharing goes straight to Paste event details modal
 
 -->
 <html lang="en">
@@ -1545,8 +1545,8 @@ function renderEvents() {
     const activeVenue = (document.getElementById("venue-filter")?.value || "").trim();
     const matchVenue = !activeVenue || (e.venue||"").toLowerCase().includes(activeVenue.toLowerCase());
     const fmt = typeof _activeFormat !== "undefined" ? _activeFormat : "all";
-    const isVirtual = !!(e.meetinglink || e.mode === "virtual" || (e.location||"").toLowerCase().includes("virtual") || (e.location||"").toLowerCase().includes("online") || (e.location||"").toLowerCase().includes("zoom"));
-    const matchFormat = fmt === "all" || (fmt === "virtual" && isVirtual) || (fmt === "inperson" && !isVirtual);
+    const _fmtIsVirtual = !!(e.meetinglink || e.mode === "virtual" || (e.location||"").toLowerCase().includes("virtual") || (e.location||"").toLowerCase().includes("online") || (e.location||"").toLowerCase().includes("zoom"));
+    const matchFormat = fmt === "all" || (fmt === "virtual" && _fmtIsVirtual) || (fmt === "inperson" && !_fmtIsVirtual);
     return matchCat && matchQ && matchTab && matchMode && matchLocation && matchHost && matchDate && matchVenue && matchFormat;
   });
 
@@ -3645,6 +3645,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.93 -->
+<!-- Events.html v11.94 -->
 </body>
 </html>
