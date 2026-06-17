@@ -2,8 +2,8 @@
 <!--
   Community Events
   Events.html Version 11.90
-  v11.90 - venue preload fix; keep URL param; button style fix
-  v11.89 - prior version
+  v11.90 - host vs socializer step in choice modal; socializer flow saves to socializers tab
+  v11.89 - remove Share button from event modal header
 
 -->
 <html lang="en">
@@ -328,30 +328,73 @@
   <div class="event-grid" id="event-grid"></div>
 </div>
 
-<!-- CHOICE MODAL (v6.72) -->
+<!-- CHOICE MODAL (v11.90) -->
 <div class="modal-overlay" id="choice-modal">
   <div class="modal choice-modal">
-    <div class="modal-title">Post an event</div>
-    <p style="font-size:14px;color:var(--muted);">How would you like to add your event?</p>
-    <div class="choice-options">
-      <button class="choice-btn" onclick="closeChoiceModal(); openModal(false);">
-        <div class="choice-btn-icon">📝</div>
-        <div class="choice-btn-text">
-          <div class="choice-btn-title">Fill out form</div>
-          <div class="choice-btn-desc">Enter details field by field</div>
-        </div>
-      </button>
-      <button class="choice-btn" onclick="closeChoiceModal(); openPasteModal();">
-        <div class="choice-btn-icon">📋</div>
-        <div class="choice-btn-text">
-          <div class="choice-btn-title">Paste event details</div>
-          <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
-        </div>
-      </button>
+
+    <!-- Step 1: How would you like to add your event? -->
+    <div id="choice-step-1">
+      <div class="modal-title">Post an event</div>
+      <p style="font-size:14px;color:var(--muted);">How would you like to add your event?</p>
+      <div class="choice-options">
+        <button class="choice-btn" onclick="choiceSelectMethod('form')">
+          <div class="choice-btn-icon">📝</div>
+          <div class="choice-btn-text">
+            <div class="choice-btn-title">Fill out form</div>
+            <div class="choice-btn-desc">Enter details field by field</div>
+          </div>
+        </button>
+        <button class="choice-btn" onclick="choiceSelectMethod('paste')">
+          <div class="choice-btn-icon">📋</div>
+          <div class="choice-btn-text">
+            <div class="choice-btn-title">Paste event details</div>
+            <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
+          </div>
+        </button>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="closeChoiceModal()">Cancel</button>
+      </div>
     </div>
-    <div style="margin-top:16px;">
-      <button class="btn btn-outline" onclick="closeChoiceModal()">Cancel</button>
+
+    <!-- Step 2: Are you hosting or sharing? -->
+    <div id="choice-step-2" style="display:none;">
+      <div class="modal-title">One more thing</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Are you hosting this event or sharing someone else's?</p>
+      <div class="choice-options">
+        <button class="choice-btn" onclick="choiceConfirmHost()">
+          <div class="choice-btn-icon">🗓️</div>
+          <div class="choice-btn-text">
+            <div class="choice-btn-title">I'm hosting</div>
+            <div class="choice-btn-desc">This is my event</div>
+          </div>
+        </button>
+        <button class="choice-btn" onclick="choiceConfirmSocializer()">
+          <div class="choice-btn-icon">📣</div>
+          <div class="choice-btn-text">
+            <div class="choice-btn-title">I'm sharing</div>
+            <div class="choice-btn-desc">I want to spread the word about someone else's event</div>
+          </div>
+        </button>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="choiceBack()">← Back</button>
+      </div>
     </div>
+
+    <!-- Step 3: Socializer flow -->
+    <div id="choice-step-3" style="display:none;">
+      <div class="modal-title">Share an event</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Paste the event link or enter the event ID. Your member card will be attached so clicks are tracked back to you.</p>
+      <input id="socializer-event-input" type="text" placeholder="Event link or event ID" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:12px;">
+      <p id="socializer-error" style="display:none;font-size:13px;color:#c0392b;margin-bottom:10px;"></p>
+      <p id="socializer-success" style="display:none;font-size:13px;color:#4CAF7D;font-weight:600;margin-bottom:10px;"></p>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-green" style="flex:1;" onclick="submitSocializer()">Save my share</button>
+        <button class="btn btn-outline" onclick="choiceBack()">← Back</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -843,10 +886,83 @@ function openPostEvent() {
 
 function openChoiceModal() {
   document.getElementById("choice-modal").classList.add("open");
+  // Always reset to step 1
+  document.getElementById("choice-step-1").style.display = "block";
+  document.getElementById("choice-step-2").style.display = "none";
+  document.getElementById("choice-step-3").style.display = "none";
+  window._choiceMethod = null;
 }
 
 function closeChoiceModal() {
   document.getElementById("choice-modal").classList.remove("open");
+}
+
+let _choiceMethod = null;
+
+function choiceSelectMethod(method) {
+  _choiceMethod = method;
+  document.getElementById("choice-step-1").style.display = "none";
+  document.getElementById("choice-step-2").style.display = "block";
+}
+
+function choiceConfirmHost() {
+  closeChoiceModal();
+  if (_choiceMethod === "paste") {
+    openPasteModal();
+  } else {
+    openModal(false);
+  }
+}
+
+function choiceConfirmSocializer() {
+  document.getElementById("choice-step-2").style.display = "none";
+  document.getElementById("choice-step-3").style.display = "block";
+  document.getElementById("socializer-event-input").value = "";
+  document.getElementById("socializer-error").style.display = "none";
+  document.getElementById("socializer-success").style.display = "none";
+}
+
+function choiceBack() {
+  const s2 = document.getElementById("choice-step-2");
+  const s3 = document.getElementById("choice-step-3");
+  if (s3.style.display !== "none") {
+    s3.style.display = "none";
+    s2.style.display = "block";
+  } else {
+    s2.style.display = "none";
+    document.getElementById("choice-step-1").style.display = "block";
+  }
+}
+
+async function submitSocializer() {
+  const input = document.getElementById("socializer-event-input").value.trim();
+  const errEl = document.getElementById("socializer-error");
+  const successEl = document.getElementById("socializer-success");
+  errEl.style.display = "none";
+  successEl.style.display = "none";
+
+  if (!input) { errEl.textContent = "Paste an event link or event ID."; errEl.style.display = "block"; return; }
+
+  const memberId = getMemberId();
+  if (!memberId) { errEl.textContent = "Sign in first to save your share."; errEl.style.display = "block"; return; }
+
+  // Extract event ID from URL or use input directly
+  let eventId = input;
+  try {
+    const url = new URL(input);
+    eventId = url.searchParams.get("id") || input;
+  } catch(e) {}
+
+  try {
+    await fetch(`${GS_URL}?action=saveSocializer&appearId=${encodeURIComponent(memberId)}&eventId=${encodeURIComponent(eventId)}&refCode=&via=manual`);
+    // Build shareable link
+    const shareLink = `https://gather.2gather.network/event.html?id=${encodeURIComponent(eventId)}&via=${encodeURIComponent(memberId)}`;
+    successEl.innerHTML = `Saved! Your share link:<br><a href="${shareLink}" style="color:var(--primary);word-break:break-all;">${shareLink}</a>`;
+    successEl.style.display = "block";
+  } catch(e) {
+    errEl.textContent = "Something went wrong. Try again.";
+    errEl.style.display = "block";
+  }
 }
 
 function openPasteModal() {
@@ -3223,13 +3339,14 @@ loadEvents().then(() => {
   // pre-set venue filter if ?venue= param present
   const venueParam = new URLSearchParams(window.location.search).get("venue");
   if (venueParam) {
-    const venueEl = document.getElementById("venue-filter");
-    if (venueEl) venueEl.value = venueParam;
+    const venueInput = document.getElementById("venue-filter");
+    if (venueInput) venueInput.value = venueParam;
     const panel = document.getElementById("filter-panel");
     if (panel) panel.style.display = "block";
     const btn = document.getElementById("filter-panel-btn");
-    if (btn) { btn.style.background = "#0d3a54"; btn.style.borderColor = "#0d3a54"; }
+    if (btn) { btn.style.background = "var(--primary)"; btn.style.color = "#fff"; }
     renderEvents();
+    window.history.replaceState({}, "", window.location.pathname);
   }
   // Initialize For You section after events load
   initForYou();
