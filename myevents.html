@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.29
-  v1.29 - revert param order to original (id first); v1.28 change broke my events loading
-  v1.28 - fix GS_URL typo (Wu→Wv); fix memberCard param order for Glide
+  myevents.html Version 1.30
+  v1.30 - revert GS_URL to original Wu value (Wv was wrong; Wu is correct for myevents script)
+  v1.29 - revert param order to original
 -->
 <html lang="en">
 <head>
@@ -108,7 +108,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWv1Fyhq9/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbzEavMnG4tMeWemoT5FLu9f_zjlKVIJsZLueG4nhw9akK0_nZqpbkZiXrAlWu1Fyhq9/exec";
 const APPEAR_BASE = "https://appear.network/dl/page/s/e13594/r/";
 let _appearId = null;
 let _allEvents = [];
@@ -827,6 +827,6 @@ async function openSocializersModal(eventId, title) {
 }
 </script>
 
-<!-- myevents.html v1.29 -->
+<!-- myevents.html v1.30 -->
 </body>
 </html>
