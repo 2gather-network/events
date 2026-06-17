@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.91
-  v11.91 - host/share first in choice modal; blue buttons; sharing goes straight to paste link
-  v11.90 - host vs socializer step in choice modal
+  Events.html Version 11.92
+  v11.92 - sharing goes straight to Paste event details modal, no link input step
+  v11.91 - host/share first in choice modal; blue buttons
 
 -->
 <html lang="en">
@@ -899,10 +899,8 @@ function choiceSelectMethod(method) {
   _choiceMethod = method;
   document.getElementById("choice-step-1").style.display = "none";
   if (method === "share") {
-    document.getElementById("socializer-event-input").value = "";
-    document.getElementById("socializer-error").style.display = "none";
-    document.getElementById("socializer-success").style.display = "none";
-    document.getElementById("choice-step-3").style.display = "block";
+    closeChoiceModal();
+    openPasteModal();
   } else {
     document.getElementById("choice-step-2").style.display = "block";
   }
@@ -3612,6 +3610,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.91 -->
+<!-- Events.html v11.92 -->
 </body>
 </html>
