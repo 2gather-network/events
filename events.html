@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.90
-  v11.90 - host vs socializer step in choice modal; socializer flow saves to socializers tab
-  v11.89 - remove Share button from event modal header
+  Events.html Version 11.91
+  v11.91 - host/share first in choice modal; blue buttons; sharing goes straight to paste link
+  v11.90 - host vs socializer step in choice modal
 
 -->
 <html lang="en">
@@ -328,27 +328,25 @@
   <div class="event-grid" id="event-grid"></div>
 </div>
 
-<!-- CHOICE MODAL (v11.90) -->
+<!-- CHOICE MODAL (v11.91) -->
 <div class="modal-overlay" id="choice-modal">
   <div class="modal choice-modal">
 
-    <!-- Step 1: How would you like to add your event? -->
+    <!-- Step 1: Hosting or sharing? -->
     <div id="choice-step-1">
       <div class="modal-title">Post an event</div>
-      <p style="font-size:14px;color:var(--muted);">How would you like to add your event?</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Are you hosting this event or sharing someone else's?</p>
       <div class="choice-options">
-        <button class="choice-btn" onclick="choiceSelectMethod('form')">
-          <div class="choice-btn-icon">📝</div>
+        <button class="choice-btn" onclick="choiceSelectMethod('host')" style="background:#154F74;border-color:#154F74;">
+          <div class="choice-btn-icon">🗓️</div>
           <div class="choice-btn-text">
-            <div class="choice-btn-title">Fill out form</div>
-            <div class="choice-btn-desc">Enter details field by field</div>
+            <div class="choice-btn-title" style="color:#fff;">I'm hosting an event</div>
           </div>
         </button>
-        <button class="choice-btn" onclick="choiceSelectMethod('paste')">
-          <div class="choice-btn-icon">📋</div>
+        <button class="choice-btn" onclick="choiceSelectMethod('share')" style="background:#154F74;border-color:#154F74;">
+          <div class="choice-btn-icon">📣</div>
           <div class="choice-btn-text">
-            <div class="choice-btn-title">Paste event details</div>
-            <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
+            <div class="choice-btn-title" style="color:#fff;">I'm sharing an event I'm not hosting</div>
           </div>
         </button>
       </div>
@@ -357,23 +355,22 @@
       </div>
     </div>
 
-    <!-- Step 2: Are you hosting or sharing? -->
+    <!-- Step 2: How would you like to add your event? (hosting only) -->
     <div id="choice-step-2" style="display:none;">
-      <div class="modal-title">One more thing</div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Are you hosting this event or sharing someone else's?</p>
+      <div class="modal-title">How would you like to add it?</div>
       <div class="choice-options">
-        <button class="choice-btn" onclick="choiceConfirmHost()">
-          <div class="choice-btn-icon">🗓️</div>
+        <button class="choice-btn" onclick="choiceConfirmHost('form')">
+          <div class="choice-btn-icon">📝</div>
           <div class="choice-btn-text">
-            <div class="choice-btn-title">I'm hosting</div>
-            <div class="choice-btn-desc">This is my event</div>
+            <div class="choice-btn-title">Fill out form</div>
+            <div class="choice-btn-desc">Enter details field by field</div>
           </div>
         </button>
-        <button class="choice-btn" onclick="choiceConfirmSocializer()">
-          <div class="choice-btn-icon">📣</div>
+        <button class="choice-btn" onclick="choiceConfirmHost('paste')">
+          <div class="choice-btn-icon">📋</div>
           <div class="choice-btn-text">
-            <div class="choice-btn-title">I'm sharing</div>
-            <div class="choice-btn-desc">I want to spread the word about someone else's event</div>
+            <div class="choice-btn-title">Paste event details</div>
+            <div class="choice-btn-desc">Paste text and we'll fill the form for you</div>
           </div>
         </button>
       </div>
@@ -382,15 +379,15 @@
       </div>
     </div>
 
-    <!-- Step 3: Socializer flow -->
+    <!-- Step 3: Socializer flow (sharing only) -->
     <div id="choice-step-3" style="display:none;">
       <div class="modal-title">Share an event</div>
-      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Paste the event link or enter the event ID. Your member card will be attached so clicks are tracked back to you.</p>
-      <input id="socializer-event-input" type="text" placeholder="Event link or event ID" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:12px;">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Paste the link to the event you want to share. We'll attach your member card so clicks are tracked back to you.</p>
+      <input id="socializer-event-input" type="text" placeholder="https://gather.2gather.network/event.html?id=..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--dark);outline:none;margin-bottom:12px;">
       <p id="socializer-error" style="display:none;font-size:13px;color:#c0392b;margin-bottom:10px;"></p>
       <p id="socializer-success" style="display:none;font-size:13px;color:#4CAF7D;font-weight:600;margin-bottom:10px;"></p>
       <div style="display:flex;gap:10px;margin-top:4px;">
-        <button class="btn btn-green" style="flex:1;" onclick="submitSocializer()">Save my share</button>
+        <button class="btn btn-green" style="flex:1;" onclick="submitSocializer()">Get my share link</button>
         <button class="btn btn-outline" onclick="choiceBack()">← Back</button>
       </div>
     </div>
@@ -886,7 +883,6 @@ function openPostEvent() {
 
 function openChoiceModal() {
   document.getElementById("choice-modal").classList.add("open");
-  // Always reset to step 1
   document.getElementById("choice-step-1").style.display = "block";
   document.getElementById("choice-step-2").style.display = "none";
   document.getElementById("choice-step-3").style.display = "none";
@@ -902,34 +898,33 @@ let _choiceMethod = null;
 function choiceSelectMethod(method) {
   _choiceMethod = method;
   document.getElementById("choice-step-1").style.display = "none";
-  document.getElementById("choice-step-2").style.display = "block";
+  if (method === "share") {
+    document.getElementById("socializer-event-input").value = "";
+    document.getElementById("socializer-error").style.display = "none";
+    document.getElementById("socializer-success").style.display = "none";
+    document.getElementById("choice-step-3").style.display = "block";
+  } else {
+    document.getElementById("choice-step-2").style.display = "block";
+  }
 }
 
-function choiceConfirmHost() {
+function choiceConfirmHost(method) {
   closeChoiceModal();
-  if (_choiceMethod === "paste") {
+  if (method === "paste") {
     openPasteModal();
   } else {
     openModal(false);
   }
 }
 
-function choiceConfirmSocializer() {
-  document.getElementById("choice-step-2").style.display = "none";
-  document.getElementById("choice-step-3").style.display = "block";
-  document.getElementById("socializer-event-input").value = "";
-  document.getElementById("socializer-error").style.display = "none";
-  document.getElementById("socializer-success").style.display = "none";
-}
-
 function choiceBack() {
   const s2 = document.getElementById("choice-step-2");
   const s3 = document.getElementById("choice-step-3");
-  if (s3.style.display !== "none") {
-    s3.style.display = "none";
-    s2.style.display = "block";
-  } else {
+  if (s2.style.display !== "none") {
     s2.style.display = "none";
+    document.getElementById("choice-step-1").style.display = "block";
+  } else if (s3.style.display !== "none") {
+    s3.style.display = "none";
     document.getElementById("choice-step-1").style.display = "block";
   }
 }
@@ -3617,6 +3612,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.90 -->
+<!-- Events.html v11.91 -->
 </body>
 </html>
