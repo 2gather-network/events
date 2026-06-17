@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 3.00
+  index.html Version 3.01
+  v3.01 - remove top-level format chips; Format chips inside filter panel; format filter logic
   v3.00 - host autocomplete text input with suggestions
-  v2.99 - Find events for you card with Add topics button
 
 -->
 <html lang="en">
@@ -147,12 +147,6 @@
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-    <button class="format-chip" id="mode-all" onclick="setMode('all')">🌐 All events</button>
-    <button class="format-chip" id="mode-virtual" onclick="setMode('virtual')">💻 Virtual</button>
-    <button class="format-chip" id="mode-inperson" onclick="setMode('inperson')">📍 In-person</button>
-  </div>
-
   <div id="location-filter" style="display:none;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
       <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Filter by location</span>
@@ -204,6 +198,14 @@
           <option value="past-month">Events past month</option>
           <option value="past-quarter">Events past quarter</option>
         </select>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-bottom:8px;">Format</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="fmt-all" onclick="setFormat('all')" style="padding:6px 14px;border-radius:20px;font-size:13px;border:none;background:#154F74;color:#fff;cursor:pointer;font-weight:600;">🌐 All events</button>
+        <button id="fmt-virtual" onclick="setFormat('virtual')" style="padding:6px 14px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);background:#fff;color:var(--dark);cursor:pointer;">💻 Virtual</button>
+        <button id="fmt-inperson" onclick="setFormat('inperson')" style="padding:6px 14px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);background:#fff;color:var(--dark);cursor:pointer;">📍 In-person</button>
       </div>
     </div>
   </div>
@@ -345,6 +347,18 @@ async function loadEvents() {
 }
 
 let _hostList = [];
+let _activeFormat = "all";
+
+function setFormat(fmt) {
+  _activeFormat = fmt;
+  ["all","virtual","inperson"].forEach(f => {
+    const btn = document.getElementById("fmt-" + f);
+    if (!btn) return;
+    if (f === fmt) { btn.style.background = "#154F74"; btn.style.color = "#fff"; btn.style.border = "none"; }
+    else { btn.style.background = "#fff"; btn.style.color = "var(--dark)"; btn.style.border = "1.5px solid var(--border)"; }
+  });
+  renderEvents();
+}
 
 function populateHostFilter() {
   _hostList = [...new Set(events.map(e => e.host).filter(Boolean))].sort();
@@ -471,7 +485,10 @@ function renderEvents() {
     }
     const matchHost  = !activeHost || (e.host||"").toLowerCase().includes(activeHost.toLowerCase());
     const effectiveMatchTab = activeHost ? true : matchTab;
-    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchDate;
+    const _fmt = typeof _activeFormat !== "undefined" ? _activeFormat : "all";
+    const _fmtIsVirtual = !!(e.meetinglink || e.mode === "virtual" || (e.location||"").toLowerCase().includes("virtual") || (e.location||"").toLowerCase().includes("online") || (e.location||"").toLowerCase().includes("zoom"));
+    const matchFormat = _fmt === "all" || (_fmt === "virtual" && _fmtIsVirtual) || (_fmt === "inperson" && !_fmtIsVirtual);
+    return matchCat && matchQ && effectiveMatchTab && matchMode && matchLocation && matchHost && matchDate && matchFormat;
   });
 
   list.sort((a, b) => {
@@ -870,6 +887,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v3.00 -->
+<!-- index.html v3.01 -->
 </body>
 </html>
