@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.95
-  v11.95 - remove top-level format chips; filter panel chips only
-  v11.94 - fix isVirtual variable conflict
+  Events.html Version 11.96
+  v11.96 - guard setMode against removed chip elements
+  v11.95 - remove top-level format chips
 
 -->
 <html lang="en">
@@ -2963,9 +2963,9 @@ function setDateFilter(f) {
 
 function setMode(mode) {
   activeMode = mode;
-  document.getElementById("mode-virtual").classList.toggle("active", mode === "virtual");
-  document.getElementById("mode-inperson").classList.toggle("active", mode === "inperson");
-  document.getElementById("mode-all").classList.toggle("active", mode === "all");
+  const modeVirtual = document.getElementById("mode-virtual"); if(modeVirtual) modeVirtual.classList.toggle("active", mode === "virtual");
+  const modeInperson = document.getElementById("mode-inperson"); if(modeInperson) modeInperson.classList.toggle("active", mode === "inperson");
+  const modeAll = document.getElementById("mode-all"); if(modeAll) modeAll.classList.toggle("active", mode === "all");
   document.getElementById("location-filter").style.display = mode === "inperson" ? "block" : "none";
   if (mode === "inperson") {
     const regionEl = document.getElementById("filter-region");
@@ -3639,6 +3639,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.95 -->
+<!-- Events.html v11.96 -->
 </body>
 </html>
