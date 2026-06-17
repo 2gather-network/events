@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
-  myevents.html Version 1.28
+  myevents.html Version 1.29
+  v1.29 - revert param order to original (id first); v1.28 change broke my events loading
   v1.28 - fix GS_URL typo (Wu→Wv); fix memberCard param order for Glide
-  v1.27 - RSVPs modal on hosted cards; Socializers modal on hosted cards; Events I've socialized section
 -->
 <html lang="en">
 <head>
@@ -467,7 +467,7 @@ async function loadAttendees(eventId) {
 async function init() {
   // Get Member Card number from URL or localStorage
   const params = new URLSearchParams(window.location.search);
-  _appearId = params.get("memberCard") || params.get("id") || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })();
+  _appearId = params.get("id") || (function(){ try { return localStorage.getItem("appear-id"); } catch(e) { return null; } })() || params.get("memberCard");
 
   if (!_appearId) {
     document.getElementById("loading").style.display = "none";
@@ -827,6 +827,6 @@ async function openSocializersModal(eventId, title) {
 }
 </script>
 
-<!-- myevents.html v1.28 -->
+<!-- myevents.html v1.29 -->
 </body>
 </html>
