@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <!--
   Community Events
-  Events.html Version 11.96
+  Events.html Version 11.97
+  v11.97 - swap JSONP event load to plain fetch() (fixes Brave/extension blocking)
   v11.96 - guard setMode against removed chip elements
-  v11.95 - remove top-level format chips
-
 -->
 <html lang="en">
 <head>
@@ -1172,6 +1171,11 @@ function sheetToEv(row) {
   };
 }
 
+async function fetchEvents() {
+  const res = await fetch(GS_URL + "?t=" + Date.now());
+  return res.json();
+}
+
 function jsonp(params) {
   return new Promise((resolve, reject) => {
     const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
@@ -1195,7 +1199,7 @@ async function loadEvents() {
     showLoading(true);
     events = [];
     renderEvents();
-    const data = await jsonp({ t: Date.now() });
+    const data = await fetchEvents();
     const allRows = (data.events || []).filter(r => r.id).map(sheetToEv);
     RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
     events = allRows.filter(e => !e.id.startsWith("rec-"));
@@ -1230,7 +1234,7 @@ async function loadEvents() {
     console.warn("Events load failed, retrying...", e);
     try {
       await new Promise(r => setTimeout(r, 2000));
-      const data = await jsonp({ t: Date.now() });
+      const data = await fetchEvents();
       const allRows = (data.events || []).filter(r => r.id).map(sheetToEv);
       RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
       events = allRows.filter(e => !e.id.startsWith("rec-"));
@@ -2358,7 +2362,7 @@ async function findMyEvents() {
   const findBtn = document.querySelector("#find-modal .btn-green");
   if (findBtn) { findBtn.disabled = true; findBtn.textContent = "Searching..."; }
   try {
-    const data = await jsonp({ t: Date.now() });
+    const data = await fetchEvents();
     if (data.events) events = data.events.filter(r => r.id).map(sheetToEv);
   } catch(e) { /* fall back to cached */ }
   if (findBtn) { findBtn.disabled = false; findBtn.textContent = "Find events"; }
@@ -3639,6 +3643,6 @@ safeOn("interests-modal", "click", e => { if (e.target.id === "interests-modal")
   </div>
 </div>
 
-<!-- Events.html v11.96 -->
+<!-- Events.html v11.97 -->
 </body>
 </html>
