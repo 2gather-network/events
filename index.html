@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <!--
-  index.html Version 3.02
+  index.html Version 3.03
+  v3.03 - swap JSONP event load to plain fetch() (fixes Brave/extension blocking)
   v3.02 - guard setMode against removed chip elements
-  v3.01 - remove top-level format chips; Format chips inside filter panel
-
 -->
 <html lang="en">
 <head>
@@ -289,6 +288,11 @@ function sheetToEv(row) {
   };
 }
 
+async function fetchEvents() {
+  const res = await fetch(GS_URL + "?t=" + Date.now());
+  return res.json();
+}
+
 function jsonp(params) {
   return new Promise((resolve, reject) => {
     const cbName = "cb_" + Date.now() + "_" + Math.random().toString(36).slice(2);
@@ -317,26 +321,17 @@ async function loadEvents() {
   const evParam = urlParams.get("event");
   if (evParam) { setTimeout(() => openEventById(evParam), 400); }
 
-    const data = await jsonp({ t: Date.now() });
+    const data = await fetchEvents();
     const allRows = (data.events||[]).filter(r => r.id).map(sheetToEv);
     RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
     events = allRows.filter(e => !e.id.startsWith("rec-"));
-  } catch(e) {
-    console.warn("Events load failed, retrying...", e);
-    try {
-      await new Promise(r => setTimeout(r, 2000));
-      const data = await jsonp({ t: Date.now() });
-      const allRows = (data.events||[]).filter(r => r.id).map(sheetToEv);
-      RECURRING_EVENTS = allRows.filter(e => e.id.startsWith("rec-") && e.recurFreq && e.dayOfWeek);
-      events = allRows.filter(e => !e.id.startsWith("rec-"));
-    } catch(e2) {
+  } catch(e2) {
       console.warn("Events retry also failed - showing recurring events only", e2);
       const bar = document.getElementById("loading-bar");
       if (bar) {
         bar.style.cssText = "display:block;background:#FFF8E7;border:1.5px solid #F0B429;border-radius:10px;padding:12px 16px;font-size:13px;color:#7B5800;text-align:center;margin-bottom:14px;";
         bar.innerHTML = "⚠️ Having trouble loading events? Try disabling your browser\'s ad blocker or shields for this page.";
       }
-    }
   } finally {
     isLoadingData = false;
     showLoading(false);
@@ -887,6 +882,6 @@ loadEvents();
   </div>
 </div>
 
-<!-- index.html v3.02 -->
+<!-- index.html v3.03 -->
 </body>
 </html>
