@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <!--
-  event.html Version 4.90
+  event.html Version 4.91
+  v4.91 - swap event-load jsonp() script-tag calls to plain fetch() (fixes intermittent "Could not load event" failures)
   v4.90 - fix cancelRsvp appearId; Shared by attribution via ?via= param; logs socializer click
-  v4.89 - associated group + address links open in new tab
   -->
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -362,6 +362,11 @@ function getMemberId() {
 
 function esc(s) {
   return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function fetchEvents() {
+  const res = await fetch(GS_URL + "?t=" + Date.now());
+  return res.json();
 }
 
 function jsonp(params) {
@@ -1120,7 +1125,7 @@ async function init() {
   // If a template row ID (rec-) is passed, resolve to next occurrence in-place
   if (id.startsWith("rec-")) {
     try {
-      const sheetData = await jsonp({ t: Date.now() });
+      const sheetData = await fetchEvents();
       const allRows = (sheetData.events || []).filter(r => r.id);
       const tmpl = allRows.find(r => String(r.id) === id);
       if (tmpl && tmpl.dayOfWeek) {
@@ -1150,7 +1155,7 @@ async function init() {
     const dateStr = id.slice(-10);
     const slug    = id.slice("recurring-".length, id.length - 11);
     try {
-      const sheetData = await jsonp({ t: Date.now() });
+      const sheetData = await fetchEvents();
       const allRows = (sheetData.events || []).filter(r => r.id);
       // Build RECURRING_EVENTS from rec- rows in sheet
       RECURRING_EVENTS = allRows
@@ -1181,7 +1186,7 @@ async function init() {
   }
 
   try {
-    const data = await jsonp({ t: Date.now() });
+    const data = await fetchEvents();
     const ev = (data.events||[]).filter(r=>r.id).map(toEv).find(e=>e.id===id);
     if (!ev) { showError("Event not found."); return; }
     // Handle ?via= socializer attribution
@@ -1218,6 +1223,6 @@ const PREVIEW_EVENT = {
 
 init();
 </script>
-<!-- event.html v4.90 -->
+<!-- event.html v4.91 -->
 </body>
 </html>
